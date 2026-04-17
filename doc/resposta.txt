@@ -1,0 +1,425 @@
+=== QUESTIONÁRIO ASSISTENCIANET ===
+Data: 23/03/2026
+
+
+━━━ IDENTIFICAÇÃO DO NEGÓCIO ━━━
+
+Qual é o nome da empresa?
+  ▸ ORQUIDIA ASSISTENCIA TÉCNICA
+
+Qual é o seu nome e cargo?
+  ▸ SÓCIO PROPRIETÁRIO
+
+Há quantos anos a empresa está no mercado?
+  ▸ 52
+
+Quantos funcionários trabalham na empresa (em todas as unidades)?
+  ▸ 5
+
+Quantas unidades/filiais a empresa possui atualmente?
+  ▸ 3 unidades
+
+Em média, quantas Ordens de Serviço são abertas por mês (em todas as unidades)?
+  ▸ 301 a 500
+
+Qual sistema ou ferramenta vocês utilizam hoje para gerenciar o negócio?
+  ▸ ALDERTADA
+
+Quais são as maiores dificuldades que você enfrenta com o processo atual?
+  ▸ ATENDIMENTO E CONTROLE ATRAVÉS DE RELATÓRIOS DE VENDAS, CLIENTES E FINANCEIRO
+
+
+━━━ ORDENS DE SERVIÇO (OS) ━━━
+
+Quais informações são essenciais ao abrir uma OS?
+  ▸ Nome do cliente
+  ▸ Equipamento e modelo
+  ▸ Número de série / patrimônio
+  ▸ Defeito relatado pelo cliente
+  ▸ Condições físicas do equipamento (riscos, amassados)
+  ▸ Acessórios entregues junto
+  ▸ Data de entrada
+  ▸ Técnico responsável
+  ▸ Filial de entrada
+
+Quais status uma OS percorre do início ao fim? Liste na ordem do seu fluxo real.
+  ▸ CADASTRO OS>ORÇAMENTO>INFORMAÇÃO DO VALOR>EXCECUÇÃO>AVISO DO APARELHO PRONTO
+
+Vocês trabalham com prioridades ou urgências em OS?
+  ▸ Outros: AS PRIORIDADES SÃO ANALISADAS DE ACORDO COM O FLUXO DE CLIENTE E NECESSIDADE E VERIFICAMOS ISSO NA ENTRADA DOS APARELHOS
+
+Vocês emitem laudo técnico ao término do serviço?
+  ▸ Outros: DESCULPE MAS NÃO ENTENDI BEM O SENTIDO DA PERGUNTA, POIS PARA QUEM SERIA O ELOGIO??
+
+Vocês oferecem garantia nos serviços realizados?
+  ▸ Sim, com prazo fixo (ex: 90 dias)
+
+Se há garantia: qual o prazo padrão? Existe controle de OS em garantia hoje?
+  ▸ FORNECEMOS O PRAZO DE GARANTIA LEGAL QUE SÃO DE 90 DIAS
+
+Existe um checklist de recebimento (conferir peças faltando, danos estéticos, etc.)?
+  ▸ Sim, fazemos isso atualmente
+
+É importante registrar fotos do equipamento ao dar entrada?
+  ▸ Seria útil mas não é essencial
+
+Vocês enviam equipamentos para terceiros (ex: fabricante, outro técnico especializado)?
+  ▸ Outros: AS VEZES QUANDO SOLICITADO PELOS FABRICANTES, POIS SOMOS AUTORIZADA DE VÁRIAS MARCAS
+
+Um equipamento pode ter múltiplos defeitos/serviços dentro de uma mesma OS, ou cada defeito gera uma OS separada?
+  ▸ Múltiplos serviços numa OS
+
+O cliente recebe algum comprovante ao deixar o equipamento?
+  ▸ Outros: TODO APARELHO ENTRA E TEM UMA OS ABERTA, POREM HOJE EM DIA NÃO ESTAMOS IMPRIMINDO VIA PARA ELE E SEIM ENVIANDO FOTO DA OS VIA ZAP
+
+O técnico precisa registrar observações durante o serviço (peças usadas, procedimentos realizados)?
+  ▸ Sim, isso é importante
+
+Existe um prazo máximo de atendimento (SLA) que vocês precisam cumprir?
+  ▸ Informamos prazo estimado ao cliente mas não é rígido
+
+
+━━━ ORÇAMENTOS ━━━
+
+Vocês sempre fazem orçamento antes de executar o serviço?
+  ▸ Sim, sempre e com aprovação formal
+
+Como o orçamento é apresentado ao cliente hoje?
+  ▸ Verbalmente (por telefone/pessoalmente)
+  ▸ Por WhatsApp (texto)
+
+Como o cliente aprova o orçamento?
+  ▸ Responde por WhatsApp ('ok', 'pode fazer')
+  ▸ Aprovação verbal apenas
+
+Os orçamentos têm prazo de validade?
+  ▸ Sim, definimos um prazo
+
+O que acontece quando o cliente recusa o orçamento? Vocês cobram pelo diagnóstico?
+  ▸ DIAGNÓSTICO É GRÁTIS
+
+O que compõe um orçamento?
+  ▸ Outros: NÃO ENTENDI
+
+O cliente negocia valor de orçamento? O sistema precisa permitir descontos?
+  ▸ Sim, descontos são comuns e precisam de controle
+
+É importante consultar orçamentos anteriores de um mesmo cliente ou equipamento?
+  ▸ Sim, muito importante
+
+Você tem um modelo padrão de orçamento? Descreva o que deve constar no documento.
+  ▸ NOME>CPF>CELULAR>ENDEREÇO COM CEP>MARCA, MODELO DO APARELHO>VALOR
+
+
+━━━ GESTÃO DE CLIENTES ━━━
+
+Qual o perfil predominante dos seus clientes?
+  ▸ Pessoa física (consumidor final)
+  ▸ Salões de beleza (CNPJ)
+  ▸ Distribuidores/revendedores
+  ▸ Spas e clínicas estéticas
+  ▸ Outros estabelecimentos comerciais
+
+Quais dados são obrigatórios no cadastro de um cliente?
+  ▸ Nome completo
+  ▸ CPF / CNPJ
+  ▸ Telefone/celular
+  ▸ Endereço completo
+  ▸ Observações internas
+
+É necessário cadastrar os equipamentos de cada cliente (com modelo, número de série, histórico)?
+  ▸ Sim, muito importante — cada cliente tem seu parque de máquinas
+
+Qual a importância de consultar todo o histórico de OS de um cliente em uma única tela?
+  ▸ 5
+
+Vocês têm ou precisam de uma classificação de clientes (ex: VIP, recorrente, inadimplente)?
+  ▸ Sim, queremos classificar clientes
+
+Como lidam hoje com cadastros duplicados de um mesmo cliente?
+  ▸ PODEMOS INATIVAR O QUE ESTIVER MENOS COMPLETO
+
+Vocês têm ações para reter clientes inativos (que não aparecem há X meses)?
+  ▸ Outros: SERIA MUITO BOM UMA NOTIFICAÇÃO, COMEÇAMOS A USAR O STATUS DO WHATSAPP E COMEÇOU A APARECER CLIENTES MAIS ANTIGOS
+
+É necessário ter um campo de observações internas sobre o cliente (visível apenas para a equipe)?
+  ▸ Sim, muito útil
+
+Um cliente que foi atendido na Filial A pode procurar a Filial B e ter seu histórico disponível?
+  ▸ Sim, precisa funcionar assim
+
+
+━━━ ESTOQUE E PEÇAS ━━━
+
+Que tipos de itens compõem o seu estoque?
+  ▸ Peças de reposição (usadas nas OS)
+  ▸ Outros: ACESSÓRIOS DOS APARELHOS
+
+Como o estoque é controlado hoje?
+  ▸ Não controlamos formalmente
+
+Qual a importância de receber alertas quando um item atinge estoque mínimo?
+  ▸ 5
+
+Como as entradas de estoque acontecem?
+  ▸ Outros: MANUALMENTE SEM MUITO CONTROLE, POIS AS PEÇAS SAEM TODAS DA MATRIZ
+
+Como as saídas de estoque acontecem?
+  ▸ Transferência para outra filial
+  ▸ Ajuste manual
+
+Cada filial tem seu próprio estoque físico separado?
+  ▸ Misto: central + pequeno estoque por filial
+
+Existe transferência de peças/produtos entre filiais? Com que frequência?
+  ▸ Sim, ocasionalmente
+
+É importante cadastrar fornecedores e vincular cada produto ao seu fornecedor?
+  ▸ 5
+
+Vocês trabalham com preço de custo e preço de venda separados para cada produto?
+  ▸ Sim, usamos margem de lucro por produto
+
+Algum produto/peça tem controle de lote ou validade?
+  ▸ Não
+
+Com que frequência vocês fazem inventário/contagem física do estoque?
+  ▸ Raramente/nunca
+
+Vocês usam ou gostariam de usar código de barras/QR code para identificar produtos?
+  ▸ Queremos implementar
+
+
+━━━ FINANCEIRO E PAGAMENTOS ━━━
+
+Quais formas de pagamento são aceitas?
+  ▸ Dinheiro
+  ▸ Cartão de débito
+  ▸ Cartão de crédito (à vista)
+  ▸ Cartão de crédito (parcelado)
+  ▸ PIX
+
+Vocês oferecem parcelamento próprio (no controle da empresa, sem maquininha)?
+  ▸ Não
+
+Existe desconto para pagamento à vista ou no PIX?
+  ▸ Às vezes
+
+Quando o pagamento da OS é registrado?
+  ▸ Na entrega do equipamento ao cliente
+
+Qual a importância de controlar contas a receber (clientes que ficaram devendo)?
+  ▸ 5
+
+Qual a importância de controlar contas a pagar (fornecedores, despesas fixas, aluguel)?
+  ▸ 5
+
+Quais categorias de despesa são mais importantes para controlar?
+  ▸ Aluguel
+  ▸ Energia elétrica
+  ▸ Compra de peças/produtos
+  ▸ Marketing e publicidade
+  ▸ Manutenção e ferramentas
+  ▸ Impostos e taxas
+
+Os técnicos recebem comissão por OS concluída ou por valor de serviço?
+  ▸ Outros: VALOR FIXO DE MÃO DE OBRA
+
+O controle financeiro é feito separadamente por filial ou de forma consolidada?
+  ▸ Separado por filial
+
+Qual a importância de ver o fluxo de caixa diário/semanal/mensal no sistema?
+  ▸ 5
+
+Qual o maior desafio financeiro que você enfrenta hoje?
+  ▸ AS VEZES O FLUXO DE CAIXA
+
+
+━━━ FUNCIONÁRIOS E PERMISSÕES ━━━
+
+Quais cargos existem na empresa?
+  ▸ Proprietário/Sócio
+  ▸ Gerente de filial
+  ▸ Técnico sênior
+
+Cada cargo deve ter um nível de acesso diferente no sistema?
+  ▸ Sim, mas com perfis predefinidos (Admin, Técnico, Atendente)
+
+Quais funcionalidades devem ser RESTRITAS (não todos podem usar)?
+  ▸ Excluir registros
+  ▸ Ver custo de peças
+
+O técnico deve ver apenas as OS atribuídas a ele, ou todas da filial?
+  ▸ Apenas as dele
+
+Vocês precisam de controle de ponto ou jornada de trabalho no sistema?
+  ▸ Não precisamos
+
+Vocês trabalham com metas por técnico (ex: número de OS concluídas, valor faturado)?
+  ▸ Não trabalhamos com metas
+
+Qual a importância de rastrear quem fez cada ação no sistema (quem abriu OS, deu desconto, excluiu)?
+  ▸ 5
+
+Algum funcionário precisa acessar o sistema fora da empresa (ex: técnico externo, gestor viajando)?
+  ▸ Sim, isso é importante
+
+
+━━━ COMUNICAÇÃO COM CLIENTES ━━━
+
+Como vocês se comunicam com os clientes hoje?
+  ▸ WhatsApp (manual)
+  ▸ Ligação telefônica
+  ▸ Presencialmente
+  ▸ Outros: INSTAGRAM / TIKTOK
+
+Qual a importância de notificar automaticamente o cliente quando o status da OS mudar?
+  ▸ 5
+
+Em quais momentos o cliente deve ser notificado?
+  ▸ Quando a OS é aberta (confirmação de recebimento)
+  ▸ Quando o orçamento está pronto para aprovação
+  ▸ Quando o serviço está concluído/pronto para retirada
+  ▸ Quando há lembrete de visita preventiva
+
+Como você usa o WhatsApp para comunicação hoje?
+  ▸ WhatsApp Business individual
+
+Você precisaria de modelos de mensagem pré-prontos (templates) que a equipe use com um clique?
+  ▸ Sim, isso agilizaria muito o atendimento
+
+Vocês gostariam de enviar pesquisa de satisfação após a conclusão de cada OS?
+  ▸ Sim, queremos medir a satisfação dos clientes
+
+Vocês enviam mensagens de marketing/promoções para a base de clientes?
+  ▸ Às vezes
+
+Há perguntas que a equipe responde repetidamente e que poderiam ser automatizadas?
+  ▸ QUAL O ENDEREÇO?
+QUAL O HORÁRIO DE FUNCIONAMENTO?
+ORÇAMENTO É GRATIS??
+ACEITA CARTÕES??
+ACEITAM PIX??
+
+
+━━━ RELATÓRIOS E INDICADORES ━━━
+
+Com que frequência você consulta dados/relatórios do negócio?
+  ▸ Semanalmente
+
+Quais indicadores de OS são mais importantes para você acompanhar?
+  ▸ Total de OS abertas no período
+  ▸ Tempo médio de execução
+  ▸ OS por técnico
+  ▸ OS por tipo de equipamento
+  ▸ Taxa de recusa de orçamento
+
+Quais indicadores financeiros você precisa acompanhar?
+  ▸ Faturamento total (diário/mensal)
+  ▸ Ticket médio por OS
+  ▸ Lucro por serviço/peça
+  ▸ Contas a receber em aberto
+  ▸ Despesas por categoria
+  ▸ Comparativo entre filiais
+  ▸ Margem de lucro líquida
+
+Quais indicadores de estoque são relevantes para você?
+  ▸ Itens em estoque mínimo ou zerado
+  ▸ Peças mais utilizadas (giro)
+  ▸ Valor total do estoque
+  ▸ Itens sem movimento há X dias
+  ▸ Custo de peças por OS
+
+Qual a importância de ter uma tela inicial (dashboard) com os principais números ao abrir o sistema?
+  ▸ 5
+
+O que não pode faltar no seu dashboard?
+  ▸ OS ABERTAS
+OS ENTREGUES
+FATURAMENTO
+DESPESAS OPERACIONAIS
+
+Qual a importância de comparar desempenho entre as filiais nos relatórios?
+  ▸ 5
+
+Você precisa exportar relatórios para Excel ou PDF?
+  ▸ Às vezes
+
+Você precisaria de relatórios gerados automaticamente e enviados por e-mail (diário, semanal, mensal)?
+  ▸ Prefiro acessar quando quiser
+
+
+━━━ MÚLTIPLAS FILIAIS ━━━
+
+Você gerencia todas as filiais de um único ponto ou cada gerente cuida da sua?
+  ▸ Gestão centralizada (vejo tudo de um lugar)
+
+Os preços de serviços e produtos são os mesmos em todas as filiais?
+  ▸ Base padrão com ajustes específicos por filial
+
+Um cliente cadastrado em uma filial pode ser atendido em outra?
+  ▸ Outros: CADA FILIAL TEM SUA BASE CLIENTES, MAS PERMITIMOS O ATENDIMANTO EM OUTRA FILIAL USANDO DADOS DE FORMA MANUAL
+
+Uma OS pode ser transferida de uma filial para outra durante o processo?
+  ▸ Outros: AS VEZES ACONTECE DE UMA APARELHO SER ENTREGUE EM OUTRA FILIAL
+
+As filiais têm acesso à internet estável?
+  ▸ Sim, todas com internet de boa qualidade
+
+Qual a importância de continuar trabalhando normalmente se a internet cair?
+  ▸ 5
+
+Quando a internet voltar após uma queda, como você espera que o sistema se comporte?
+  ▸ Sincroniza automaticamente sem nenhuma intervenção
+
+Existe plano de abrir mais filiais nos próximos 1-2 anos?
+  ▸ Não por enquanto
+
+Cada filial precisa ter autonomia para cadastrar seus próprios produtos e serviços?
+  ▸ Filial pode ajustar preços mas não criar novos itens
+
+
+━━━ PRIORIDADES E EXPECTATIVAS ━━━
+
+Quais módulos você considera mais urgentes de ter funcionando primeiro?
+  ▸ Ordens de Serviço
+  ▸ Clientes
+  ▸ Estoque
+  ▸ Financeiro
+  ▸ Orçamentos
+  ▸ Relatórios / Dashboard
+  ▸ Comunicação automática com cliente
+  ▸ Controle de funcionários e permissões
+
+Se tivesse que escolher apenas 3 problemas que o sistema DEVE resolver imediatamente, quais seriam?
+  ▸ INTEGRAR AS FILIAIS
+ATENDIMENTO AUTOMÁTICO AOS CLIENTES
+FATURAMENTO DIÁRIO DAS 3 UNIDADES DE FORMA SEPARADA EM UMA MESMA TELA
+
+
+O que absolutamente NÃO PODE faltar no sistema para você adotá-lo no dia a dia?
+  ▸ SEJA SIMPLES E OBJETIVO
+
+Quais são seus maiores medos ou dificuldades em relação à adoção de um novo sistema?
+  ▸ PERDER DADOS ANTIGOS
+ELE SER DE FÁCIL UTILIZAÇÃO E MUITO INTUITIVO
+
+Você e sua equipe teriam disponibilidade para participar de treinamento de implantação?
+  ▸ Prefiro treinamento gravado/autoexplicativo
+
+Precisa migrar algum dado do sistema atual para o novo?
+  ▸ Cadastro de clientes
+  ▸ Histórico de OS
+  ▸ Contas a receber em aberto
+
+Em uma escala de 1 a 5, o quanto você está insatisfeito com o processo atual?
+  ▸ 3
+
+Qual é o prazo ideal para você ter o sistema funcionando?
+  ▸ Sem pressa, quero que esteja bem feito
+
+Existe uma expectativa de investimento mensal para o sistema? (opcional)
+  ▸ Outros: NÃO FAÇO IDEIA NESSE MOMENTO
+
+Alguma observação, situação especial ou necessidade que ainda não foi coberta nas perguntas acima?
+  ▸ PRECISO QUE SEJA PENSADO NÃO SOMENTE PARA MINHA EQUIPE, VEJO A POSSIBILIDADE DE VENDERMOS ACESSO AO SISTEMA PARA PROFISSIONAIS DE ASSISTÊNCIA TÉCNICA EM GERAL
