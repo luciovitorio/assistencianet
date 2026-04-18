@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient as createSupabaseClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { createAuditLog } from '@/lib/audit/audit-log'
 import { getAdminContext } from '@/lib/auth/admin-context'
 import { getCompanyContext } from '@/lib/auth/company-context'
@@ -215,7 +216,8 @@ export async function deleteClient(id: string) {
 
     const deletedAt = new Date().toISOString()
     const archivedDocument = buildArchivedUniqueFieldValue(client.document, client.id, deletedAt)
-    const { error } = await supabase
+    const admin = createAdminClient()
+    const { error } = await admin
       .from('clients')
       .update({
         active: false,
@@ -246,10 +248,6 @@ export async function deleteClient(id: string) {
     revalidateClientsPage()
     return { success: true }
   } catch (error: unknown) {
-    if (error instanceof Error) {
-      return { error: error.message }
-    }
-
-    return { error: 'Erro ao excluir cliente' }
+    return { error: getActionErrorMessage(error, 'Erro ao excluir cliente') }
   }
 }
