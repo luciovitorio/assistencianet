@@ -99,7 +99,7 @@ export function BranchList({ initialBranches, isAdmin }: BranchListProps) {
           </div>
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div data-testid="branch-card-grid" className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {branches.map((branch) => (
             <BranchCard
               key={branch.id}

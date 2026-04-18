@@ -44,7 +44,20 @@
       "Bash(find /c/projetos/assistencia_saas/apps/web/supabase/migrations -name \"*.sql\" -exec grep -l \"service_orders\" {} \\\\;)",
       "Bash(grep -B 5 -A 40 \"CREATE TABLE service_orders\" /c/projetos/assistencia_saas/apps/web/supabase/migrations/20260401*.sql)",
       "Bash(xargs cat:*)",
-      "Bash(grep -l \"service_orders\" /c/projetos/assistencia_saas/apps/web/supabase/migrations/*.sql)"
+      "Bash(grep -l \"service_orders\" /c/projetos/assistencia_saas/apps/web/supabase/migrations/*.sql)",
+      "Bash(npx vitest *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3001)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://127.0.0.1:54321)",
+      "Bash(npx playwright *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3001/login)",
+      "Bash(npm run *)",
+      "Bash(PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -c \"\\\\\\\\d+ public.clients\")",
+      "Bash(PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -c \"SELECT indexdef FROM pg_indexes WHERE tablename = 'clients' AND schemaname = 'public';\")",
+      "Bash(node -e ' *)",
+      "Bash(curl -s http://localhost:3001/dashboard/clientes -o /dev/null -w \"%{http_code}\\\\n\")",
+      "Bash(PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -c \"SELECT polname, polcmd, pg_get_expr\\(polqual, polrelid\\) AS using_expr, pg_get_expr\\(polwithcheck, polrelid\\) AS with_check_expr FROM pg_policy WHERE polrelid = 'public.clients'::regclass;\")",
+      "Bash(node scripts/test-rls-delete.js)",
+      "Bash(DEBUG=pw:api npx playwright test src/tests/e2e/clientes.spec.ts -g \"TC-CLI-046\" --reporter=line)"
     ]
   }
 }

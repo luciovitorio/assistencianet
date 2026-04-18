@@ -49,7 +49,11 @@ export async function updatePasswordOnFirstLogin(password: string): Promise<Upda
   } = await supabase.auth.getUser()
 
   if (!user) return { error: 'Não autenticado' }
-  if (!user.app_metadata?.force_password_change) {
+  const admin = createAdminClient()
+  const { data: latestUser } = await admin.auth.admin.getUserById(user.id)
+  const appMetadata = latestUser.user?.app_metadata ?? user.app_metadata
+
+  if (!appMetadata?.force_password_change) {
     return { error: 'Troca de senha não necessária para este usuário.' }
   }
 
@@ -58,9 +62,8 @@ export async function updatePasswordOnFirstLogin(password: string): Promise<Upda
     return translatePasswordUpdateError(updatePasswordError.message)
   }
 
-  const admin = createAdminClient()
   const { error } = await admin.auth.admin.updateUserById(user.id, {
-    app_metadata: { ...user.app_metadata, force_password_change: false },
+    app_metadata: { ...appMetadata, force_password_change: false },
   })
 
   if (error) {

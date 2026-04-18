@@ -181,14 +181,17 @@ export default function OnboardingFiliaisPage() {
                       {...register(`branches.${i}.city`)}
                     />
                   </div>
-                  <InputField
-                    label="Estado (UF)"
-                    placeholder="SP"
-                    maxLength={2}
-                    {...register(`branches.${i}.state`, {
-                      setValueAs: (v: string) => v.toUpperCase(),
-                    })}
-                  />
+                    <InputField
+                      label="Estado (UF)"
+                      placeholder="SP"
+                      maxLength={2}
+                      {...register(`branches.${i}.state`, {
+                        onChange: (e) => {
+                          e.target.value = e.target.value.toUpperCase()
+                        },
+                        setValueAs: (v: string) => v.toUpperCase(),
+                      })}
+                    />
                 </div>
               </div>
             </div>

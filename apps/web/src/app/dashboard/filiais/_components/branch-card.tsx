@@ -23,7 +23,11 @@ interface BranchCardProps {
 
 export function BranchCard({ branch, isAdmin, onEdit, onDelete }: BranchCardProps) {
   return (
-    <div className="bg-card text-card-foreground border border-border shadow-sm rounded-xl p-6 flex flex-col relative group transition-all hover:border-primary/50">
+    <div
+      data-testid="branch-card"
+      data-branch-name={branch.name}
+      className="bg-card text-card-foreground border border-border shadow-sm rounded-xl p-6 flex flex-col relative group transition-all hover:border-primary/50"
+    >
       <div className="flex justify-between items-start mb-4">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-primary/10 rounded-lg text-primary">
@@ -55,7 +59,10 @@ export function BranchCard({ branch, isAdmin, onEdit, onDelete }: BranchCardProp
       </div>
 
       {isAdmin && (
-        <div className="absolute top-4 right-4 flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+        <div
+          data-testid="branch-card-actions"
+          className="absolute top-4 right-4 flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
+        >
           <Button
             variant="ghost"
             size="icon"

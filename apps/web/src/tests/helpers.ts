@@ -123,7 +123,9 @@ export async function cleanupCompany(companyId: string, ownerId?: string) {
     await pg.query('DELETE FROM public.service_order_estimate_items WHERE company_id = $1', [companyId])
     await pg.query('DELETE FROM public.service_order_estimates WHERE company_id = $1', [companyId])
     await pg.query('DELETE FROM public.service_orders WHERE company_id = $1', [companyId])
+    await pg.query('DELETE FROM public.clients WHERE company_id = $1', [companyId])
     await pg.query('DELETE FROM public.bills WHERE company_id = $1', [companyId])
+    await pg.query('DELETE FROM public.employees WHERE company_id = $1', [companyId])
     await pg.query('DELETE FROM public.branches WHERE company_id = $1', [companyId])
     await pg.query('DELETE FROM public.companies WHERE id = $1', [companyId])
     if (ownerId) {

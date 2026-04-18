@@ -323,7 +323,7 @@ export function EmployeeList({ initialEmployees, branches, isAdmin }: EmployeeLi
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm" data-testid="employee-table">
               <thead>
                 <tr className="border-b border-border bg-muted/40">
                   <th className="text-left font-medium text-muted-foreground px-4 py-3">Nome</th>
@@ -346,7 +346,12 @@ export function EmployeeList({ initialEmployees, branches, isAdmin }: EmployeeLi
                   const hasEmail = !!employee.email
 
                   return (
-                    <tr key={employee.id} className="hover:bg-muted/20 transition-colors">
+                    <tr
+                      key={employee.id}
+                      className="hover:bg-muted/20 transition-colors"
+                      data-testid="employee-row"
+                      data-employee-name={employee.name}
+                    >
                       {/* Nome */}
                       <td className="px-4 py-3">
                         <div className="font-medium text-foreground">{employee.name}</div>
@@ -429,6 +434,7 @@ export function EmployeeList({ initialEmployees, branches, isAdmin }: EmployeeLi
                                 })
                               }
                               title="Editar"
+                              aria-label={`Editar funcionário ${employee.name}`}
                             >
                               <Edit2 className="size-4" />
                             </Button>
@@ -447,6 +453,7 @@ export function EmployeeList({ initialEmployees, branches, isAdmin }: EmployeeLi
                                   })
                                 }
                                 title="Convidar por e-mail"
+                                aria-label={`Convidar funcionário ${employee.name} por e-mail`}
                               >
                                 <Mail className="size-4" />
                               </Button>
@@ -466,6 +473,7 @@ export function EmployeeList({ initialEmployees, branches, isAdmin }: EmployeeLi
                                   })
                                 }
                                 title="Definir senha provisória"
+                                aria-label={`Definir senha provisória para ${employee.name}`}
                               >
                                 <KeyRound className="size-4" />
                               </Button>
@@ -480,6 +488,7 @@ export function EmployeeList({ initialEmployees, branches, isAdmin }: EmployeeLi
                                   setDialog({ type: 'revoke', id: employee.id, name: employee.name })
                                 }
                                 title="Revogar acesso"
+                                aria-label={`Revogar acesso de ${employee.name}`}
                               >
                                 <ShieldOff className="size-4" />
                               </Button>
@@ -493,6 +502,7 @@ export function EmployeeList({ initialEmployees, branches, isAdmin }: EmployeeLi
                                 setDialog({ type: 'delete', id: employee.id, name: employee.name })
                               }
                               title="Excluir"
+                              aria-label={`Excluir funcionário ${employee.name}`}
                             >
                               <Trash2 className="size-4" />
                             </Button>

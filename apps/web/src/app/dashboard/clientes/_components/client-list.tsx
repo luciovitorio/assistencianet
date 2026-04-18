@@ -329,7 +329,7 @@ export function ClientList({
                   const isPreferred = currentBranchId && client.origin_branch_id === currentBranchId
 
                   return (
-                    <tr key={client.id} className="hover:bg-muted/20 transition-colors">
+                    <tr key={client.id} data-testid="client-row" className="hover:bg-muted/20 transition-colors">
                       <td className="px-4 py-3">
                         <div className="font-medium text-foreground">{client.name}</div>
                         {client.notes && (
@@ -420,6 +420,7 @@ export function ClientList({
                                   })
                                 }
                                 title="Editar"
+                                aria-label={`Editar cliente ${client.name}`}
                               >
                                 <Edit2 className="size-4" />
                               </Button>
@@ -430,6 +431,7 @@ export function ClientList({
                                 className="size-8 text-muted-foreground hover:text-destructive"
                                 onClick={() => setDialog({ type: 'delete', id: client.id, name: client.name })}
                                 title="Excluir"
+                                aria-label={`Excluir cliente ${client.name}`}
                               >
                                 <Trash2 className="size-4" />
                               </Button>

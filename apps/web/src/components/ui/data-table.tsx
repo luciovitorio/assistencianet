@@ -150,6 +150,7 @@ function DataTableFilterPopover({
                 <button
                   key={option.value}
                   type="button"
+                  aria-label={`${title}: ${option.label}`}
                   onClick={() => onToggle(option.value)}
                   className={cn(
                     "flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-muted",
@@ -227,7 +228,7 @@ function DataTablePagination({
             value={String(rowsPerPage)}
             onValueChange={(value) => onRowsPerPageChange(Number(value ?? String(rowsPerPageOptions[0] ?? 10)))}
           >
-            <SelectTrigger className="h-9 min-w-16 bg-background">
+            <SelectTrigger aria-label="Linhas por pagina" className="h-9 min-w-16 bg-background">
               <SelectValue />
             </SelectTrigger>
             <SelectContent align="end">

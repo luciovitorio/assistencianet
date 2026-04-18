@@ -183,7 +183,7 @@ export function BranchDialog({ branch, open, onOpenChange }: BranchDialogProps) 
                   label="CEP"
                   placeholder="00000-000"
                   error={errors.zip_code?.message}
-                  rightIcon={isFetchingCep ? <Loader2 className="animate-spin" /> : undefined}
+                  rightIcon={isFetchingCep ? <Loader2 data-testid="cep-loading" className="animate-spin" /> : undefined}
                   {...field}
                   value={field.value || ''}
                   onChange={(e) => {

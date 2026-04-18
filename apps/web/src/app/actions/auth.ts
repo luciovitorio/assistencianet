@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { createAuditLog } from '@/lib/audit/audit-log'
 import { loginSchema, registerSchema } from '@/lib/validations/auth'
 
@@ -72,6 +73,13 @@ export async function login(_prev: unknown, formData: FormData) {
     return { error: employeeStatus.error }
   }
 
+  let forcePasswordChange = Boolean(data.user?.app_metadata?.force_password_change)
+  if (!forcePasswordChange && data.user?.id) {
+    const admin = createAdminClient()
+    const { data: latestUser } = await admin.auth.admin.getUserById(data.user.id)
+    forcePasswordChange = Boolean(latestUser.user?.app_metadata?.force_password_change)
+  }
+
   await createAuditLog({
     action: 'login',
     entityType: 'auth',
@@ -80,6 +88,9 @@ export async function login(_prev: unknown, formData: FormData) {
   })
 
   revalidatePath('/', 'layout')
+  if (forcePasswordChange) {
+    redirect('/dashboard/alterar-senha')
+  }
   redirect('/dashboard')
 }
 

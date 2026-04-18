@@ -138,7 +138,7 @@ export function EmployeeDialog({ employee, branches, open, onOpenChange }: Emplo
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4" id="employee-form">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4" id="employee-form" noValidate>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
               <Controller

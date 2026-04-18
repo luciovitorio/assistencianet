@@ -84,7 +84,7 @@ export function DirectAccessDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} id="direct-access-form" className="space-y-4 py-2">
+        <form onSubmit={handleSubmit(onSubmit)} id="direct-access-form" className="space-y-4 py-2" noValidate>
           <Controller
             control={control}
             name="email"
