@@ -311,12 +311,22 @@ export async function toggleBotEnabled(
     const { companyId } = await getCompanyContext()
     const supabase = await createClient()
 
+    const updates = enabled
+      ? {
+          bot_enabled: true,
+          status: 'bot' as const,
+          bot_state: null,
+          attempts: 0,
+        }
+      : { bot_enabled: false, status: 'in_progress' as const }
+
     await supabase
       .from('whatsapp_conversations')
-      .update({ bot_enabled: enabled })
+      .update(updates)
       .eq('id', conversationId)
       .eq('company_id', companyId)
 
+    revalidatePath('/dashboard/atendimento')
     return {}
   } catch {
     return { error: 'Erro ao alterar bot.' }
