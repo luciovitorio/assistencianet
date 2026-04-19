@@ -25,6 +25,7 @@ import { logout } from '@/app/actions/auth'
 import { RouteTransitionProvider } from '@/components/ui/route-transition-indicator'
 import { NotificationBell } from './notification-bell'
 import { AtendimentoWaitingBadge } from './atendimento-waiting-badge'
+import { LogoutButton } from './logout-button'
 
 interface DashboardShellProps {
   children: React.ReactNode
@@ -481,13 +482,7 @@ export function DashboardShell({
             <div className="h-6 w-px bg-border"></div>
 
             <form action={logout}>
-              <button
-                title="Sair"
-                type="submit"
-                className="p-2 text-muted-foreground hover:text-destructive transition-colors cursor-pointer font-medium text-sm"
-              >
-                Sair
-              </button>
+              <LogoutButton />
             </form>
           </div>
         </header>
