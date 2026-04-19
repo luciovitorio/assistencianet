@@ -24,23 +24,32 @@ export function AtendimentoWaitingBadge({ companyId, isExpanded }: Props) {
 
     refresh()
 
+    // Realtime — idealmente dispara no instante, mas pode perder eventos
     const supabase = createClient()
     const channel = supabase
-      .channel(`sidebar-atendimento-${companyId}`)
+      .channel('sidebar-atendimento')
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'whatsapp_conversations',
-          filter: `company_id=eq.${companyId}`,
         },
         refresh,
       )
       .subscribe()
 
+    // Fallback: revalida a cada 30s e quando a aba volta ao foco
+    const interval = setInterval(refresh, 30_000)
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') refresh()
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+
     return () => {
       cancelled = true
+      clearInterval(interval)
+      document.removeEventListener('visibilitychange', onVisibility)
       supabase.removeChannel(channel)
     }
   }, [companyId])
