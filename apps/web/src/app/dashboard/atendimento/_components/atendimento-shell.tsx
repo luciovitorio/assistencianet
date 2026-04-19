@@ -195,6 +195,7 @@ export function AtendimentoShell({
   const [search, setSearch] = React.useState('')
   const [statusFilter, setStatusFilter] = React.useState<string>('all')
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false)
+  const [currentUserId, setCurrentUserId] = React.useState<string | null>(null)
 
   const selectedIdRef = React.useRef(selectedId)
   const messagesEndRef = React.useRef<HTMLDivElement>(null)
@@ -209,6 +210,13 @@ export function AtendimentoShell({
   React.useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  // Identifica o usuário atual (para saber se a conversa é dele)
+  React.useEffect(() => {
+    createClient()
+      .auth.getUser()
+      .then(({ data: { user } }) => setCurrentUserId(user?.id ?? null))
+  }, [])
 
   // Realtime: conversas + mensagens
   React.useEffect(() => {
@@ -317,7 +325,11 @@ export function AtendimentoShell({
     const result = await assumeConversation(selectedId)
     if (result.error) { toast.error(result.error); return }
     setConversations((prev) =>
-      prev.map((c) => (c.id === selectedId ? { ...c, status: 'in_progress' as const, bot_enabled: false } : c)),
+      prev.map((c) =>
+        c.id === selectedId
+          ? { ...c, status: 'in_progress' as const, bot_enabled: false, assigned_to: result.assignedTo ?? currentUserId }
+          : c,
+      ),
     )
     toast.success('Conversa assumida.')
   }
@@ -327,7 +339,11 @@ export function AtendimentoShell({
     const result = await resolveConversation(selectedId)
     if (result.error) { toast.error(result.error); return }
     setConversations((prev) =>
-      prev.map((c) => (c.id === selectedId ? { ...c, status: 'resolved' as const, bot_enabled: false } : c)),
+      prev.map((c) =>
+        c.id === selectedId
+          ? { ...c, status: 'resolved' as const, bot_enabled: false, assigned_to: null }
+          : c,
+      ),
     )
     toast.success('Conversa encerrada.')
   }
@@ -338,10 +354,18 @@ export function AtendimentoShell({
     if (result.error) { toast.error(result.error); return }
     setConversations((prev) =>
       prev.map((c) =>
-        c.id === selectedId ? { ...c, status: 'bot' as const, bot_enabled: true, bot_state: null } : c,
+        c.id === selectedId
+          ? {
+              ...c,
+              status: 'in_progress' as const,
+              bot_enabled: false,
+              bot_state: null,
+              assigned_to: result.assignedTo ?? currentUserId,
+            }
+          : c,
       ),
     )
-    toast.success('Conversa reaberta. Bot reativado.')
+    toast.success('Conversa reaberta. Você assumiu o atendimento.')
   }
 
   const handleDelete = async () => {
@@ -358,12 +382,11 @@ export function AtendimentoShell({
   }
 
   const filteredConversations = React.useMemo(() => {
-    let list = conversations
+    // Conversas ainda no bot (sem solicitação de atendimento humano) não aparecem aqui —
+    // a lista é para o técnico atender clientes que pediram atendimento.
+    let list = conversations.filter((c) => c.status !== 'bot')
     if (statusFilter !== 'all') {
       list = list.filter((c) => c.status === statusFilter)
-    } else {
-      // Remove conversas que ainda estão no bot do filtro 'Todos'
-      list = list.filter((c) => c.status !== 'bot')
     }
     if (search) {
       const term = search.toLowerCase()
@@ -382,7 +405,6 @@ export function AtendimentoShell({
     { value: 'all', label: 'Todos' },
     { value: 'waiting', label: 'Aguardando' },
     { value: 'in_progress', label: 'Em atendimento' },
-    { value: 'bot', label: 'Bot' },
     { value: 'resolved', label: 'Resolvidos' },
   ]
 
@@ -506,7 +528,7 @@ export function AtendimentoShell({
                     Assumir
                   </Button>
                 )}
-                {(selectedConversation.status === 'in_progress' || selectedConversation.status === 'bot') && (
+                {selectedConversation.status === 'in_progress' && (
                   <Button size="sm" variant="outline" onClick={handleResolve} className="gap-1.5">
                     <CheckCheck className="size-3.5" />
                     Resolver
@@ -548,6 +570,14 @@ export function AtendimentoShell({
               {selectedConversation.status === 'resolved' ? (
                 <p className="text-center text-xs text-slate-400">
                   Conversa encerrada. Reabra para enviar mensagens.
+                </p>
+              ) : selectedConversation.assigned_to && selectedConversation.assigned_to !== currentUserId ? (
+                <p className="text-center text-xs text-slate-400">
+                  Esta conversa está em atendimento por outro técnico.
+                </p>
+              ) : !selectedConversation.assigned_to ? (
+                <p className="text-center text-xs text-slate-400">
+                  Clique em “Assumir” para responder esta conversa.
                 </p>
               ) : (
                 <div className="flex items-end gap-2 bg-slate-50 border border-slate-200 rounded-3xl pb-1 pl-1 pr-1 pt-1 focus-within:ring-2 focus-within:ring-emerald-500/30 focus-within:border-emerald-400 transition-all">

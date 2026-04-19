@@ -93,10 +93,13 @@ export async function getConversations(
          branches(name), clients(name)`,
       )
       .eq('company_id', companyId)
+      .in('status', ['waiting', 'in_progress', 'resolved'])
       .order('last_message_at', { ascending: false, nullsFirst: false })
       .limit(100)
 
-    if (filters.status) query = query.eq('status', filters.status)
+    if (filters.status && filters.status !== 'bot') {
+      query = query.eq('status', filters.status)
+    }
     if (filters.branchId) query = query.eq('branch_id', filters.branchId)
 
     const { data } = await query
@@ -181,12 +184,16 @@ export async function sendAtendimentoReply(
     // Busca conversa
     const { data: conversation } = await supabase
       .from('whatsapp_conversations')
-      .select('id, phone_number, status')
+      .select('id, phone_number, status, assigned_to')
       .eq('id', conversationId)
       .eq('company_id', companyId)
-      .maybeSingle<{ id: string; phone_number: string; status: string }>()
+      .maybeSingle<{ id: string; phone_number: string; status: string; assigned_to: string | null }>()
 
     if (!conversation) return { error: 'Conversa não encontrada.' }
+
+    if (conversation.assigned_to && conversation.assigned_to !== user.id) {
+      return { error: 'Esta conversa está em atendimento por outro técnico.' }
+    }
 
     // Envia via Evolution API
     const evolutionClient = await getEvolutionClient(companyId)
@@ -239,19 +246,19 @@ export async function sendAtendimentoReply(
 
 export async function assumeConversation(
   conversationId: string,
-): Promise<{ error?: string }> {
+): Promise<{ error?: string; assignedTo?: string }> {
   try {
-    const { companyId } = await getCompanyContext()
+    const { companyId, user } = await getCompanyContext()
     const supabase = await createClient()
 
     await supabase
       .from('whatsapp_conversations')
-      .update({ status: 'in_progress', bot_enabled: false })
+      .update({ status: 'in_progress', bot_enabled: false, assigned_to: user.id })
       .eq('id', conversationId)
       .eq('company_id', companyId)
 
     revalidatePath('/dashboard/atendimento')
-    return {}
+    return { assignedTo: user.id }
   } catch {
     return { error: 'Erro ao assumir conversa.' }
   }
@@ -271,6 +278,7 @@ export async function resolveConversation(
         bot_enabled: true,
         bot_state: null,
         attempts: 0,
+        assigned_to: null,
       })
       .eq('id', conversationId)
       .eq('company_id', companyId)
@@ -284,25 +292,26 @@ export async function resolveConversation(
 
 export async function reopenConversation(
   conversationId: string,
-): Promise<{ error?: string }> {
+): Promise<{ error?: string; assignedTo?: string }> {
   try {
-    const { companyId } = await getCompanyContext()
+    const { companyId, user } = await getCompanyContext()
     const supabase = await createClient()
 
     await supabase
       .from('whatsapp_conversations')
       .update({
-        status: 'bot',
-        bot_enabled: true,
+        status: 'in_progress',
+        bot_enabled: false,
         bot_state: null,
         context: {},
         attempts: 0,
+        assigned_to: user.id,
       })
       .eq('id', conversationId)
       .eq('company_id', companyId)
 
     revalidatePath('/dashboard/atendimento')
-    return {}
+    return { assignedTo: user.id }
   } catch {
     return { error: 'Erro ao reabrir conversa.' }
   }
