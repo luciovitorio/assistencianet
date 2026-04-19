@@ -61,8 +61,7 @@ import {
   type ThirdPartyOption,
 } from '../[id]/_components/dispatch-to-third-party-dialog'
 import { ReturnFromThirdPartyDialog } from '../[id]/_components/return-from-third-party-dialog'
-import { EstimatesModal } from '../[id]/_components/estimates-modal'
-import { type ServiceOrderEstimateRecord } from '../[id]/_components/service-order-estimates-panel'
+import { LazyEstimatesModal } from './lazy-estimates-modal'
 import { ServiceOrderPickupSheet } from './service-order-pickup-sheet'
 
 export interface ServiceOrderData {
@@ -115,7 +114,6 @@ export interface EmployeeOption {
 
 interface ServiceOrderListProps {
   initialOrders: ServiceOrderData[]
-  estimateHistoriesByOrderId: Record<string, ServiceOrderEstimateRecord[]>
   branches: BranchOption[]
   clients: ClientOption[]
   employees: EmployeeOption[]
@@ -133,7 +131,6 @@ const DISPATCHABLE_STATUSES: ServiceOrderStatus[] = ['aguardando', 'em_analise',
 
 export function ServiceOrderList({
   initialOrders,
-  estimateHistoriesByOrderId,
   branches,
   clients,
   employees,
@@ -369,9 +366,13 @@ export function ServiceOrderList({
     return estimates.reduce((best, curr) => (curr.version > best.version ? curr : best))
   }
 
-  const getLatestApprovedEstimate = (serviceOrderId: string) => {
-    const estimates = estimateHistoriesByOrderId[serviceOrderId] ?? []
-    return estimates.find((estimate) => estimate.status === 'aprovado') ?? null
+  const getLatestApprovedEstimate = (order: ServiceOrderData) => {
+    const estimates = order.service_order_estimates ?? []
+    return (
+      estimates
+        .filter((estimate) => estimate.status === 'aprovado')
+        .sort((a, b) => b.version - a.version)[0] ?? null
+    )
   }
 
   const canDeleteOrder = (order: ServiceOrderData) =>
@@ -418,7 +419,7 @@ export function ServiceOrderList({
     ? (orders.find((order) => order.id === pickupOrderId) ?? null)
     : null
   const pickupClient = pickupOrder ? clientMap[pickupOrder.client_id] : null
-  const pickupApprovedEstimate = pickupOrder ? getLatestApprovedEstimate(pickupOrder.id) : null
+  const pickupApprovedEstimate = pickupOrder ? getLatestApprovedEstimate(pickupOrder) : null
 
   return (
     <>
@@ -998,20 +999,13 @@ export function ServiceOrderList({
       )}
 
       {historyOrder && (
-        <EstimatesModal
-          hideSummaryCard
+        <LazyEstimatesModal
           open={!!historyOrder}
           onOpenChange={(open) => {
             if (!open) setHistoryOrderId(null)
           }}
           serviceOrderId={historyOrder.id}
           serviceOrderNumber={historyOrder.number}
-          initialEstimates={estimateHistoriesByOrderId[historyOrder.id] ?? []}
-          catalogServices={[]}
-          catalogParts={[]}
-          stockAvailability={{}}
-          defaultWarrantyDays={0}
-          defaultEstimateValidityDays={0}
           serviceOrderStatus={historyOrder.status as ServiceOrderStatus}
           clientName={historyClient?.name ?? null}
           clientPhone={historyClient?.phone ?? null}

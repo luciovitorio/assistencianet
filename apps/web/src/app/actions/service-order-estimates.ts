@@ -877,3 +877,70 @@ export async function sendEstimate(
     return { error: 'Erro ao enviar orcamento.' }
   }
 }
+
+export async function getServiceOrderEstimatesHistory(serviceOrderId: string) {
+  try {
+    const { companyId } = await getCompanyContext()
+    const supabase = await createClient()
+
+    const [{ data: estimates, error: estimatesError }, { data: items, error: itemsError }] =
+      await Promise.all([
+        supabase
+          .from('service_order_estimates')
+          .select(
+            'id, version, status, approval_channel, subtotal_amount, discount_amount, total_amount, valid_until, sent_at, approved_at, rejected_at, notes, created_at, warranty_days',
+          )
+          .eq('company_id', companyId)
+          .eq('service_order_id', serviceOrderId)
+          .order('version', { ascending: false }),
+        supabase
+          .from('service_order_estimate_items')
+          .select('id, estimate_id, part_id, item_type, description, quantity, unit_price, line_total, notes')
+          .eq('company_id', companyId)
+          .eq('service_order_id', serviceOrderId)
+          .order('created_at', { ascending: true }),
+      ])
+
+    if (estimatesError) return { error: estimatesError.message }
+    if (itemsError) return { error: itemsError.message }
+
+    const itemsByEstimateId = new Map<string, Array<(typeof items)[number]>>()
+    for (const item of items ?? []) {
+      const existing = itemsByEstimateId.get(item.estimate_id) ?? []
+      existing.push(item)
+      itemsByEstimateId.set(item.estimate_id, existing)
+    }
+
+    const history = (estimates ?? []).map((estimate) => ({
+      id: estimate.id,
+      version: estimate.version,
+      status: estimate.status,
+      approval_channel: estimate.approval_channel,
+      subtotal_amount: estimate.subtotal_amount,
+      discount_amount: estimate.discount_amount,
+      total_amount: estimate.total_amount,
+      valid_until: estimate.valid_until,
+      sent_at: estimate.sent_at,
+      approved_at: estimate.approved_at,
+      rejected_at: estimate.rejected_at,
+      notes: estimate.notes,
+      created_at: estimate.created_at,
+      warranty_days: estimate.warranty_days,
+      items: (itemsByEstimateId.get(estimate.id) ?? []).map((item) => ({
+        id: item.id,
+        part_id: item.part_id,
+        item_type: item.item_type,
+        description: item.description,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        line_total: item.line_total,
+        notes: item.notes,
+      })),
+    }))
+
+    return { data: history }
+  } catch (error: unknown) {
+    if (error instanceof Error) return { error: error.message }
+    return { error: 'Erro ao carregar historico de orcamentos.' }
+  }
+}

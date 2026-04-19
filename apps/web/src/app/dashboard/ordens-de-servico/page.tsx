@@ -2,7 +2,6 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getCompanyContext } from '@/lib/auth/company-context'
 import { firstRelation } from '@/lib/supabase/relations'
-import { type ServiceOrderEstimateRecord } from './[id]/_components/service-order-estimates-panel'
 import { ServiceOrderList, type ServiceOrderData } from './_components/service-order-list'
 
 type RelationValue<T> = T | T[] | null
@@ -96,69 +95,6 @@ export default async function OrdensDeServicoPage() {
       .order('name'),
   ])
 
-  const serviceOrderIds = (serviceOrders ?? []).map((order) => order.id)
-
-  const [{ data: estimates }, { data: estimateItems }] =
-    serviceOrderIds.length > 0
-      ? await Promise.all([
-          supabase
-            .from('service_order_estimates')
-            .select(
-              'id, service_order_id, version, status, approval_channel, subtotal_amount, discount_amount, total_amount, valid_until, sent_at, approved_at, rejected_at, notes, created_at, warranty_days'
-            )
-            .eq('company_id', companyId)
-            .in('service_order_id', serviceOrderIds)
-            .order('version', { ascending: false }),
-          supabase
-            .from('service_order_estimate_items')
-            .select(
-              'id, estimate_id, part_id, item_type, description, quantity, unit_price, line_total, notes'
-            )
-            .eq('company_id', companyId)
-            .in('service_order_id', serviceOrderIds)
-            .order('created_at', { ascending: true }),
-        ])
-      : [{ data: [] }, { data: [] }]
-
-  const itemsByEstimateId = new Map<string, ServiceOrderEstimateRecord['items']>()
-  for (const item of estimateItems ?? []) {
-    const existing = itemsByEstimateId.get(item.estimate_id) ?? []
-    existing.push({
-      id: item.id,
-      part_id: item.part_id,
-      item_type: item.item_type,
-      description: item.description,
-      quantity: item.quantity,
-      unit_price: item.unit_price,
-      line_total: item.line_total,
-      notes: item.notes,
-    })
-    itemsByEstimateId.set(item.estimate_id, existing)
-  }
-
-  const estimateHistoriesByOrderId: Record<string, ServiceOrderEstimateRecord[]> = {}
-  for (const estimate of estimates ?? []) {
-    const existing = estimateHistoriesByOrderId[estimate.service_order_id] ?? []
-    existing.push({
-      id: estimate.id,
-      version: estimate.version,
-      status: estimate.status,
-      approval_channel: estimate.approval_channel,
-      subtotal_amount: estimate.subtotal_amount,
-      discount_amount: estimate.discount_amount,
-      total_amount: estimate.total_amount,
-      valid_until: estimate.valid_until,
-      sent_at: estimate.sent_at,
-      approved_at: estimate.approved_at,
-      rejected_at: estimate.rejected_at,
-      notes: estimate.notes,
-      created_at: estimate.created_at,
-      warranty_days: estimate.warranty_days,
-      items: itemsByEstimateId.get(estimate.id) ?? [],
-    })
-    estimateHistoriesByOrderId[estimate.service_order_id] = existing
-  }
-
   const normalizedServiceOrders = ((serviceOrders ?? []) as ServiceOrderQueryRow[]).map(
     normalizeServiceOrder,
   )
@@ -167,7 +103,6 @@ export default async function OrdensDeServicoPage() {
     <div className="space-y-6">
       <ServiceOrderList
         initialOrders={normalizedServiceOrders}
-        estimateHistoriesByOrderId={estimateHistoriesByOrderId}
         branches={branches || []}
         clients={clients || []}
         employees={employees || []}
