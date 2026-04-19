@@ -176,10 +176,12 @@ export async function sendAtendimentoReply(
 
     const { data: employee } = await supabase
       .from('employees')
-      .select('name')
+      .select('id, name')
       .eq('user_id', user.id)
-      .maybeSingle<{ name: string }>()
+      .eq('company_id', companyId)
+      .maybeSingle<{ id: string; name: string }>()
     const senderName = employee?.name ?? 'Atendente'
+    const employeeId = employee?.id ?? null
 
     // Busca conversa
     const { data: conversation } = await supabase
@@ -191,7 +193,7 @@ export async function sendAtendimentoReply(
 
     if (!conversation) return { error: 'Conversa não encontrada.' }
 
-    if (conversation.assigned_to && conversation.assigned_to !== user.id) {
+    if (conversation.assigned_to && conversation.assigned_to !== employeeId) {
       return { error: 'Esta conversa está em atendimento por outro técnico.' }
     }
 
@@ -244,6 +246,26 @@ export async function sendAtendimentoReply(
 
 // ── Ações de status ───────────────────────────────────────────
 
+export async function getCurrentEmployeeId(): Promise<string | null> {
+  try {
+    const { companyId, user } = await getCompanyContext()
+    return await getEmployeeId(user.id, companyId)
+  } catch {
+    return null
+  }
+}
+
+async function getEmployeeId(userId: string, companyId: string): Promise<string | null> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('employees')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('company_id', companyId)
+    .maybeSingle<{ id: string }>()
+  return data?.id ?? null
+}
+
 export async function assumeConversation(
   conversationId: string,
 ): Promise<{ error?: string; assignedTo?: string }> {
@@ -251,14 +273,19 @@ export async function assumeConversation(
     const { companyId, user } = await getCompanyContext()
     const supabase = await createClient()
 
-    await supabase
+    const employeeId = await getEmployeeId(user.id, companyId)
+    if (!employeeId) return { error: 'Funcionário não encontrado.' }
+
+    const { error } = await supabase
       .from('whatsapp_conversations')
-      .update({ status: 'in_progress', bot_enabled: false, assigned_to: user.id })
+      .update({ status: 'in_progress', bot_enabled: false, assigned_to: employeeId })
       .eq('id', conversationId)
       .eq('company_id', companyId)
 
+    if (error) throw error
+
     revalidatePath('/dashboard/atendimento')
-    return { assignedTo: user.id }
+    return { assignedTo: employeeId }
   } catch {
     return { error: 'Erro ao assumir conversa.' }
   }
@@ -297,7 +324,10 @@ export async function reopenConversation(
     const { companyId, user } = await getCompanyContext()
     const supabase = await createClient()
 
-    await supabase
+    const employeeId = await getEmployeeId(user.id, companyId)
+    if (!employeeId) return { error: 'Funcionário não encontrado.' }
+
+    const { error } = await supabase
       .from('whatsapp_conversations')
       .update({
         status: 'in_progress',
@@ -305,13 +335,15 @@ export async function reopenConversation(
         bot_state: null,
         context: {},
         attempts: 0,
-        assigned_to: user.id,
+        assigned_to: employeeId,
       })
       .eq('id', conversationId)
       .eq('company_id', companyId)
 
+    if (error) throw error
+
     revalidatePath('/dashboard/atendimento')
-    return { assignedTo: user.id }
+    return { assignedTo: employeeId }
   } catch {
     return { error: 'Erro ao reabrir conversa.' }
   }

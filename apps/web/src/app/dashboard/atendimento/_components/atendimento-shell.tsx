@@ -18,6 +18,7 @@ import { createClient } from '@/lib/supabase/client'
 import {
   assumeConversation,
   getConversationMessages,
+  getCurrentEmployeeId,
   markConversationRead,
   reopenConversation,
   resolveConversation,
@@ -195,7 +196,7 @@ export function AtendimentoShell({
   const [search, setSearch] = React.useState('')
   const [statusFilter, setStatusFilter] = React.useState<string>('all')
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false)
-  const [currentUserId, setCurrentUserId] = React.useState<string | null>(null)
+  const [currentEmployeeId, setCurrentEmployeeId] = React.useState<string | null>(null)
 
   const selectedIdRef = React.useRef(selectedId)
   const messagesEndRef = React.useRef<HTMLDivElement>(null)
@@ -211,11 +212,9 @@ export function AtendimentoShell({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // Identifica o usuário atual (para saber se a conversa é dele)
+  // Identifica o employee atual (para saber se a conversa é dele)
   React.useEffect(() => {
-    createClient()
-      .auth.getUser()
-      .then(({ data: { user } }) => setCurrentUserId(user?.id ?? null))
+    getCurrentEmployeeId().then(setCurrentEmployeeId)
   }, [])
 
   // Realtime: conversas + mensagens
@@ -327,7 +326,7 @@ export function AtendimentoShell({
     setConversations((prev) =>
       prev.map((c) =>
         c.id === selectedId
-          ? { ...c, status: 'in_progress' as const, bot_enabled: false, assigned_to: result.assignedTo ?? currentUserId }
+          ? { ...c, status: 'in_progress' as const, bot_enabled: false, assigned_to: result.assignedTo ?? currentEmployeeId }
           : c,
       ),
     )
@@ -360,7 +359,7 @@ export function AtendimentoShell({
               status: 'in_progress' as const,
               bot_enabled: false,
               bot_state: null,
-              assigned_to: result.assignedTo ?? currentUserId,
+              assigned_to: result.assignedTo ?? currentEmployeeId,
             }
           : c,
       ),
@@ -522,18 +521,19 @@ export function AtendimentoShell({
 
               {/* Ações */}
               <div className="flex items-center gap-2 flex-none">
-                {selectedConversation.status === 'waiting' && (
+                {selectedConversation.status === 'waiting' && !selectedConversation.assigned_to && (
                   <Button size="sm" variant="outline" onClick={handleAssume} className="gap-1.5">
                     <UserCheck className="size-3.5" />
                     Assumir
                   </Button>
                 )}
-                {selectedConversation.status === 'in_progress' && (
-                  <Button size="sm" variant="outline" onClick={handleResolve} className="gap-1.5">
-                    <CheckCheck className="size-3.5" />
-                    Resolver
-                  </Button>
-                )}
+                {selectedConversation.status === 'in_progress' &&
+                  selectedConversation.assigned_to === currentEmployeeId && (
+                    <Button size="sm" variant="outline" onClick={handleResolve} className="gap-1.5">
+                      <CheckCheck className="size-3.5" />
+                      Resolver
+                    </Button>
+                  )}
                 {selectedConversation.status === 'resolved' && (
                   <Button size="sm" variant="outline" onClick={handleReopen} className="gap-1.5">
                     <RefreshCw className="size-3.5" />
@@ -571,7 +571,7 @@ export function AtendimentoShell({
                 <p className="text-center text-xs text-slate-400">
                   Conversa encerrada. Reabra para enviar mensagens.
                 </p>
-              ) : selectedConversation.assigned_to && selectedConversation.assigned_to !== currentUserId ? (
+              ) : selectedConversation.assigned_to && selectedConversation.assigned_to !== currentEmployeeId ? (
                 <p className="text-center text-xs text-slate-400">
                   Esta conversa está em atendimento por outro técnico.
                 </p>
