@@ -21,6 +21,8 @@ export type WhatsAppConversation = {
     | 'awaiting_os_number'
     | 'awaiting_branch'
     | 'awaiting_estimate_response'
+    | 'awaiting_rating_consent'
+    | 'awaiting_rating'
     | null
   bot_enabled: boolean
   context: Record<string, unknown>

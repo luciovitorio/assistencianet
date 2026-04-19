@@ -91,8 +91,13 @@ const buildOsStatusText = (os: ServiceOrderSummary): string => {
   )
 }
 
+const NUMBER_EMOJIS = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣']
+
 const buildBranchListText = (branches: Array<{ id: string; name: string }>): string => {
-  const options = branches.map((b, i) => `${i + 1}. ${b.name}`).join('\n')
+  const options = branches
+    .slice(0, NUMBER_EMOJIS.length)
+    .map((b, i) => `${NUMBER_EMOJIS[i]} ${b.name}`)
+    .join('\n')
 
   return (
     `Em qual filial você deseja atendimento?\n\n${options}\n\n` +
@@ -415,6 +420,81 @@ const handleAwaitingEstimateResponse = async (params: BotEngineParams) => {
   await handleInvalidResponse(params, 'awaiting_estimate_response')
 }
 
+/** Estado: awaiting_rating_consent — pergunta se o cliente quer avaliar. */
+const handleAwaitingRatingConsent = async (params: BotEngineParams) => {
+  const { supabase, conversation, messageText, evolutionClient } = params
+  const choice = messageText.trim()
+
+  if (choice === '1') {
+    const text =
+      'Que bom! 😊 Dê uma nota para o atendimento:\n\n' +
+      '1️⃣ Muito ruim\n' +
+      '2️⃣ Ruim\n' +
+      '3️⃣ Regular\n' +
+      '4️⃣ Bom\n' +
+      '5️⃣ Excelente'
+    await sendAndSave(supabase, evolutionClient, conversation, text)
+    await updateConversation(supabase, conversation.id, {
+      bot_state: 'awaiting_rating',
+      attempts: 0,
+    })
+    return
+  }
+
+  if (choice === '2') {
+    const text = 'Tudo bem! Obrigado pelo contato. Se precisar, é só chamar por aqui. 🙌'
+    await sendAndSave(supabase, evolutionClient, conversation, text)
+    await updateConversation(supabase, conversation.id, {
+      bot_state: null,
+      attempts: 0,
+      context: {},
+    })
+    return
+  }
+
+  // Qualquer outra coisa: desiste da avaliação e volta ao fluxo normal
+  await updateConversation(supabase, conversation.id, {
+    bot_state: null,
+    attempts: 0,
+    context: {},
+  })
+  await handleNewSession(params)
+}
+
+/** Estado: awaiting_rating — cliente manda nota de 1 a 5. */
+const handleAwaitingRating = async (params: BotEngineParams) => {
+  const { supabase, conversation, messageText, evolutionClient } = params
+  const rating = parseInt(messageText.trim(), 10)
+
+  if (isNaN(rating) || rating < 1 || rating > 5) {
+    await handleInvalidResponse(params, 'awaiting_rating')
+    return
+  }
+
+  const assignedTo =
+    typeof conversation.context.rated_assigned_to === 'string'
+      ? conversation.context.rated_assigned_to
+      : null
+
+  await supabase.from('whatsapp_ratings').insert({
+    company_id: conversation.company_id,
+    branch_id: conversation.branch_id,
+    conversation_id: conversation.id,
+    assigned_to: assignedTo,
+    phone_number: conversation.phone_number,
+    contact_name: conversation.contact_name,
+    rating,
+  })
+
+  const text = 'Obrigado pela avaliação! 🙌 Sua opinião nos ajuda a melhorar sempre.'
+  await sendAndSave(supabase, evolutionClient, conversation, text)
+  await updateConversation(supabase, conversation.id, {
+    bot_state: null,
+    attempts: 0,
+    context: {},
+  })
+}
+
 /** Resposta inválida: incrementa tentativas ou força handoff após limite. */
 const handleInvalidResponse = async (
   params: BotEngineParams,
@@ -449,7 +529,9 @@ const handleInvalidResponse = async (
         ? 'Responda com o *número* da filial desejada.'
         : currentState === 'awaiting_estimate_response'
           ? 'Responda com *1* para aprovar, *2* para recusar, *3* para falar com atendente ou *0* para voltar ao menu.'
-          : 'Não entendi. Responda com o *número* da opção do menu (ex: 1 ou 2).'
+          : currentState === 'awaiting_rating'
+            ? 'Envie apenas um número de *1 a 5* para avaliar o atendimento.'
+            : 'Não entendi. Responda com o *número* da opção do menu (ex: 1 ou 2).'
 
   await sendAndSave(supabase, evolutionClient, conversation, hint)
 }
@@ -491,6 +573,12 @@ export const runBotEngine = async (params: BotEngineParams): Promise<void> => {
       break
     case 'awaiting_estimate_response':
       await handleAwaitingEstimateResponse(params)
+      break
+    case 'awaiting_rating_consent':
+      await handleAwaitingRatingConsent(params)
+      break
+    case 'awaiting_rating':
+      await handleAwaitingRating(params)
       break
     default:
       await handleNewSession(params)

@@ -313,15 +313,54 @@ export async function resolveConversation(
   try {
     const { companyId } = await getCompanyContext()
     const supabase = await createClient()
+    const adminSupabase = createAdminClient()
+
+    // Pega quem estava atendendo para atrelar à avaliação
+    const { data: conversation } = await supabase
+      .from('whatsapp_conversations')
+      .select('id, phone_number, assigned_to')
+      .eq('id', conversationId)
+      .eq('company_id', companyId)
+      .maybeSingle<{ id: string; phone_number: string; assigned_to: string | null }>()
+
+    if (!conversation) return { error: 'Conversa não encontrada.' }
+
+    // Envia mensagem de agradecimento + pedido de avaliação
+    const evolutionClient = await getEvolutionClient(companyId)
+    const askRating =
+      'Seu atendimento foi finalizado. Obrigado pelo contato! 😊\n' +
+      'Estamos sempre por aqui quando precisar.\n\n' +
+      'Gostaria de avaliar o atendimento?\n\n' +
+      '1️⃣ Sim\n' +
+      '2️⃣ Não'
+
+    if (evolutionClient) {
+      try {
+        await evolutionClient.sendText({ number: conversation.phone_number, text: askRating })
+        await adminSupabase.from('whatsapp_messages').insert({
+          conversation_id: conversationId,
+          company_id: companyId,
+          direction: 'outbound',
+          content: askRating,
+          sent_by_bot: true,
+          status: 'sent',
+        })
+      } catch {
+        // Falha no envio não deve bloquear o resolve
+      }
+    }
 
     await supabase
       .from('whatsapp_conversations')
       .update({
         status: 'resolved',
         bot_enabled: true,
-        bot_state: null,
+        bot_state: 'awaiting_rating_consent',
         attempts: 0,
         assigned_to: null,
+        context: { rated_assigned_to: conversation.assigned_to },
+        last_message_at: new Date().toISOString(),
+        last_message_preview: 'Seu atendimento foi finalizado…',
       })
       .eq('id', conversationId)
       .eq('company_id', companyId)
