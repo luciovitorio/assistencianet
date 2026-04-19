@@ -3,8 +3,6 @@
 import * as React from 'react'
 import { toast } from 'sonner'
 import {
-  Bot,
-  BotOff,
   CheckCheck,
   MessageSquare,
   Phone,
@@ -24,7 +22,6 @@ import {
   reopenConversation,
   resolveConversation,
   sendAtendimentoReply,
-  toggleBotEnabled,
   deleteConversation,
   type ConversationRow,
   type MessageRow,
@@ -347,16 +344,6 @@ export function AtendimentoShell({
     toast.success('Conversa reaberta. Bot reativado.')
   }
 
-  const handleToggleBot = async (enabled: boolean) => {
-    if (!selectedId) return
-    const result = await toggleBotEnabled(selectedId, enabled)
-    if (result.error) { toast.error(result.error); return }
-    setConversations((prev) =>
-      prev.map((c) => (c.id === selectedId ? { ...c, bot_enabled: enabled } : c)),
-    )
-    toast.success(enabled ? 'Bot reativado.' : 'Bot pausado.')
-  }
-
   const handleDelete = async () => {
     if (!selectedId) return
     
@@ -520,33 +507,10 @@ export function AtendimentoShell({
                   </Button>
                 )}
                 {(selectedConversation.status === 'in_progress' || selectedConversation.status === 'bot') && (
-                  <>
-                    {selectedConversation.bot_enabled ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleToggleBot(false)}
-                        className="gap-1.5"
-                      >
-                        <BotOff className="size-3.5" />
-                        Pausar bot
-                      </Button>
-                    ) : (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleToggleBot(true)}
-                        className="gap-1.5"
-                      >
-                        <Bot className="size-3.5" />
-                        Ativar bot
-                      </Button>
-                    )}
-                    <Button size="sm" variant="outline" onClick={handleResolve} className="gap-1.5">
-                      <CheckCheck className="size-3.5" />
-                      Resolver
-                    </Button>
-                  </>
+                  <Button size="sm" variant="outline" onClick={handleResolve} className="gap-1.5">
+                    <CheckCheck className="size-3.5" />
+                    Resolver
+                  </Button>
                 )}
                 {selectedConversation.status === 'resolved' && (
                   <Button size="sm" variant="outline" onClick={handleReopen} className="gap-1.5">
