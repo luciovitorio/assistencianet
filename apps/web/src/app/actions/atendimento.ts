@@ -81,8 +81,11 @@ export async function getConversations(
   filters: ConversationFilters = {},
 ): Promise<ConversationRow[]> {
   try {
-    const { companyId } = await getCompanyContext()
+    const { companyId, isAdmin, currentBranchId } = await getCompanyContext()
     const supabase = await createClient()
+
+    // Não-admin sem branch não vê conversa nenhuma
+    if (!isAdmin && !currentBranchId) return []
 
     let query = supabase
       .from('whatsapp_conversations')
@@ -100,7 +103,13 @@ export async function getConversations(
     if (filters.status && filters.status !== 'bot') {
       query = query.eq('status', filters.status)
     }
-    if (filters.branchId) query = query.eq('branch_id', filters.branchId)
+
+    // Admin: pode filtrar por filial opcionalmente. Não-admin: força própria filial.
+    if (isAdmin) {
+      if (filters.branchId) query = query.eq('branch_id', filters.branchId)
+    } else if (currentBranchId) {
+      query = query.eq('branch_id', currentBranchId)
+    }
 
     const { data } = await query
     let rows = ((data ?? []) as ConversationQueryRow[]).map((row) => ({
@@ -127,13 +136,19 @@ export async function getConversations(
 
 export async function getWaitingConversationsCount(): Promise<number> {
   try {
-    const { companyId } = await getCompanyContext()
+    const { companyId, isAdmin, currentBranchId } = await getCompanyContext()
+    if (!isAdmin && !currentBranchId) return 0
+
     const supabase = await createClient()
-    const { count } = await supabase
+    let query = supabase
       .from('whatsapp_conversations')
       .select('id', { count: 'exact', head: true })
       .eq('company_id', companyId)
       .eq('status', 'waiting')
+
+    if (!isAdmin && currentBranchId) query = query.eq('branch_id', currentBranchId)
+
+    const { count } = await query
     return count ?? 0
   } catch {
     return 0

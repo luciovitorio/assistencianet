@@ -51,6 +51,7 @@ interface AtendimentoShellProps {
   initialConversations: ConversationRow[]
   companyId: string
   isAdmin: boolean
+  branches: { id: string; name: string }[]
 }
 
 // ── Helpers de formatação ────────────────────────────────────
@@ -186,6 +187,7 @@ export function AtendimentoShell({
   initialConversations,
   companyId,
   isAdmin,
+  branches,
 }: AtendimentoShellProps) {
   const [conversations, setConversations] = React.useState(initialConversations)
   const [selectedId, setSelectedId] = React.useState<string | null>(null)
@@ -195,6 +197,7 @@ export function AtendimentoShell({
   const [sending, setSending] = React.useState(false)
   const [search, setSearch] = React.useState('')
   const [statusFilter, setStatusFilter] = React.useState<string>('all')
+  const [branchFilter, setBranchFilter] = React.useState<string>('all')
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false)
   const [currentEmployeeId, setCurrentEmployeeId] = React.useState<string | null>(null)
 
@@ -387,6 +390,9 @@ export function AtendimentoShell({
     if (statusFilter !== 'all') {
       list = list.filter((c) => c.status === statusFilter)
     }
+    if (branchFilter !== 'all') {
+      list = list.filter((c) => c.branch_id === branchFilter)
+    }
     if (search) {
       const term = search.toLowerCase()
       list = list.filter(
@@ -396,7 +402,7 @@ export function AtendimentoShell({
       )
     }
     return list
-  }, [conversations, statusFilter, search])
+  }, [conversations, statusFilter, branchFilter, search])
 
   const selectedConversation = conversations.find((c) => c.id === selectedId) ?? null
 
@@ -458,6 +464,31 @@ export function AtendimentoShell({
               </SelectContent>
             </Select>
           </div>
+
+          {/* Filtro de filial (apenas admin) */}
+          {isAdmin && branches.length > 1 && (
+            <div className="pb-0.5">
+              <Select value={branchFilter} onValueChange={(val) => setBranchFilter(val || 'all')}>
+                <SelectTrigger className="w-full h-8 text-xs font-semibold bg-slate-50" size="sm">
+                  <span className="flex flex-1 text-left line-clamp-1">
+                    {branchFilter === 'all'
+                      ? 'Todas as filiais'
+                      : (branches.find((b) => b.id === branchFilter)?.name ?? 'Filial')}
+                  </span>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all" className="text-xs">
+                    Todas as filiais
+                  </SelectItem>
+                  {branches.map((b) => (
+                    <SelectItem key={b.id} value={b.id} className="text-xs">
+                      {b.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
 
         {/* Lista de conversas */}
