@@ -266,7 +266,12 @@ export async function resolveConversation(
 
     await supabase
       .from('whatsapp_conversations')
-      .update({ status: 'resolved', bot_enabled: false, bot_state: null })
+      .update({
+        status: 'resolved',
+        bot_enabled: true,
+        bot_state: null,
+        attempts: 0,
+      })
       .eq('id', conversationId)
       .eq('company_id', companyId)
 
