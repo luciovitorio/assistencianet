@@ -401,26 +401,28 @@ export function DashboardShell({
             />
           )}
 
-          <SidebarMenu
-            icon={Settings}
-            label="Configurações"
-            active={inConfiguracoes}
-            isExpanded={isExpanded}
-            setIsExpanded={setIsExpanded}
-          >
-            <SidebarSubItem
-              href="/dashboard/configuracoes/sistema"
-              label="Sistema"
-              active={pathname.startsWith('/dashboard/configuracoes/sistema')}
+          {isAdmin && (
+            <SidebarMenu
+              icon={Settings}
+              label="Configurações"
+              active={inConfiguracoes}
               isExpanded={isExpanded}
-            />
-            <SidebarSubItem
-              href="/dashboard/configuracoes/automacao"
-              label="Automação"
-              active={pathname.startsWith('/dashboard/configuracoes/automacao')}
-              isExpanded={isExpanded}
-            />
-          </SidebarMenu>
+              setIsExpanded={setIsExpanded}
+            >
+              <SidebarSubItem
+                href="/dashboard/configuracoes/sistema"
+                label="Sistema"
+                active={pathname.startsWith('/dashboard/configuracoes/sistema')}
+                isExpanded={isExpanded}
+              />
+              <SidebarSubItem
+                href="/dashboard/configuracoes/automacao"
+                label="Automação"
+                active={pathname.startsWith('/dashboard/configuracoes/automacao')}
+                isExpanded={isExpanded}
+              />
+            </SidebarMenu>
+          )}
 
           <div className="px-2">
             <Link
