@@ -203,7 +203,8 @@ export async function sendAtendimentoReply(
       return { error: 'WhatsApp não está configurado para esta empresa.' }
     }
 
-    await evolutionClient.sendText({ number: conversation.phone_number, text })
+    const whatsappText = `*${senderName}:*\n${text}`
+    await evolutionClient.sendText({ number: conversation.phone_number, text: whatsappText })
 
     // Salva mensagem no banco
     const { data: saved, error } = await adminSupabase
