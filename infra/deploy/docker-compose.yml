@@ -1,0 +1,98 @@
+name: assistencianet
+
+services:
+  web:
+    build:
+      context: ../..
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+    image: assistencianet-web:latest
+    container_name: assistencianet_web
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "80:3000"
+    depends_on:
+      evolution-api:
+        condition: service_started
+    networks:
+      - assistencianet
+
+  evolution-api:
+    image: evoapicloud/evolution-api:v2.3.7
+    container_name: assistencianet_evolution_api
+    restart: unless-stopped
+    depends_on:
+      evolution-postgres:
+        condition: service_healthy
+      evolution-redis:
+        condition: service_healthy
+    env_file:
+      - .env.evolution
+    ports:
+      - "8080:8080"
+    volumes:
+      - evolution_instances:/evolution/instances
+    networks:
+      - assistencianet
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:8080').then(r=>process.exit(r.status < 500 ? 0 : 1)).catch(()=>process.exit(1))\"",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  evolution-postgres:
+    image: postgres:15-alpine
+    container_name: assistencianet_evolution_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DATABASE}
+      POSTGRES_USER: ${POSTGRES_USERNAME}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    command:
+      - postgres
+      - -c
+      - max_connections=1000
+      - -c
+      - listen_addresses=*
+    volumes:
+      - evolution_postgres:/var/lib/postgresql/data
+    networks:
+      - assistencianet
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  evolution-redis:
+    image: redis:7-alpine
+    container_name: assistencianet_evolution_redis
+    restart: unless-stopped
+    command: redis-server --port 6379 --appendonly yes
+    volumes:
+      - evolution_redis:/data
+    networks:
+      - assistencianet
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  evolution_instances:
+  evolution_postgres:
+  evolution_redis:
+
+networks:
+  assistencianet:
+    driver: bridge
