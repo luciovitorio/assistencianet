@@ -2,7 +2,14 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 
-const PUBLIC_ROUTES = ['/login', '/register', '/verify-email', '/auth']
+const PUBLIC_ROUTES = [
+  '/login',
+  '/register',
+  '/verify-email',
+  '/auth',
+  '/recursos-api-whatsapp.html',
+  '/recursos-dashboard-admin.html',
+]
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl

@@ -1,0 +1,1059 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard do Admin — Como os dados são montados</title>
+    <style>
+      :root {
+        --bg: #0b0f17;
+        --surface: #111827;
+        --surface-2: #1f2937;
+        --border: #1f2937;
+        --text: #e5e7eb;
+        --muted: #9ca3af;
+        --primary: #6366f1;
+        --primary-dark: #4338ca;
+        --accent: #3b82f6;
+        --warning: #f59e0b;
+        --success: #10b981;
+        --danger: #ef4444;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+          Arial, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .container {
+        max-width: 1040px;
+        margin: 0 auto;
+        padding: 0 1.5rem;
+      }
+
+      .hero {
+        background: linear-gradient(
+          135deg,
+          var(--primary-dark) 0%,
+          #3730a3 100%
+        );
+        padding: 4rem 0 3rem;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .hero-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(255, 255, 255, 0.12);
+        backdrop-filter: blur(10px);
+        padding: 0.4rem 0.9rem;
+        border-radius: 9999px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        margin-bottom: 1.25rem;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+      }
+
+      .hero h1 {
+        font-size: clamp(1.75rem, 4vw, 2.5rem);
+        font-weight: 700;
+        color: #fff;
+        margin-bottom: 0.75rem;
+        line-height: 1.2;
+      }
+
+      .hero p {
+        font-size: 1.05rem;
+        color: rgba(255, 255, 255, 0.85);
+        max-width: 720px;
+      }
+
+      main {
+        padding: 3rem 0 5rem;
+      }
+
+      section {
+        margin-bottom: 3rem;
+      }
+
+      h2 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #fff;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+      }
+
+      h2 .icon {
+        width: 28px;
+        height: 28px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--primary);
+        color: #fff;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 700;
+      }
+
+      h3 {
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: #fff;
+        margin: 1.25rem 0 0.5rem;
+      }
+
+      p {
+        color: var(--text);
+        margin-bottom: 0.75rem;
+      }
+
+      .lead {
+        color: var(--muted);
+        font-size: 1rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+      }
+
+      .card-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1rem;
+      }
+
+      .card-grid .card {
+        margin-bottom: 0;
+      }
+
+      .card h3 {
+        margin-top: 0;
+        color: var(--primary);
+      }
+
+      ul {
+        list-style: none;
+        padding: 0;
+      }
+
+      ul li {
+        position: relative;
+        padding-left: 1.5rem;
+        margin-bottom: 0.5rem;
+        color: var(--text);
+      }
+
+      ul li::before {
+        content: "✓";
+        position: absolute;
+        left: 0;
+        color: var(--primary);
+        font-weight: bold;
+      }
+
+      ul.list-neutral li::before {
+        content: "•";
+        color: var(--muted);
+        font-size: 1.2rem;
+        top: -2px;
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        margin: 1rem 0;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.95rem;
+      }
+
+      thead {
+        background: var(--surface-2);
+      }
+
+      th,
+      td {
+        padding: 0.85rem 1rem;
+        text-align: left;
+        border-bottom: 1px solid var(--border);
+        vertical-align: top;
+      }
+
+      th {
+        font-weight: 600;
+        color: #fff;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      tbody tr:last-child td {
+        border-bottom: none;
+      }
+
+      tbody tr:hover {
+        background: var(--surface-2);
+      }
+
+      td strong {
+        color: #fff;
+      }
+
+      code,
+      .mono {
+        font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas,
+          monospace;
+        font-size: 0.85em;
+        background: rgba(99, 102, 241, 0.12);
+        color: #c7d2fe;
+        padding: 0.15rem 0.4rem;
+        border-radius: 4px;
+      }
+
+      pre {
+        background: #020617;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.25rem;
+        overflow-x: auto;
+        font-size: 0.85rem;
+        line-height: 1.5;
+        margin: 1rem 0;
+      }
+
+      pre code {
+        background: transparent;
+        padding: 0;
+        color: #e2e8f0;
+      }
+
+      .step {
+        display: flex;
+        gap: 1rem;
+        padding: 1.25rem;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        margin-bottom: 0.75rem;
+      }
+
+      .step-number {
+        flex-shrink: 0;
+        width: 36px;
+        height: 36px;
+        background: var(--primary);
+        color: #fff;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1rem;
+      }
+
+      .step-content h4 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #fff;
+        margin-bottom: 0.25rem;
+      }
+
+      .step-content p {
+        color: var(--muted);
+        font-size: 0.95rem;
+        margin: 0;
+      }
+
+      .alert {
+        padding: 1rem 1.25rem;
+        border-radius: 12px;
+        border-left: 4px solid;
+        margin: 1rem 0;
+        font-size: 0.95rem;
+      }
+
+      .alert-warning {
+        background: rgba(245, 158, 11, 0.08);
+        border-color: var(--warning);
+        color: #fde68a;
+      }
+
+      .alert-info {
+        background: rgba(59, 130, 246, 0.08);
+        border-color: var(--accent);
+        color: #bfdbfe;
+      }
+
+      .alert strong {
+        color: #fff;
+      }
+
+      .badge {
+        display: inline-block;
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.15rem 0.55rem;
+        border-radius: 9999px;
+        background: var(--surface-2);
+        color: var(--text);
+        border: 1px solid var(--border);
+      }
+
+      .badge-success {
+        background: rgba(16, 185, 129, 0.12);
+        color: #6ee7b7;
+        border-color: rgba(16, 185, 129, 0.3);
+      }
+
+      .badge-danger {
+        background: rgba(239, 68, 68, 0.12);
+        color: #fca5a5;
+        border-color: rgba(239, 68, 68, 0.3);
+      }
+
+      .badge-info {
+        background: rgba(59, 130, 246, 0.12);
+        color: #bfdbfe;
+        border-color: rgba(59, 130, 246, 0.3);
+      }
+
+      .badge-primary {
+        background: rgba(99, 102, 241, 0.12);
+        color: #c7d2fe;
+        border-color: rgba(99, 102, 241, 0.3);
+      }
+
+      .flow {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 0.75rem;
+        margin: 1rem 0;
+      }
+
+      .flow-box {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1rem 1.25rem;
+        text-align: center;
+        position: relative;
+      }
+
+      .flow-box .flow-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--primary);
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+      }
+
+      .flow-box .flow-title {
+        font-weight: 600;
+        color: #fff;
+        font-size: 0.95rem;
+      }
+
+      .flow-box .flow-desc {
+        font-size: 0.8rem;
+        color: var(--muted);
+        margin-top: 0.35rem;
+      }
+
+      .kpi-demo {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+        margin: 1rem 0;
+      }
+
+      .kpi-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.25rem;
+      }
+
+      .kpi-card .kpi-label {
+        font-size: 0.8rem;
+        color: var(--muted);
+        font-weight: 500;
+      }
+
+      .kpi-card .kpi-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #fff;
+        margin: 0.4rem 0;
+      }
+
+      .kpi-card .kpi-source {
+        font-size: 0.75rem;
+        color: var(--primary);
+        font-family: "JetBrains Mono", monospace;
+      }
+
+      .toc {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 2rem;
+      }
+
+      .toc h3 {
+        margin-top: 0;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+        font-weight: 600;
+      }
+
+      .toc ol {
+        list-style: none;
+        counter-reset: toc;
+        margin-top: 0.5rem;
+      }
+
+      .toc li {
+        counter-increment: toc;
+        padding: 0.3rem 0;
+        padding-left: 0;
+      }
+
+      .toc li::before {
+        content: counter(toc) ". ";
+        color: var(--primary);
+        font-weight: 600;
+      }
+
+      .toc a {
+        color: var(--text);
+        text-decoration: none;
+      }
+
+      .toc a:hover {
+        color: var(--primary);
+      }
+
+      footer {
+        border-top: 1px solid var(--border);
+        padding: 2rem 0;
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+
+      @media print {
+        body {
+          background: #fff;
+          color: #000;
+        }
+        .hero {
+          background: #3730a3 !important;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+      }
+
+      @media (max-width: 600px) {
+        .hero {
+          padding: 2.5rem 0 2rem;
+        }
+        h2 {
+          font-size: 1.25rem;
+        }
+        th,
+        td {
+          padding: 0.65rem 0.75rem;
+          font-size: 0.85rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="hero">
+      <div class="container">
+        <span class="hero-badge">📊 Documentação técnica</span>
+        <h1>Dashboard do Admin — Como os dados são montados</h1>
+        <p>
+          Documento técnico detalhando a origem dos indicadores, regras de
+          negócio, tabelas consultadas e o fluxo de montagem da tela inicial do
+          dashboard administrativo.
+        </p>
+      </div>
+    </header>
+
+    <main class="container">
+      <nav class="toc">
+        <h3>Índice</h3>
+        <ol>
+          <li><a href="#visao-geral">Visão geral</a></li>
+          <li><a href="#arquitetura">Arquitetura e fluxo</a></li>
+          <li><a href="#periodo">Período de apuração</a></li>
+          <li><a href="#fontes">Fontes de dados (tabelas)</a></li>
+          <li><a href="#kpis">Os 4 KPIs principais</a></li>
+          <li><a href="#filiais">Comparativo entre filiais</a></li>
+          <li><a href="#resumo-financeiro">Resumo financeiro</a></li>
+          <li><a href="#recentes">Últimas ordens de serviço</a></li>
+          <li><a href="#seguranca">Segurança e isolamento</a></li>
+          <li><a href="#limitacoes">Limitações atuais</a></li>
+        </ol>
+      </nav>
+
+      <section id="visao-geral">
+        <h2><span class="icon">1</span> Visão geral</h2>
+        <p class="lead">
+          Quando um usuário com papel de
+          <strong>owner</strong> ou <strong>admin</strong> acessa
+          <code>/dashboard</code>, o sistema renderiza o
+          <code>AdminDashboard</code> — uma página que consolida em tempo real a
+          operação da empresa no mês corrente.
+        </p>
+        <div class="card-grid">
+          <div class="card">
+            <h3>4 KPIs principais</h3>
+            <ul>
+              <li>OS abertas</li>
+              <li>OS entregues no mês</li>
+              <li>Faturamento do mês</li>
+              <li>Despesas operacionais</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>3 painéis de detalhe</h3>
+            <ul>
+              <li>Comparativo entre filiais</li>
+              <li>Resumo financeiro consolidado</li>
+              <li>Últimas 6 ordens de serviço</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Stack envolvida</h3>
+            <ul>
+              <li>Next.js 16 (Server Component)</li>
+              <li>Server Action para buscar dados</li>
+              <li>Supabase como banco</li>
+              <li>RLS + companyId para isolar dados</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="arquitetura">
+        <h2><span class="icon">2</span> Arquitetura e fluxo</h2>
+        <p class="lead">
+          Tudo acontece em uma única renderização no servidor. Sem loading
+          spinners no cliente — os dados chegam prontos quando a página é
+          entregue.
+        </p>
+        <div class="flow">
+          <div class="flow-box">
+            <div class="flow-label">1. Request</div>
+            <div class="flow-title">/dashboard</div>
+            <div class="flow-desc">Usuário acessa a rota</div>
+          </div>
+          <div class="flow-box">
+            <div class="flow-label">2. Proxy</div>
+            <div class="flow-title">Verifica auth</div>
+            <div class="flow-desc">Valida sessão e role</div>
+          </div>
+          <div class="flow-box">
+            <div class="flow-label">3. Server Component</div>
+            <div class="flow-title">page.tsx</div>
+            <div class="flow-desc">Escolhe admin ou técnico</div>
+          </div>
+          <div class="flow-box">
+            <div class="flow-label">4. Server Action</div>
+            <div class="flow-title">getDashboardOverview</div>
+            <div class="flow-desc">Busca dados em paralelo</div>
+          </div>
+          <div class="flow-box">
+            <div class="flow-label">5. Supabase</div>
+            <div class="flow-title">6 queries paralelas</div>
+            <div class="flow-desc">Promise.all nas tabelas</div>
+          </div>
+          <div class="flow-box">
+            <div class="flow-label">6. Agregação</div>
+            <div class="flow-title">Cálculo no Node</div>
+            <div class="flow-desc">Soma, agrupa por filial</div>
+          </div>
+          <div class="flow-box">
+            <div class="flow-label">7. HTML</div>
+            <div class="flow-title">Renderização</div>
+            <div class="flow-desc">Página pronta para o navegador</div>
+          </div>
+        </div>
+        <div class="alert alert-info">
+          <strong>Por que Server Action?</strong> Os dados são sensíveis e o
+          cálculo exige acesso a várias tabelas. Resolver no servidor reduz
+          chamadas do cliente, evita expor consultas e aproveita proximidade
+          com o banco.
+        </div>
+      </section>
+
+      <section id="periodo">
+        <h2><span class="icon">3</span> Período de apuração</h2>
+        <p class="lead">
+          O dashboard sempre olha para o <strong>mês corrente</strong>, do dia 1
+          até hoje. É calculado a cada requisição.
+        </p>
+        <pre><code>const now = new Date()
+const start = new Date(now.getFullYear(), now.getMonth(), 1)
+// startDate = "2026-04-01"
+// endDate   = "2026-04-19"
+// label     = "01/04 a 19/04"</code></pre>
+        <ul class="list-neutral">
+          <li>
+            <strong>Início:</strong> primeiro dia do mês atual, 00:00
+          </li>
+          <li>
+            <strong>Fim:</strong> hoje, 23:59:59.999
+          </li>
+          <li>
+            <strong>Fuso:</strong> servidor (UTC); exibição formatada em PT-BR
+          </li>
+          <li>
+            O rótulo do período é exibido no topo do dashboard para deixar claro
+            a janela considerada
+          </li>
+        </ul>
+      </section>
+
+      <section id="fontes">
+        <h2><span class="icon">4</span> Fontes de dados</h2>
+        <p class="lead">
+          Seis queries disparadas em paralelo com
+          <code>Promise.all</code>. Cada uma alimenta um pedaço diferente do
+          dashboard.
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Tabela</th>
+                <th>Filtros</th>
+                <th>O que alimenta</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>branches</code></td>
+                <td>
+                  <span class="badge badge-info">active = true</span><br />
+                  <span class="badge">deleted_at IS NULL</span>
+                </td>
+                <td>Lista de filiais para o comparativo</td>
+              </tr>
+              <tr>
+                <td><code>service_orders</code><br />(abertas)</td>
+                <td>
+                  status IN <em>(8 status não finalizados)</em><br />
+                  <span class="badge">deleted_at IS NULL</span>
+                </td>
+                <td>
+                  KPI "OS abertas"<br />
+                  Coluna "OS abertas" por filial
+                </td>
+              </tr>
+              <tr>
+                <td><code>service_orders</code><br />(entregues)</td>
+                <td>
+                  status = <code>finalizado</code><br />
+                  delivered_at entre início e fim do mês
+                </td>
+                <td>
+                  KPI "OS entregues"<br />
+                  Coluna "OS entregues" por filial
+                </td>
+              </tr>
+              <tr>
+                <td><code>cash_entries</code></td>
+                <td>created_at dentro do mês</td>
+                <td>
+                  KPI "Faturamento"<br />
+                  Ticket médio<br />
+                  Receita por filial
+                </td>
+              </tr>
+              <tr>
+                <td><code>bills</code></td>
+                <td>
+                  due_date dentro do mês<br />
+                  <span class="badge">deleted_at IS NULL</span>
+                </td>
+                <td>
+                  KPI "Despesas operacionais"<br />
+                  Despesas por filial
+                </td>
+              </tr>
+              <tr>
+                <td><code>service_orders</code><br />(recentes)</td>
+                <td>
+                  ordenado por número desc<br />
+                  limite 6
+                </td>
+                <td>Tabela "Últimas ordens de serviço"</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          Todas as queries são filtradas por
+          <code>company_id</code> — obtido a partir do contexto do usuário
+          autenticado — garantindo que cada empresa veja apenas seus próprios
+          dados.
+        </p>
+      </section>
+
+      <section id="kpis">
+        <h2><span class="icon">5</span> Os 4 KPIs principais</h2>
+        <p class="lead">
+          Cada cartão no topo do dashboard é calculado a partir de uma regra
+          específica. Veja como cada número é gerado:
+        </p>
+
+        <div class="kpi-demo">
+          <div class="kpi-card">
+            <div class="kpi-label">OS abertas</div>
+            <div class="kpi-value">42</div>
+            <div class="kpi-source">count(service_orders)</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">OS entregues</div>
+            <div class="kpi-value">28</div>
+            <div class="kpi-source">count(finalizado no mês)</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Faturamento</div>
+            <div class="kpi-value">R$ 12.540</div>
+            <div class="kpi-source">sum(cash_entries.net_amount)</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Despesas</div>
+            <div class="kpi-value">R$ 4.120</div>
+            <div class="kpi-source">sum(bills.amount)</div>
+          </div>
+        </div>
+
+        <h3>OS abertas</h3>
+        <p>
+          Conta todas as ordens de serviço com status que indica
+          <strong>trabalho em andamento</strong>, sem filtro de data. Os status
+          considerados "abertos" são:
+        </p>
+        <p>
+          <span class="badge badge-info">aguardando</span>
+          <span class="badge badge-info">em_analise</span>
+          <span class="badge badge-info">aguardando_aprovacao</span>
+          <span class="badge badge-info">aprovado</span>
+          <span class="badge badge-info">reprovado</span>
+          <span class="badge badge-info">aguardando_peca</span>
+          <span class="badge badge-info">enviado_terceiro</span>
+          <span class="badge badge-info">pronto</span>
+        </p>
+
+        <h3>OS entregues</h3>
+        <p>
+          Conta OS com status <code>finalizado</code> cujo
+          <code>delivered_at</code> está dentro do mês corrente. Ou seja, a data
+          que conta é a de <strong>entrega ao cliente</strong>, não a de
+          abertura.
+        </p>
+
+        <h3>Faturamento</h3>
+        <p>
+          Soma do campo <code>net_amount</code> de todos os lançamentos em
+          <code>cash_entries</code> no mês. Representa o que efetivamente entrou
+          em caixa.
+        </p>
+        <p>
+          O <strong>ticket médio</strong> mostrado no cartão é
+          <code>faturamento / número de OS pagas</code>, considerando OS
+          distintas (uma OS pode ter várias entradas de caixa).
+        </p>
+
+        <h3>Despesas operacionais</h3>
+        <p>
+          Soma do <code>amount</code> das contas a pagar (<code>bills</code>)
+          com <code>due_date</code> dentro do mês. Atenção: usa a
+          <strong>data de vencimento</strong>, não a data de pagamento.
+        </p>
+
+        <div class="alert alert-warning">
+          <strong>Resultado (net):</strong> exibido embaixo do cartão de
+          despesas e também na seção "Resumo financeiro". É simplesmente
+          <code>faturamento − despesas</code>.
+        </div>
+      </section>
+
+      <section id="filiais">
+        <h2><span class="icon">6</span> Comparativo entre filiais</h2>
+        <p class="lead">
+          Cada filial ativa aparece como uma linha. Os valores são agregados no
+          Node.js após as queries, usando <code>Map</code> para contagem por
+          <code>branch_id</code>.
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Coluna</th>
+                <th>Origem</th>
+                <th>Cálculo</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>OS abertas</td>
+                <td><code>service_orders</code> (abertas)</td>
+                <td>Contagem agrupada por <code>branch_id</code></td>
+              </tr>
+              <tr>
+                <td>OS entregues</td>
+                <td><code>service_orders</code> (entregues no mês)</td>
+                <td>Contagem agrupada por <code>branch_id</code></td>
+              </tr>
+              <tr>
+                <td>Faturamento</td>
+                <td><code>cash_entries</code></td>
+                <td>Soma de <code>net_amount</code> por filial</td>
+              </tr>
+              <tr>
+                <td>Despesas</td>
+                <td><code>bills</code></td>
+                <td>Soma de <code>amount</code> por filial</td>
+              </tr>
+              <tr>
+                <td>Resultado</td>
+                <td>—</td>
+                <td><code>faturamento − despesas</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          A ordenação é por <strong>faturamento decrescente</strong>, com
+          desempate pelo número de OS abertas. A barra verde no nome da filial
+          mostra proporcionalmente a receita em relação à maior do grupo.
+        </p>
+      </section>
+
+      <section id="resumo-financeiro">
+        <h2><span class="icon">7</span> Resumo financeiro</h2>
+        <p class="lead">
+          Painel simples no canto direito do dashboard, consolidando os três
+          números principais do mês.
+        </p>
+        <div class="card">
+          <ul class="list-neutral">
+            <li>
+              <strong>Faturamento</strong> —
+              <span class="badge badge-success">positivo</span> soma dos
+              <code>cash_entries.net_amount</code>
+            </li>
+            <li>
+              <strong>Despesas</strong> —
+              <span class="badge badge-danger">negativo</span> soma dos
+              <code>bills.amount</code>
+            </li>
+            <li>
+              <strong>Resultado</strong> —
+              <span class="badge badge-success">positivo</span> ou
+              <span class="badge badge-danger">negativo</span> conforme o sinal
+              da diferença
+            </li>
+          </ul>
+        </div>
+        <p>
+          É o mesmo dado mostrado nos KPIs do topo, só que reorganizado em
+          formato de "demonstrativo".
+        </p>
+      </section>
+
+      <section id="recentes">
+        <h2><span class="icon">8</span> Últimas ordens de serviço</h2>
+        <p class="lead">
+          Mostra as <strong>6 OS mais recentes</strong> (ordenadas pelo número
+          decrescente), independente do status.
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Coluna exibida</th>
+                <th>Origem</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Número da OS</td>
+                <td><code>service_orders.number</code></td>
+              </tr>
+              <tr>
+                <td>Cliente (nome + telefone)</td>
+                <td>
+                  join com <code>clients</code> → <code>name</code>,
+                  <code>phone</code>
+                </td>
+              </tr>
+              <tr>
+                <td>Equipamento</td>
+                <td>
+                  concatenação de <code>device_type</code>,
+                  <code>device_brand</code> e <code>device_model</code>
+                </td>
+              </tr>
+              <tr>
+                <td>Status</td>
+                <td>
+                  <code>service_orders.status</code>, traduzido via mapa em
+                  <code>validations/service-order.ts</code>
+                </td>
+              </tr>
+              <tr>
+                <td>Filial</td>
+                <td>join com <code>branches.name</code></td>
+              </tr>
+              <tr>
+                <td>Abertura</td>
+                <td><code>service_orders.created_at</code> formatado PT-BR</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          Cada número de OS é um link para a tela de detalhes
+          <code>/dashboard/ordens-de-servico/[id]</code>.
+        </p>
+      </section>
+
+      <section id="seguranca">
+        <h2><span class="icon">9</span> Segurança e isolamento</h2>
+        <p class="lead">
+          O dashboard aplica <strong>três camadas</strong> de proteção antes de
+          devolver qualquer dado:
+        </p>
+        <div class="step">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <h4>Proxy (camada de rota)</h4>
+            <p>
+              Verifica sessão Supabase, bloqueia usuários inativos e redireciona
+              não autenticados para <code>/login</code>.
+            </p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <h4>Server Component (camada de role)</h4>
+            <p>
+              A página <code>page.tsx</code> escolhe
+              <code>AdminDashboard</code> ou <code>TechnicianDashboard</code>
+              com base em <code>app_metadata.role</code>. Atendentes e técnicos
+              caem no dashboard operacional.
+            </p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <h4>Server Action (camada de tenant)</h4>
+            <p>
+              <code>getAdminContext('financeiro')</code> valida permissão e
+              extrai o <code>companyId</code> do usuário. Todas as queries
+              aplicam <code>WHERE company_id = ?</code> no banco.
+            </p>
+          </div>
+        </div>
+        <div class="alert alert-info">
+          <strong>Multi-tenant:</strong> o sistema é multi-empresa. O isolamento
+          dos dados de cada cliente é garantido pelo
+          <code>company_id</code> em todas as consultas + políticas RLS no
+          Supabase.
+        </div>
+      </section>
+
+      <section id="limitacoes">
+        <h2><span class="icon">10</span> Limitações atuais e próximos passos</h2>
+        <div class="card">
+          <h3>Limitações</h3>
+          <ul class="list-neutral">
+            <li>
+              Período fixo: sempre o mês corrente, sem seletor para comparar com
+              meses anteriores
+            </li>
+            <li>
+              "Despesas" considera vencimento, não pagamento efetivo — pode
+              distorcer o resultado se houver muitas contas em atraso
+            </li>
+            <li>
+              Limite de 5.000 registros por query — empresas muito grandes
+              podem precisar de paginação ou pré-agregação
+            </li>
+            <li>
+              Não há cache: a cada recarregamento da página, as 6 queries são
+              executadas de novo
+            </li>
+            <li>
+              Sem gráficos de evolução temporal (só números consolidados)
+            </li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Possíveis evoluções</h3>
+          <ul>
+            <li>Seletor de período (hoje, semana, mês, trimestre)</li>
+            <li>
+              Gráficos de evolução diária/semanal de OS abertas e faturamento
+            </li>
+            <li>Comparação com o mês anterior (delta %)</li>
+            <li>Cache em tempo curto para reduzir carga no banco</li>
+            <li>Materialização em view ou tabela de agregados</li>
+          </ul>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="container">
+        <p>
+          Documentação técnica interna — gerada a partir do código-fonte
+          (<code>app/actions/dashboard.ts</code> e
+          <code>_components/admin-dashboard.tsx</code>).
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

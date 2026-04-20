@@ -1,0 +1,828 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>API Oficial do WhatsApp — Guia para Contratação</title>
+    <style>
+      :root {
+        --bg: #0b0f17;
+        --surface: #111827;
+        --surface-2: #1f2937;
+        --border: #1f2937;
+        --text: #e5e7eb;
+        --muted: #9ca3af;
+        --primary: #25d366;
+        --primary-dark: #128c7e;
+        --accent: #3b82f6;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --success: #10b981;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+          Arial, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .container {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 0 1.5rem;
+      }
+
+      /* Header */
+      .hero {
+        background: linear-gradient(
+          135deg,
+          var(--primary-dark) 0%,
+          #075e54 100%
+        );
+        padding: 4rem 0 3rem;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .hero-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(255, 255, 255, 0.12);
+        backdrop-filter: blur(10px);
+        padding: 0.4rem 0.9rem;
+        border-radius: 9999px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        margin-bottom: 1.25rem;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+      }
+
+      .hero h1 {
+        font-size: clamp(1.75rem, 4vw, 2.5rem);
+        font-weight: 700;
+        color: #fff;
+        margin-bottom: 0.75rem;
+        line-height: 1.2;
+      }
+
+      .hero p {
+        font-size: 1.05rem;
+        color: rgba(255, 255, 255, 0.85);
+        max-width: 640px;
+      }
+
+      /* Sections */
+      main {
+        padding: 3rem 0 5rem;
+      }
+
+      section {
+        margin-bottom: 3rem;
+      }
+
+      h2 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #fff;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+      }
+
+      h2 .icon {
+        width: 28px;
+        height: 28px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--primary);
+        color: #fff;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 700;
+      }
+
+      h3 {
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: #fff;
+        margin: 1.25rem 0 0.5rem;
+      }
+
+      p {
+        color: var(--text);
+        margin-bottom: 0.75rem;
+      }
+
+      .lead {
+        color: var(--muted);
+        font-size: 1rem;
+        margin-bottom: 1.5rem;
+      }
+
+      /* Cards */
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+      }
+
+      .card-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 1rem;
+      }
+
+      .card-grid .card {
+        margin-bottom: 0;
+      }
+
+      .card h3 {
+        margin-top: 0;
+        color: var(--primary);
+      }
+
+      /* Lists */
+      ul {
+        list-style: none;
+        padding: 0;
+      }
+
+      ul li {
+        position: relative;
+        padding-left: 1.5rem;
+        margin-bottom: 0.5rem;
+        color: var(--text);
+      }
+
+      ul li::before {
+        content: "✓";
+        position: absolute;
+        left: 0;
+        color: var(--primary);
+        font-weight: bold;
+      }
+
+      ul.list-neutral li::before {
+        content: "•";
+        color: var(--muted);
+        font-size: 1.2rem;
+        top: -2px;
+      }
+
+      /* Pricing table */
+      .table-wrap {
+        overflow-x: auto;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        margin: 1rem 0;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.95rem;
+      }
+
+      thead {
+        background: var(--surface-2);
+      }
+
+      th,
+      td {
+        padding: 0.85rem 1rem;
+        text-align: left;
+        border-bottom: 1px solid var(--border);
+      }
+
+      th {
+        font-weight: 600;
+        color: #fff;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      tbody tr:last-child td {
+        border-bottom: none;
+      }
+
+      tbody tr:hover {
+        background: var(--surface-2);
+      }
+
+      td strong {
+        color: #fff;
+      }
+
+      /* Steps */
+      .steps {
+        counter-reset: step;
+      }
+
+      .step {
+        display: flex;
+        gap: 1rem;
+        padding: 1.25rem;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        margin-bottom: 0.75rem;
+      }
+
+      .step-number {
+        flex-shrink: 0;
+        width: 36px;
+        height: 36px;
+        background: var(--primary);
+        color: #fff;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1rem;
+      }
+
+      .step-content h4 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #fff;
+        margin-bottom: 0.25rem;
+      }
+
+      .step-content p {
+        color: var(--muted);
+        font-size: 0.95rem;
+        margin: 0;
+      }
+
+      /* Alerts */
+      .alert {
+        padding: 1rem 1.25rem;
+        border-radius: 12px;
+        border-left: 4px solid;
+        margin: 1rem 0;
+        font-size: 0.95rem;
+      }
+
+      .alert-warning {
+        background: rgba(245, 158, 11, 0.08);
+        border-color: var(--warning);
+        color: #fde68a;
+      }
+
+      .alert-info {
+        background: rgba(59, 130, 246, 0.08);
+        border-color: var(--accent);
+        color: #bfdbfe;
+      }
+
+      .alert-success {
+        background: rgba(16, 185, 129, 0.08);
+        border-color: var(--success);
+        color: #a7f3d0;
+      }
+
+      .alert strong {
+        color: #fff;
+      }
+
+      /* Highlight box */
+      .highlight {
+        background: linear-gradient(
+          135deg,
+          rgba(37, 211, 102, 0.1),
+          rgba(18, 140, 126, 0.08)
+        );
+        border: 1px solid rgba(37, 211, 102, 0.25);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 1.5rem 0;
+      }
+
+      .highlight .total {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--primary);
+        margin: 0.5rem 0;
+      }
+
+      .highlight .total small {
+        font-size: 1rem;
+        color: var(--muted);
+        font-weight: 400;
+      }
+
+      /* TOC */
+      .toc {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 2rem;
+      }
+
+      .toc h3 {
+        margin-top: 0;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+        font-weight: 600;
+      }
+
+      .toc ol {
+        list-style: none;
+        counter-reset: toc;
+        margin-top: 0.5rem;
+      }
+
+      .toc li {
+        counter-increment: toc;
+        padding: 0.3rem 0;
+        padding-left: 0;
+      }
+
+      .toc li::before {
+        content: counter(toc) ". ";
+        color: var(--primary);
+        font-weight: 600;
+      }
+
+      .toc a {
+        color: var(--text);
+        text-decoration: none;
+        transition: color 0.15s;
+      }
+
+      .toc a:hover {
+        color: var(--primary);
+      }
+
+      /* Footer */
+      footer {
+        border-top: 1px solid var(--border);
+        padding: 2rem 0;
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+
+      footer a {
+        color: var(--primary);
+        text-decoration: none;
+      }
+
+      /* Print */
+      @media print {
+        body {
+          background: #fff;
+          color: #000;
+        }
+        .hero {
+          background: #075e54 !important;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        .card,
+        .step,
+        .toc,
+        .alert,
+        .highlight {
+          break-inside: avoid;
+        }
+      }
+
+      /* Small screens */
+      @media (max-width: 600px) {
+        .hero {
+          padding: 2.5rem 0 2rem;
+        }
+        h2 {
+          font-size: 1.25rem;
+        }
+        th,
+        td {
+          padding: 0.65rem 0.75rem;
+          font-size: 0.85rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="hero">
+      <div class="container">
+        <span class="hero-badge">📱 Documento informativo</span>
+        <h1>API Oficial do WhatsApp Business</h1>
+        <p>
+          Guia prático de requisitos, custos e etapas para habilitar a
+          integração oficial com o WhatsApp no seu sistema de gestão.
+        </p>
+      </div>
+    </header>
+
+    <main class="container">
+      <nav class="toc">
+        <h3>Índice</h3>
+        <ol>
+          <li><a href="#visao-geral">Visão geral</a></li>
+          <li><a href="#requisitos">Requisitos da empresa</a></li>
+          <li><a href="#contas-meta">Contas e verificação na Meta</a></li>
+          <li><a href="#custos">Custos envolvidos</a></li>
+          <li><a href="#estimativa">Estimativa mensal</a></li>
+          <li><a href="#bsp">BSP (parceiro técnico)</a></li>
+          <li><a href="#passo-a-passo">Passo a passo</a></li>
+          <li><a href="#seguranca">Segurança e credenciais</a></li>
+          <li><a href="#alternativa">Alternativa no início</a></li>
+        </ol>
+      </nav>
+
+      <section id="visao-geral">
+        <h2><span class="icon">1</span> Visão geral</h2>
+        <p class="lead">
+          A API Oficial do WhatsApp (WhatsApp Business Platform) é o canal
+          autorizado pela Meta para empresas enviarem e receberem mensagens em
+          escala — com selo verde de conta verificada, templates aprovados e
+          garantia de entrega.
+        </p>
+        <div class="card-grid">
+          <div class="card">
+            <h3>Quando vale a pena</h3>
+            <ul>
+              <li>Volume acima de 500 conversas/mês</li>
+              <li>Envio ativo com templates (lembretes, orçamentos)</li>
+              <li>Necessidade de selo verde</li>
+              <li>Múltiplos atendentes no mesmo número</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>O que você ganha</h3>
+            <ul>
+              <li>Estabilidade e sem risco de bloqueio</li>
+              <li>Templates homologados pela Meta</li>
+              <li>Relatórios oficiais de entrega e leitura</li>
+              <li>Conformidade com LGPD e Termos da Meta</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="requisitos">
+        <h2><span class="icon">2</span> Requisitos da empresa</h2>
+        <p class="lead">
+          Antes de iniciar, a empresa precisa ter os seguintes itens em ordem:
+        </p>
+        <div class="card">
+          <h3>Documentação</h3>
+          <ul>
+            <li><strong>CNPJ ativo</strong> e regular</li>
+            <li>Contrato social (última alteração consolidada)</li>
+            <li>Comprovante de endereço da empresa</li>
+            <li>
+              <strong>Site próprio no ar</strong> — com CNPJ no rodapé, política
+              de privacidade e página de contato
+            </li>
+            <li>
+              E-mail corporativo com domínio próprio (ex: contato@empresa.com.br)
+            </li>
+            <li>
+              Número de telefone dedicado exclusivamente à API (não pode estar
+              em uso no WhatsApp comum)
+            </li>
+          </ul>
+        </div>
+        <div class="alert alert-warning">
+          <strong>Atenção:</strong> se o número já estiver em uso no WhatsApp
+          comum ou Business, é preciso fazer o logout antes de migrar para a
+          API. Todas as conversas antigas ficam no aparelho.
+        </div>
+      </section>
+
+      <section id="contas-meta">
+        <h2><span class="icon">3</span> Contas e verificação na Meta</h2>
+        <p class="lead">
+          Todo o processo acontece dentro do ecossistema Meta e exige
+          verificação de negócio.
+        </p>
+        <div class="steps">
+          <div class="step">
+            <div class="step-number">1</div>
+            <div class="step-content">
+              <h4>Meta Business Manager</h4>
+              <p>
+                Criar conta em business.facebook.com usando o CNPJ da empresa.
+              </p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-number">2</div>
+            <div class="step-content">
+              <h4>Verificação de negócio</h4>
+              <p>
+                Envio dos documentos (contrato social, comprovante de endereço).
+                A aprovação leva de <strong>2 a 10 dias úteis</strong>.
+              </p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-number">3</div>
+            <div class="step-content">
+              <h4>Conta WhatsApp Business API (WABA)</h4>
+              <p>
+                Criada dentro do Business Manager, vinculada ao número
+                dedicado.
+              </p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-number">4</div>
+            <div class="step-content">
+              <h4>Aprovação de templates</h4>
+              <p>
+                Mensagens ativas (iniciadas pela empresa) só podem ser enviadas
+                via template aprovado. Aprovação leva minutos a horas e é
+                gratuita.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="custos">
+        <h2><span class="icon">4</span> Custos envolvidos</h2>
+        <p class="lead">
+          A Meta cobra por <strong>conversa</strong> (janela de 24h), não por
+          mensagem individual. Os valores abaixo são referência e podem variar.
+        </p>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Tipo de conversa</th>
+                <th>Quem inicia</th>
+                <th>Valor (ref.)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Serviço (service)</strong></td>
+                <td>Cliente final</td>
+                <td>1.000/mês grátis, depois ~R$ 0,16</td>
+              </tr>
+              <tr>
+                <td><strong>Utilidade</strong></td>
+                <td>Empresa (template)</td>
+                <td>~R$ 0,13</td>
+              </tr>
+              <tr>
+                <td><strong>Autenticação</strong></td>
+                <td>Empresa (template)</td>
+                <td>~R$ 0,10</td>
+              </tr>
+              <tr>
+                <td><strong>Marketing</strong></td>
+                <td>Empresa (template)</td>
+                <td>~R$ 0,40</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="alert alert-info">
+          <strong>Tabela oficial atualizada:</strong> os valores são revisados
+          periodicamente pela Meta. Consulte sempre a referência oficial antes
+          de fechar contrato.
+        </div>
+      </section>
+
+      <section id="estimativa">
+        <h2><span class="icon">5</span> Estimativa mensal realista</h2>
+        <p class="lead">
+          Cenário pequeno — oficina/assistência com volume moderado:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Custo estimado</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Mensalidade do BSP (parceiro técnico)</td>
+                <td>R$ 250 – R$ 400</td>
+              </tr>
+              <tr>
+                <td>500 conversas de utilidade (lembretes, orçamentos)</td>
+                <td>~ R$ 70</td>
+              </tr>
+              <tr>
+                <td>200 conversas de marketing (promoções)</td>
+                <td>~ R$ 80</td>
+              </tr>
+              <tr>
+                <td>Conversas iniciadas pelo cliente (até 1.000)</td>
+                <td>Grátis</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="highlight">
+          <p style="margin: 0; color: var(--muted); font-size: 0.9rem;">
+            Total mensal estimado
+          </p>
+          <p class="total">
+            R$ 400 – R$ 600 <small>/ mês</small>
+          </p>
+          <p style="margin: 0; color: var(--muted); font-size: 0.9rem;">
+            Valores aproximados e variáveis conforme o volume e o BSP escolhido.
+          </p>
+        </div>
+      </section>
+
+      <section id="bsp">
+        <h2><span class="icon">6</span> BSP — Parceiro técnico</h2>
+        <p class="lead">
+          Um BSP (Business Solution Provider) facilita a integração, cuida da
+          infraestrutura e da gestão de templates. Opcional, mas altamente
+          recomendado.
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>BSP</th>
+                <th>Mensalidade</th>
+                <th>Observação</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>360dialog</strong></td>
+                <td>~ € 49/mês</td>
+                <td>Europeu, sólido, foco em dev</td>
+              </tr>
+              <tr>
+                <td><strong>Gupshup</strong></td>
+                <td>A partir de US$ 10/mês</td>
+                <td>Bom custo-benefício</td>
+              </tr>
+              <tr>
+                <td><strong>Z-API (oficial)</strong></td>
+                <td>Planos em reais</td>
+                <td>Mais amigável para o Brasil</td>
+              </tr>
+              <tr>
+                <td><strong>Twilio</strong></td>
+                <td>Pago por uso</td>
+                <td>Sem mensalidade, mais caro por mensagem</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="passo-a-passo">
+        <h2><span class="icon">7</span> Passo a passo resumido</h2>
+        <div class="steps">
+          <div class="step">
+            <div class="step-number">1</div>
+            <div class="step-content">
+              <h4>Reunir documentação da empresa</h4>
+              <p>CNPJ, contrato social, comprovante de endereço, site no ar.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-number">2</div>
+            <div class="step-content">
+              <h4>Criar Meta Business Manager</h4>
+              <p>Registrar a empresa em business.facebook.com.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-number">3</div>
+            <div class="step-content">
+              <h4>Solicitar verificação de negócio</h4>
+              <p>Enviar documentos e aguardar aprovação (2 a 10 dias úteis).</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-number">4</div>
+            <div class="step-content">
+              <h4>Escolher BSP (opcional)</h4>
+              <p>Contratar parceiro técnico para facilitar a integração.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-number">5</div>
+            <div class="step-content">
+              <h4>Criar WABA e registrar número</h4>
+              <p>Número dedicado, sem uso prévio no WhatsApp comum.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-number">6</div>
+            <div class="step-content">
+              <h4>Submeter templates de mensagem</h4>
+              <p>
+                Modelos de lembrete, orçamento, confirmação etc. para aprovação.
+              </p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-number">7</div>
+            <div class="step-content">
+              <h4>Conceder acesso técnico ao SaaS</h4>
+              <p>
+                Via Embedded Signup ou adicionando o Business ID do SaaS como
+                parceiro — <strong>sem compartilhar senha</strong>.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="seguranca">
+        <h2><span class="icon">8</span> Segurança e credenciais</h2>
+        <div class="alert alert-success">
+          <strong>Boa prática:</strong> o cliente nunca precisa compartilhar
+          login e senha do Facebook/Meta. Toda a autorização é feita via
+          permissões do Business Manager.
+        </div>
+        <p>
+          Existem dois caminhos seguros para conceder acesso ao provedor
+          técnico:
+        </p>
+        <ul class="list-neutral">
+          <li>
+            <strong>Embedded Signup:</strong> o cliente clica em "Conectar
+            WhatsApp" no SaaS, faz login na conta dele e autoriza o app. O SaaS
+            recebe apenas um token de acesso revogável.
+          </li>
+          <li>
+            <strong>Compartilhamento de parceria:</strong> o cliente adiciona o
+            Business ID do SaaS como parceiro no Business Manager, concedendo
+            permissões específicas sobre a WABA.
+          </li>
+        </ul>
+        <div class="alert alert-warning">
+          <strong>Nunca faça:</strong> enviar senha do Facebook ou do Business
+          Manager por e-mail/WhatsApp. Além de violar os Termos da Meta, a
+          conta pode ser bloqueada.
+        </div>
+      </section>
+
+      <section id="alternativa">
+        <h2><span class="icon">9</span> Alternativa no início</h2>
+        <p class="lead">
+          Se o volume ainda for baixo, dá para começar com a integração
+          não-oficial já existente no SaaS e migrar para a API oficial quando
+          fizer sentido.
+        </p>
+        <div class="card">
+          <h3>Sinais de que chegou a hora de migrar</h3>
+          <ul>
+            <li>Volume superior a 500 conversas ativas por mês</li>
+            <li>Necessidade de envio em massa com templates aprovados</li>
+            <li>Exigência do selo verde de conta verificada</li>
+            <li>
+              Problemas recorrentes de bloqueio ou instabilidade no modo
+              não-oficial
+            </li>
+            <li>Vários atendentes operando o mesmo número simultaneamente</li>
+          </ul>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="container">
+        <p>
+          Documento informativo — elaborado para orientação comercial.
+          <br />
+          Valores e prazos podem variar conforme políticas vigentes da Meta.
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>
