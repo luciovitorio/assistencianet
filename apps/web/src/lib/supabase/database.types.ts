@@ -539,6 +539,66 @@ export type Database = {
           },
         ]
       }
+      equipment_models: {
+        Row: {
+          active: boolean
+          company_id: string
+          created_at: string
+          deleted_at: string | null
+          deleted_by: string | null
+          id: string
+          manufacturer: string
+          model: string
+          notes: string | null
+          type: string
+          updated_at: string
+          voltage: string | null
+        }
+        Insert: {
+          active?: boolean
+          company_id: string
+          created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          id?: string
+          manufacturer: string
+          model: string
+          notes?: string | null
+          type: string
+          updated_at?: string
+          voltage?: string | null
+        }
+        Update: {
+          active?: boolean
+          company_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          id?: string
+          manufacturer?: string
+          model?: string
+          notes?: string | null
+          type?: string
+          updated_at?: string
+          voltage?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_models_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_models_deleted_by_fkey"
+            columns: ["deleted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employees: {
         Row: {
           active: boolean
@@ -991,10 +1051,13 @@ export type Database = {
           delivered_at: string | null
           delivered_by: string | null
           device_brand: string | null
+          device_color: string | null
           device_condition: string | null
+          device_internal_code: string | null
           device_model: string | null
           device_serial: string | null
           device_type: string
+          equipment_model_id: string | null
           estimated_delivery: string | null
           id: string
           notes: string | null
@@ -1029,10 +1092,13 @@ export type Database = {
           delivered_at?: string | null
           delivered_by?: string | null
           device_brand?: string | null
+          device_color?: string | null
           device_condition?: string | null
+          device_internal_code?: string | null
           device_model?: string | null
           device_serial?: string | null
           device_type: string
+          equipment_model_id?: string | null
           estimated_delivery?: string | null
           id?: string
           notes?: string | null
@@ -1067,10 +1133,13 @@ export type Database = {
           delivered_at?: string | null
           delivered_by?: string | null
           device_brand?: string | null
+          device_color?: string | null
           device_condition?: string | null
+          device_internal_code?: string | null
           device_model?: string | null
           device_serial?: string | null
           device_type?: string
+          equipment_model_id?: string | null
           estimated_delivery?: string | null
           id?: string
           notes?: string | null
@@ -1130,6 +1199,13 @@ export type Database = {
             columns: ["delivered_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_orders_equipment_model_id_fkey"
+            columns: ["equipment_model_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_models"
             referencedColumns: ["id"]
           },
           {

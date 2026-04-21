@@ -2,11 +2,10 @@ import type { Tables } from '@/lib/supabase/database.types'
 
 type CompanySettingsRow = Pick<
   Tables<'company_settings'>,
-  'device_types' | 'default_warranty_days' | 'default_estimate_validity_days'
+  'default_warranty_days' | 'default_estimate_validity_days'
 >
 
 export interface ResolvedCompanySettings {
-  deviceTypes: string[]
   defaultWarrantyDays: number
   defaultEstimateValidityDays: number
 }
@@ -23,36 +22,13 @@ export const BEAUTY_SALON_DEVICE_TYPE_DEFAULTS = [
 ] as const
 
 export const COMPANY_SETTINGS_DEFAULTS: ResolvedCompanySettings = {
-  deviceTypes: [...BEAUTY_SALON_DEVICE_TYPE_DEFAULTS],
   defaultWarrantyDays: 90,
   defaultEstimateValidityDays: 30,
-}
-
-const normalizeDeviceTypeLabel = (value: string) =>
-  value.trim().replace(/\s+/g, ' ')
-
-export const normalizeDeviceTypes = (deviceTypes: string[] | null | undefined): string[] => {
-  const normalized = (deviceTypes ?? [])
-    .map(normalizeDeviceTypeLabel)
-    .filter(Boolean)
-
-  const deduped: string[] = []
-  const seen = new Set<string>()
-
-  for (const deviceType of normalized) {
-    const key = deviceType.toLocaleLowerCase('pt-BR')
-    if (seen.has(key)) continue
-    seen.add(key)
-    deduped.push(deviceType)
-  }
-
-  return deduped.length > 0 ? deduped : [...COMPANY_SETTINGS_DEFAULTS.deviceTypes]
 }
 
 export const resolveCompanySettings = (
   settings: CompanySettingsRow | null | undefined,
 ): ResolvedCompanySettings => ({
-  deviceTypes: normalizeDeviceTypes(settings?.device_types),
   defaultWarrantyDays:
     typeof settings?.default_warranty_days === 'number' &&
     Number.isFinite(settings.default_warranty_days) &&

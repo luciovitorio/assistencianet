@@ -225,6 +225,7 @@ export function DashboardShell({
     pathname.startsWith('/dashboard/clientes') ||
     pathname.startsWith('/dashboard/fornecedores') ||
     pathname.startsWith('/dashboard/terceiros') ||
+    pathname.startsWith('/dashboard/equipamentos') ||
     pathname.startsWith('/dashboard/pecas') ||
     pathname.startsWith('/dashboard/servicos')
   const inOrdens = pathname.startsWith('/dashboard/ordens-de-servico')
@@ -336,6 +337,12 @@ export function DashboardShell({
                 href="/dashboard/terceiros"
                 label="Terceirizadas"
                 active={pathname.startsWith('/dashboard/terceiros')}
+                isExpanded={isExpanded}
+              />
+              <SidebarSubItem
+                href="/dashboard/equipamentos"
+                label="Equipamentos"
+                active={pathname.startsWith('/dashboard/equipamentos')}
                 isExpanded={isExpanded}
               />
               <SidebarSubItem

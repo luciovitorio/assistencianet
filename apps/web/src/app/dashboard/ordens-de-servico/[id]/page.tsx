@@ -153,7 +153,7 @@ export default async function ServiceOrderDetailPage({ params }: ServiceOrderPag
     supabase
       .from('service_orders')
       .select(
-        'id, number, status, payment_status, device_type, device_brand, device_model, device_serial, device_condition, reported_issue, estimated_delivery, delivered_at, warranty_expires_at, notes, branch_id, client_id, technician_id, created_at, third_party_id, third_party_dispatched_at, third_party_expected_return_at, third_party_returned_at, third_party_notes',
+        'id, number, status, payment_status, device_type, device_brand, device_model, device_serial, device_color, device_internal_code, device_condition, reported_issue, estimated_delivery, delivered_at, warranty_expires_at, notes, branch_id, client_id, technician_id, created_at, third_party_id, third_party_dispatched_at, third_party_expected_return_at, third_party_returned_at, third_party_notes',
       )
       .eq('id', id)
       .eq('company_id', companyId)
@@ -175,7 +175,7 @@ export default async function ServiceOrderDetailPage({ params }: ServiceOrderPag
       .order('created_at', { ascending: true }),
     supabase
       .from('company_settings')
-      .select('device_types, default_warranty_days, default_estimate_validity_days')
+      .select('default_warranty_days, default_estimate_validity_days')
       .eq('company_id', companyId)
       .maybeSingle(),
     supabase
@@ -431,8 +431,16 @@ export default async function ServiceOrderDetailPage({ params }: ServiceOrderPag
               </CardHeader>
               <CardContent className="space-y-1.5 pb-4">
                 <p className="text-sm font-semibold">{deviceLabel || '—'}</p>
+                {serviceOrder.device_color && (
+                  <p className="text-xs text-muted-foreground">Cor: {serviceOrder.device_color}</p>
+                )}
                 {serviceOrder.device_serial && (
                   <p className="text-xs text-muted-foreground">S/N: {serviceOrder.device_serial}</p>
+                )}
+                {serviceOrder.device_internal_code && (
+                  <p className="text-xs text-muted-foreground">
+                    Código interno: {serviceOrder.device_internal_code}
+                  </p>
                 )}
                 {serviceOrder.device_condition && (
                   <p className="text-xs text-muted-foreground">

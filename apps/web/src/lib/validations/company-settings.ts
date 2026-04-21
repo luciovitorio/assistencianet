@@ -1,15 +1,6 @@
 import * as z from 'zod'
 
 export const companySettingsSchema = z.object({
-  device_types: z
-    .array(
-      z
-        .string()
-        .trim()
-        .min(1, 'Informe um tipo de equipamento válido.')
-        .max(100, 'O tipo de equipamento deve ter no máximo 100 caracteres.'),
-    )
-    .min(1, 'Selecione pelo menos um tipo de equipamento.'),
   default_warranty_days: z
     .number({ error: 'Informe o prazo default de garantia.' })
     .int('O prazo default de garantia deve ser inteiro.')

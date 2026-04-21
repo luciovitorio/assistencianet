@@ -1,25 +1,20 @@
 'use client'
 
 import * as React from 'react'
-import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Controller, useForm, type Resolver } from 'react-hook-form'
+import { Controller, useForm, useWatch, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
 import {
   ArrowLeft,
   Building2,
   CalendarClock,
-  Check,
   ClipboardList,
   Cpu,
-  Plus,
-  Search,
   ShieldCheck,
   User,
   Wrench,
-  X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { buttonVariants } from '@/components/ui/button-variants'
@@ -28,10 +23,14 @@ import { DatePickerField } from '@/components/ui/date-picker-field'
 import { InputField } from '@/components/ui/input-field'
 import { Label } from '@/components/ui/label'
 import { useRouteTransition } from '@/components/ui/route-transition-indicator'
+import { SearchAutocomplete } from '@/components/ui/search-autocomplete'
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { searchClientsForServiceOrder } from '@/app/actions/clients'
+import { searchEquipmentModelsForServiceOrder } from '@/app/actions/equipments'
 import { createServiceOrder, editServiceOrder } from '@/app/actions/service-orders'
 import { ClientDialog } from '@/app/dashboard/clientes/_components/client-dialog'
+import { EquipmentDialog } from '@/app/dashboard/equipamentos/_components/equipment-dialog'
 import {
   serviceOrderSchema,
   editServiceOrderSchema,
@@ -60,8 +59,22 @@ export interface EmployeeOption {
   role: string
 }
 
+export interface EquipmentOption {
+  id: string
+  type: string
+  manufacturer: string
+  model: string
+  voltage: string | null
+}
+
 const mergeClientsById = (...groups: ClientOption[][]) =>
   Array.from(new Map(groups.flat().map((client) => [client.id, client])).values())
+
+const normalizeAutocompleteSearch = (value: string) =>
+  value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
 
 interface ClientSearchInputProps {
   clients: ClientOption[]
@@ -82,176 +95,67 @@ function ClientSearchInput({
   branches,
   defaultBranchId,
 }: ClientSearchInputProps) {
-  const [search, setSearch] = React.useState('')
-  const [isOpen, setIsOpen] = React.useState(false)
   const [showCreateDialog, setShowCreateDialog] = React.useState(false)
-  const [dropdownStyle, setDropdownStyle] = React.useState<React.CSSProperties>({})
-  const wrapperRef = React.useRef<HTMLDivElement>(null)
-  const dropdownRef = React.useRef<HTMLDivElement>(null)
-  const inputRef = React.useRef<HTMLInputElement>(null)
+  const [newClientName, setNewClientName] = React.useState('')
+  const searchClients = React.useCallback(async (search: string) => {
+    const result = await searchClientsForServiceOrder(search)
 
-  const selectedClient = React.useMemo(
-    () => clients.find((client) => client.id === value) ?? null,
-    [clients, value],
-  )
+    if ('error' in result) {
+      toast.error(result.error)
+      return []
+    }
 
-  const filteredClients = React.useMemo(() => {
-    const query = search.trim().toLowerCase()
-    if (!query) return clients.slice(0, 8)
-    return clients
-      .filter(
-        (client) =>
-          client.name.toLowerCase().includes(query) ||
-          (client.phone ?? '').toLowerCase().includes(query) ||
-          (client.document ?? '').replace(/\D/g, '').includes(query.replace(/\D/g, '')),
-      )
-      .slice(0, 10)
-  }, [clients, search])
-
-  const updatePosition = React.useCallback(() => {
-    if (!wrapperRef.current) return
-    const rect = wrapperRef.current.getBoundingClientRect()
-    setDropdownStyle({ position: 'fixed', top: rect.bottom + 4, left: rect.left, width: rect.width, zIndex: 9999 })
+    return result.clients
   }, [])
-
-  React.useEffect(() => {
-    if (!isOpen) return
-    const handleMouseDown = (event: MouseEvent) => {
-      const target = event.target as Node
-      if (wrapperRef.current?.contains(target)) return
-      if (dropdownRef.current?.contains(target)) return
-      setIsOpen(false)
-    }
-    document.addEventListener('mousedown', handleMouseDown)
-    return () => document.removeEventListener('mousedown', handleMouseDown)
-  }, [isOpen])
-
-  React.useEffect(() => {
-    if (!isOpen) return
-    const sync = () => updatePosition()
-    window.addEventListener('scroll', sync, true)
-    window.addEventListener('resize', sync)
-    return () => {
-      window.removeEventListener('scroll', sync, true)
-      window.removeEventListener('resize', sync)
-    }
-  }, [isOpen, updatePosition])
-
-  const displayValue = selectedClient ? selectedClient.name : search
-
-  const dropdown =
-    isOpen && typeof window !== 'undefined'
-      ? createPortal(
-          <div
-            ref={dropdownRef}
-            style={dropdownStyle}
-            className="overflow-hidden rounded-xl bg-popover ring-1 ring-foreground/10 shadow-xl shadow-slate-950/10"
-          >
-            <div className="max-h-64 overflow-y-auto">
-              {filteredClients.length === 0 ? (
-                <p className="px-3 py-2 text-sm text-muted-foreground">
-                  {search.trim()
-                    ? `Nenhum cliente encontrado para "${search}".`
-                    : 'Nenhum cliente cadastrado.'}
-                </p>
-              ) : (
-                filteredClients.map((client) => (
-                  <button
-                    key={client.id}
-                    type="button"
-                    className="flex w-full items-center justify-between px-3 py-2.5 text-left text-sm transition-colors hover:bg-muted/60"
-                    onMouseDown={(event) => {
-                      event.preventDefault()
-                      onChange(client.id)
-                      setSearch('')
-                      setIsOpen(false)
-                    }}
-                  >
-                    <span>
-                      <span className="font-medium">{client.name}</span>
-                      {client.phone && <span className="ml-2 text-xs text-muted-foreground">{client.phone}</span>}
-                    </span>
-                    {value === client.id && <Check className="size-4 shrink-0 text-primary" />}
-                  </button>
-                ))
-              )}
-            </div>
-            <div className="border-t">
-              <button
-                type="button"
-                className="flex w-full items-center gap-2 px-3 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-primary/5"
-                onMouseDown={(event) => {
-                  event.preventDefault()
-                  setIsOpen(false)
-                  setShowCreateDialog(true)
-                }}
-              >
-                <Plus className="size-4 shrink-0" />
-                {search.trim() ? `Cadastrar "${search.trim()}" como novo cliente` : 'Cadastrar novo cliente'}
-              </button>
-            </div>
-          </div>,
-          document.body,
-        )
-      : null
 
   return (
     <>
-      <div ref={wrapperRef} className="relative">
-        <div
-          className={cn(
-            'relative flex h-11 items-center rounded-xl border bg-background shadow-sm shadow-slate-950/5 transition-colors focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50',
-            error ? 'border-destructive ring-3 ring-destructive/20' : 'border-input',
-          )}
-        >
-          <Search className="pointer-events-none absolute left-3 size-4 text-muted-foreground" />
-          <input
-            ref={inputRef}
-            type="text"
-            value={displayValue}
-            onChange={(event) => {
-              setSearch(event.target.value)
-              if (value) onChange('')
-              if (!isOpen) {
-                updatePosition()
-                setIsOpen(true)
-              }
-            }}
-            onFocus={() => {
-              updatePosition()
-              setIsOpen(true)
-            }}
-            placeholder="Buscar pelo nome, telefone ou CPF/CNPJ..."
-            className="flex-1 bg-transparent py-1 pl-10 pr-9 text-sm text-foreground outline-none placeholder:text-muted-foreground/70"
-            autoComplete="off"
-          />
-          {(selectedClient || search) && (
-            <button
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation()
-                onChange('')
-                setSearch('')
-                setIsOpen(false)
-                setTimeout(() => inputRef.current?.focus(), 0)
-              }}
-              className="absolute right-2.5 text-muted-foreground transition-colors hover:text-foreground"
-            >
-              <X className="size-4" />
-            </button>
-          )}
-        </div>
-        {error && <p className="mt-1 text-xs text-destructive">{error}</p>}
-      </div>
+      <SearchAutocomplete
+        options={clients}
+        value={value}
+        onChange={onChange}
+        onSelectOption={onClientCreated}
+        placeholder="Buscar pelo nome, telefone ou CPF/CNPJ..."
+        error={error}
+        getOptionLabel={(client) => client.name}
+        getOptionSearchText={(client) => [client.name, client.phone, client.document].filter(Boolean).join(' ')}
+        filterOption={(client, query) => {
+          const nameMatches = normalizeAutocompleteSearch(client.name)
+            .split(/\s+/)
+            .some((namePart) => namePart.startsWith(query))
+          const numericQuery = query.replace(/\D/g, '')
 
-      {dropdown}
+          if (!numericQuery) return nameMatches
+
+          return nameMatches || [client.phone, client.document]
+            .filter(Boolean)
+            .some((value) => value!.replace(/\D/g, '').includes(numericQuery))
+        }}
+        searchOptions={searchClients}
+        renderOption={(client) => (
+          <>
+            <span className="font-medium">{client.name}</span>
+            {client.phone && <span className="ml-2 text-xs text-muted-foreground">{client.phone}</span>}
+          </>
+        )}
+        emptyMessage={(search) =>
+          search.trim()
+            ? `Nenhum cliente encontrado para "${search}".`
+            : 'Nenhum cliente cadastrado.'
+        }
+        createLabel={() => 'Cadastrar novo cliente'}
+        onCreate={(search) => {
+          setNewClientName(search.trim())
+          setShowCreateDialog(true)
+        }}
+      />
 
       <ClientDialog
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}
         branches={branches}
         defaultOriginBranchId={defaultBranchId}
-        client={search.trim() ? { name: search.trim() } : undefined}
+        client={newClientName ? { name: newClientName } : undefined}
         onSuccess={(created) => {
           const newClient = {
             id: created.id,
@@ -261,7 +165,88 @@ function ClientSearchInput({
           }
           onClientCreated(newClient)
           onChange(created.id)
-          setSearch('')
+          setNewClientName('')
+        }}
+      />
+    </>
+  )
+}
+
+interface EquipmentSearchInputProps {
+  equipments: EquipmentOption[]
+  value: string
+  onChange: (equipmentId: string) => void
+  onEquipmentCreated: (equipment: EquipmentOption) => void
+  error?: string
+}
+
+function EquipmentSearchInput({
+  equipments,
+  value,
+  onChange,
+  onEquipmentCreated,
+  error,
+}: EquipmentSearchInputProps) {
+  const [showCreateDialog, setShowCreateDialog] = React.useState(false)
+
+  const formatEquipment = React.useCallback(
+    (equipment: EquipmentOption) =>
+      `${equipment.type} · ${equipment.manufacturer} ${equipment.model}${
+        equipment.voltage ? ` · ${equipment.voltage}` : ''
+      }`,
+    [],
+  )
+  const searchEquipments = React.useCallback(async (search: string) => {
+    const result = await searchEquipmentModelsForServiceOrder(search)
+
+    if ('error' in result) {
+      toast.error(result.error)
+      return []
+    }
+
+    return result.equipments
+  }, [])
+
+  return (
+    <>
+      <SearchAutocomplete
+        options={equipments}
+        value={value}
+        onChange={onChange}
+        onSelectOption={onEquipmentCreated}
+        placeholder="Buscar por tipo, fabricante, modelo ou voltagem..."
+        error={error}
+        getOptionLabel={formatEquipment}
+        getOptionSearchText={(equipment) =>
+          [equipment.type, equipment.manufacturer, equipment.model, equipment.voltage]
+            .filter(Boolean)
+            .join(' ')
+        }
+        searchOptions={searchEquipments}
+        renderOption={(equipment) => (
+          <>
+            <span className="font-medium">{equipment.type}</span>
+            <span className="ml-2 text-xs text-muted-foreground">
+              {equipment.manufacturer} {equipment.model}
+              {equipment.voltage ? ` · ${equipment.voltage}` : ''}
+            </span>
+          </>
+        )}
+        emptyMessage={(search) =>
+          search.trim()
+            ? `Nenhum equipamento encontrado para "${search}".`
+            : 'Nenhum equipamento cadastrado.'
+        }
+        createLabel={() => 'Cadastrar novo equipamento'}
+        onCreate={() => setShowCreateDialog(true)}
+      />
+
+      <EquipmentDialog
+        open={showCreateDialog}
+        onOpenChange={setShowCreateDialog}
+        onSuccess={(created) => {
+          onEquipmentCreated(created)
+          onChange(created.id)
         }}
       />
     </>
@@ -274,10 +259,13 @@ export interface ServiceOrderInitialData {
   status: string
   branch_id: string
   client_id: string
+  equipment_model_id: string | null
   device_type: string
   device_brand: string | null
   device_model: string | null
   device_serial: string | null
+  device_color: string | null
+  device_internal_code: string | null
   device_condition: string | null
   reported_issue: string
   technician_id: string | null
@@ -289,7 +277,7 @@ interface ServiceOrderFormProps {
   branches: BranchOption[]
   clients: ClientOption[]
   employees: EmployeeOption[]
-  deviceTypes: string[]
+  equipments: EquipmentOption[]
   defaultBranchId: string | null
   defaultBranchName?: string | null
   nextNumber?: number
@@ -301,7 +289,7 @@ export function ServiceOrderForm({
   branches,
   clients,
   employees,
-  deviceTypes,
+  equipments,
   defaultBranchId,
   defaultBranchName,
   nextNumber,
@@ -314,9 +302,14 @@ export function ServiceOrderForm({
   const [isPending, startTransition] = React.useTransition()
   const [isNavigatingAway, setIsNavigatingAway] = React.useState(false)
   const [extraClients, setExtraClients] = React.useState<ClientOption[]>([])
+  const [extraEquipments, setExtraEquipments] = React.useState<EquipmentOption[]>([])
   const allClients = React.useMemo(
     () => mergeClientsById(clients, extraClients),
     [clients, extraClients],
+  )
+  const allEquipments = React.useMemo(
+    () => Array.from(new Map([...equipments, ...extraEquipments].map((equipment) => [equipment.id, equipment])).values()),
+    [equipments, extraEquipments],
   )
   const technicians = employees.filter((employee) => employee.role === 'tecnico')
   const num = isEdit && initialData ? initialData.number : (nextNumber || 0)
@@ -325,6 +318,7 @@ export function ServiceOrderForm({
   const {
     control,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<ServiceOrderSchema>({
     resolver: zodResolver(isEdit ? editServiceOrderSchema : serviceOrderSchema) as unknown as Resolver<ServiceOrderSchema>,
@@ -332,10 +326,13 @@ export function ServiceOrderForm({
       ? {
           branch_id: initialData.branch_id,
           client_id: initialData.client_id,
+          equipment_model_id: initialData.equipment_model_id || '',
           device_type: initialData.device_type,
           device_brand: initialData.device_brand || '',
           device_model: initialData.device_model || '',
           device_serial: initialData.device_serial || '',
+          device_color: initialData.device_color || '',
+          device_internal_code: initialData.device_internal_code || '',
           device_condition: initialData.device_condition || '',
           reported_issue: initialData.reported_issue || '',
           technician_id: initialData.technician_id || '',
@@ -347,10 +344,13 @@ export function ServiceOrderForm({
       : {
           branch_id: defaultBranchId || '',
           client_id: '',
+          equipment_model_id: '',
           device_type: undefined,
           device_brand: '',
           device_model: '',
           device_serial: '',
+          device_color: '',
+          device_internal_code: '',
           device_condition: '',
           reported_issue: '',
           technician_id: '',
@@ -358,6 +358,22 @@ export function ServiceOrderForm({
           notes: '',
         },
   })
+
+  const selectedEquipmentId = useWatch({
+    control,
+    name: 'equipment_model_id',
+  })
+  const selectedEquipment = React.useMemo(
+    () => allEquipments.find((equipment) => equipment.id === selectedEquipmentId) ?? null,
+    [allEquipments, selectedEquipmentId],
+  )
+
+  React.useEffect(() => {
+    if (!selectedEquipment) return
+    setValue('device_type', selectedEquipment.type, { shouldValidate: true, shouldDirty: true })
+    setValue('device_brand', selectedEquipment.manufacturer, { shouldValidate: true, shouldDirty: true })
+    setValue('device_model', selectedEquipment.model, { shouldValidate: true, shouldDirty: true })
+  }, [selectedEquipment, setValue])
 
   const onSubmit = (data: ServiceOrderSchema) => {
     if (isPending || isNavigatingAway) return
@@ -561,38 +577,62 @@ export function ServiceOrderForm({
           <Card className="border border-slate-200 shadow-sm shadow-slate-950/5">
             <CardHeader className="border-b border-slate-100">
               <CardTitle className="flex items-center gap-2 text-slate-900"><Cpu className="size-4 text-teal-700" />Detalhes do equipamento</CardTitle>
-              <CardDescription>Identifique com precisao o equipamento de salão que esta entrando na bancada.</CardDescription>
+              <CardDescription>Selecione o equipamento cadastrado e complete os dados de identificação da unidade.</CardDescription>
             </CardHeader>
             <CardContent className="pt-4">
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <div>
-                  <Label className="mb-1.5 block text-sm font-semibold text-slate-800">Tipo *</Label>
+                <div className="sm:col-span-2 xl:col-span-4">
+                  <Label className="mb-1.5 block text-sm font-semibold text-slate-800">Equipamento cadastrado *</Label>
                   <Controller
                     control={control}
-                    name="device_type"
+                    name="equipment_model_id"
                     render={({ field }) => {
-                      const selected = field.value || undefined
                       return (
-                        <Select value={field.value || ''} onValueChange={field.onChange}>
-                          <SelectTrigger className={cn(CONTROL, errors.device_type && 'border-destructive')}>
-                            <span className={field.value ? 'text-foreground' : 'text-muted-foreground'}>
-                              {selected || 'Selecione o tipo'}
-                            </span>
-                          </SelectTrigger>
-                          <SelectContent>
-                            {deviceTypes.map((deviceType) => (
-                              <SelectItem key={deviceType} value={deviceType}>{deviceType}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <EquipmentSearchInput
+                          equipments={allEquipments}
+                          value={field.value || ''}
+                          onChange={field.onChange}
+                          onEquipmentCreated={(created) =>
+                            setExtraEquipments((prev) =>
+                              Array.from(
+                                new Map([...prev, created].map((equipment) => [equipment.id, equipment])).values(),
+                              ),
+                            )
+                          }
+                          error={errors.equipment_model_id?.message}
+                        />
                       )
                     }}
                   />
-                  {errors.device_type && <p className="mt-1 text-xs text-destructive">{errors.device_type.message}</p>}
                 </div>
-                <Controller control={control} name="device_brand" render={({ field }) => <InputField label="Marca" placeholder="Ex: Taiff, Babyliss, Wahl" error={errors.device_brand?.message} className={CONTROL} {...field} value={field.value || ''} />} />
-                <Controller control={control} name="device_model" render={({ field }) => <InputField label="Modelo" placeholder="Ex: Vulcan, Nano Titanium, Magic Clip" error={errors.device_model?.message} className={CONTROL} {...field} value={field.value || ''} />} />
-                <Controller control={control} name="device_serial" render={({ field }) => <InputField label="Série / Patrimônio" placeholder="Ex: NS-001245 ou etiqueta interna" error={errors.device_serial?.message} className={CONTROL} {...field} value={field.value || ''} />} />
+
+                <div>
+                  <Label className="mb-1.5 block text-sm font-semibold text-slate-800">Tipo</Label>
+                  <div className={cn(CONTROL, 'flex items-center px-3 text-sm text-slate-700')}>
+                    {selectedEquipment?.type || initialData?.device_type || '—'}
+                  </div>
+                </div>
+                <div>
+                  <Label className="mb-1.5 block text-sm font-semibold text-slate-800">Fabricante</Label>
+                  <div className={cn(CONTROL, 'flex items-center px-3 text-sm text-slate-700')}>
+                    {selectedEquipment?.manufacturer || initialData?.device_brand || '—'}
+                  </div>
+                </div>
+                <div>
+                  <Label className="mb-1.5 block text-sm font-semibold text-slate-800">Modelo</Label>
+                  <div className={cn(CONTROL, 'flex items-center px-3 text-sm text-slate-700')}>
+                    {selectedEquipment?.model || initialData?.device_model || '—'}
+                  </div>
+                </div>
+                <div>
+                  <Label className="mb-1.5 block text-sm font-semibold text-slate-800">Voltagem</Label>
+                  <div className={cn(CONTROL, 'flex items-center px-3 text-sm text-slate-700')}>
+                    {selectedEquipment?.voltage || '—'}
+                  </div>
+                </div>
+                <Controller control={control} name="device_color" render={({ field }) => <InputField label="Cor" placeholder="Ex: Preto, branco, cromado" error={errors.device_color?.message} className={CONTROL} {...field} value={field.value || ''} />} />
+                <Controller control={control} name="device_serial" render={({ field }) => <InputField label="Número de série original" placeholder="Se estiver legível" error={errors.device_serial?.message} className={CONTROL} {...field} value={field.value || ''} />} />
+                <Controller control={control} name="device_internal_code" render={({ field }) => <InputField label="Código interno / etiqueta" placeholder="Ex: ORQ-000123" error={errors.device_internal_code?.message} className={CONTROL} {...field} value={field.value || ''} />} />
                 <div className="sm:col-span-2 xl:col-span-4">
                   <Controller
                     control={control}

@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getCompanyContext } from '@/lib/auth/company-context'
-import { resolveCompanySettings } from '@/lib/company-settings'
 import { ServiceOrderForm } from '../_components/service-order-form'
 
 export default async function NovaOrdemDeServicoPage() {
@@ -29,22 +28,13 @@ export default async function NovaOrdemDeServicoPage() {
 
   const [
     { data: branches },
-    { data: clients },
     { data: employees },
     { data: lastOrder },
-    { data: companySettings },
   ] = await Promise.all([
     supabase
       .from('branches')
       .select('id, name, is_main')
       .eq('company_id', companyId)
-      .is('deleted_at', null)
-      .order('name', { ascending: true }),
-    supabase
-      .from('clients')
-      .select('id, name, phone, document')
-      .eq('company_id', companyId)
-      .eq('active', true)
       .is('deleted_at', null)
       .order('name', { ascending: true }),
     supabase
@@ -64,15 +54,9 @@ export default async function NovaOrdemDeServicoPage() {
       .order('number', { ascending: false })
       .limit(1)
       .maybeSingle(),
-    supabase
-      .from('company_settings')
-      .select('device_types, default_warranty_days, default_estimate_validity_days')
-      .eq('company_id', companyId)
-      .maybeSingle(),
   ])
 
   const nextNumber = lastOrder ? lastOrder.number + 1 : currentYear * 10000 + 1
-  const resolvedSettings = resolveCompanySettings(companySettings)
 
   const defaultBranchId =
     currentBranchId ??
@@ -96,9 +80,9 @@ export default async function NovaOrdemDeServicoPage() {
   return (
     <ServiceOrderForm
       branches={branches || []}
-      clients={clients || []}
+      clients={[]}
       employees={employees || []}
-      deviceTypes={resolvedSettings.deviceTypes}
+      equipments={[]}
       defaultBranchId={defaultBranchId}
       defaultBranchName={defaultBranchName}
       nextNumber={nextNumber}

@@ -110,6 +110,11 @@ export const serviceOrderSchema = z.object({
     .trim()
     .min(1, 'Cliente é obrigatório')
     .uuid('Cliente inválido'),
+  equipment_model_id: z
+    .string()
+    .trim()
+    .min(1, 'Equipamento é obrigatório')
+    .uuid('Equipamento inválido'),
   device_type: z
     .string()
     .trim()
@@ -133,6 +138,20 @@ export const serviceOrderSchema = z.object({
     .string()
     .trim()
     .max(100, 'Número de série deve ter no máximo 100 caracteres')
+    .optional()
+    .nullable()
+    .or(z.literal('')),
+  device_color: z
+    .string()
+    .trim()
+    .max(50, 'Cor deve ter no máximo 50 caracteres')
+    .optional()
+    .nullable()
+    .or(z.literal('')),
+  device_internal_code: z
+    .string()
+    .trim()
+    .max(100, 'Código interno deve ter no máximo 100 caracteres')
     .optional()
     .nullable()
     .or(z.literal('')),

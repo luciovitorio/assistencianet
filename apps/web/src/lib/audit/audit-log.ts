@@ -8,6 +8,7 @@ type AuditEntityType =
   | 'client'
   | 'company'
   | 'employee'
+  | 'equipment'
   | 'part'
   | 'service'
   | 'service_order'

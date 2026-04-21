@@ -1,7 +1,6 @@
 import { redirect, notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getCompanyContext } from '@/lib/auth/company-context'
-import { resolveCompanySettings } from '@/lib/company-settings'
 import { ServiceOrderForm, type ServiceOrderInitialData } from '../../_components/service-order-form'
 
 export default async function EditarOrdemDeServicoPage({
@@ -31,9 +30,7 @@ export default async function EditarOrdemDeServicoPage({
   const [
     { data: os },
     { data: branches },
-    { data: clients },
     { data: employees },
-    { data: companySettings },
   ] = await Promise.all([
     supabase
       .from('service_orders')
@@ -48,24 +45,12 @@ export default async function EditarOrdemDeServicoPage({
       .is('deleted_at', null)
       .order('name', { ascending: true }),
     supabase
-      .from('clients')
-      .select('id, name, phone, document')
-      .eq('company_id', companyId)
-      .eq('active', true)
-      .is('deleted_at', null)
-      .order('name', { ascending: true }),
-    supabase
       .from('employees')
       .select('id, name, role')
       .eq('company_id', companyId)
       .eq('active', true)
       .is('deleted_at', null)
       .order('name', { ascending: true }),
-    supabase
-      .from('company_settings')
-      .select('device_types, default_warranty_days, default_estimate_validity_days')
-      .eq('company_id', companyId)
-      .maybeSingle(),
   ])
 
   if (!os) {
@@ -76,7 +61,24 @@ export default async function EditarOrdemDeServicoPage({
     redirect(`/dashboard/ordens-de-servico/${os.id}`)
   }
 
-  const resolvedSettings = resolveCompanySettings(companySettings)
+  const [{ data: client }, { data: equipment }] = await Promise.all([
+    supabase
+      .from('clients')
+      .select('id, name, phone, document')
+      .eq('id', os.client_id)
+      .eq('company_id', companyId)
+      .is('deleted_at', null)
+      .maybeSingle(),
+    os.equipment_model_id
+      ? supabase
+          .from('equipment_models')
+          .select('id, type, manufacturer, model, voltage')
+          .eq('id', os.equipment_model_id)
+          .eq('company_id', companyId)
+          .is('deleted_at', null)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+  ])
 
   const initialData: ServiceOrderInitialData = {
     id: os.id,
@@ -84,10 +86,13 @@ export default async function EditarOrdemDeServicoPage({
     status: os.status,
     branch_id: os.branch_id ?? '',
     client_id: os.client_id,
+    equipment_model_id: os.equipment_model_id,
     device_type: os.device_type,
     device_brand: os.device_brand,
     device_model: os.device_model,
     device_serial: os.device_serial,
+    device_color: os.device_color,
+    device_internal_code: os.device_internal_code,
     device_condition: os.device_condition,
     reported_issue: os.reported_issue,
     technician_id: os.technician_id,
@@ -98,9 +103,9 @@ export default async function EditarOrdemDeServicoPage({
   return (
     <ServiceOrderForm
       branches={branches || []}
-      clients={clients || []}
+      clients={client ? [client] : []}
       employees={employees || []}
-      deviceTypes={resolvedSettings.deviceTypes}
+      equipments={equipment ? [equipment] : []}
       defaultBranchId={os.branch_id || null}
       initialData={initialData}
       isAdmin={isAdmin}

@@ -4,7 +4,6 @@ import { revalidatePath } from 'next/cache'
 import { createClient as createSupabaseClient } from '@/lib/supabase/server'
 import { createAuditLog } from '@/lib/audit/audit-log'
 import { getAdminContext } from '@/lib/auth/admin-context'
-import { resolveCompanySettings } from '@/lib/company-settings'
 import { getCompanyContext } from '@/lib/auth/company-context'
 import { calculatePickupPayment } from '@/lib/service-orders/pickup-payment'
 import { reserveEstimatePartsIfAvailable } from '@/lib/service-orders/reserve-estimate-parts'
@@ -600,6 +599,27 @@ const revalidateServiceOrderDetailPage = (id: string) => {
   revalidatePath(`/dashboard/ordens-de-servico/${id}`)
 }
 
+const getActiveEquipmentModel = async (
+  supabase: Awaited<ReturnType<typeof createSupabaseClient>>,
+  companyId: string,
+  equipmentModelId: string,
+) => {
+  const { data, error } = await supabase
+    .from('equipment_models')
+    .select('id, type, manufacturer, model, voltage')
+    .eq('id', equipmentModelId)
+    .eq('company_id', companyId)
+    .eq('active', true)
+    .is('deleted_at', null)
+    .single()
+
+  if (error || !data) {
+    return null
+  }
+
+  return data
+}
+
 export async function createServiceOrder(data: ServiceOrderSchema) {
   try {
     const { companyId, user } = await getCompanyContext()
@@ -610,18 +630,14 @@ export async function createServiceOrder(data: ServiceOrderSchema) {
     }
 
     const supabase = await createSupabaseClient()
-    const { data: companySettings } = await supabase
-      .from('company_settings')
-      .select('device_types, default_warranty_days, default_estimate_validity_days')
-      .eq('company_id', companyId)
-      .maybeSingle()
+    const equipmentModel = await getActiveEquipmentModel(
+      supabase,
+      companyId,
+      parsed.data.equipment_model_id,
+    )
 
-    const resolvedSettings = resolveCompanySettings(companySettings)
-
-    if (!resolvedSettings.deviceTypes.includes(parsed.data.device_type)) {
-      return {
-        error: 'O tipo de equipamento informado nao esta habilitado nas configuracoes da assistencia.',
-      }
+    if (!equipmentModel) {
+      return { error: 'Equipamento cadastrado não encontrado ou inativo.' }
     }
 
     const currentYear = new Date().getFullYear()
@@ -648,10 +664,13 @@ export async function createServiceOrder(data: ServiceOrderSchema) {
         number: nextNumber,
         branch_id: parsed.data.branch_id,
         client_id: parsed.data.client_id,
-        device_type: parsed.data.device_type,
-        device_brand: normalizeOptional(parsed.data.device_brand),
-        device_model: normalizeOptional(parsed.data.device_model),
+        equipment_model_id: equipmentModel.id,
+        device_type: equipmentModel.type,
+        device_brand: equipmentModel.manufacturer,
+        device_model: equipmentModel.model,
         device_serial: normalizeOptional(parsed.data.device_serial),
+        device_color: normalizeOptional(parsed.data.device_color),
+        device_internal_code: normalizeOptional(parsed.data.device_internal_code),
         device_condition: normalizeOptional(parsed.data.device_condition),
         reported_issue: parsed.data.reported_issue.trim(),
         technician_id: normalizeOptional(parsed.data.technician_id) || null,
@@ -680,7 +699,7 @@ export async function createServiceOrder(data: ServiceOrderSchema) {
       company_id: companyId,
       type: 'nova_os',
       title: `Nova OS #${created.number}`,
-      body: `${client?.name ?? 'Cliente'} · ${parsed.data.device_type}${parsed.data.device_brand ? ` ${parsed.data.device_brand}` : ''}`,
+      body: `${client?.name ?? 'Cliente'} · ${equipmentModel.type} ${equipmentModel.manufacturer}`.trim(),
     })
 
     await createAuditLog({
@@ -1023,14 +1042,27 @@ export async function editServiceOrder(id: string, data: EditServiceOrderSchema)
       return { error: 'Esta OS não pode mais ser editada após o envio do orçamento ao cliente.' }
     }
 
+    const equipmentModel = await getActiveEquipmentModel(
+      supabase,
+      companyId,
+      parsed.data.equipment_model_id,
+    )
+
+    if (!equipmentModel) {
+      return { error: 'Equipamento cadastrado não encontrado ou inativo.' }
+    }
+
     const { error } = await supabase
       .from('service_orders')
       .update({
         branch_id: parsed.data.branch_id,
-        device_type: parsed.data.device_type,
-        device_brand: normalizeOptional(parsed.data.device_brand),
-        device_model: normalizeOptional(parsed.data.device_model),
+        equipment_model_id: equipmentModel.id,
+        device_type: equipmentModel.type,
+        device_brand: equipmentModel.manufacturer,
+        device_model: equipmentModel.model,
         device_serial: normalizeOptional(parsed.data.device_serial),
+        device_color: normalizeOptional(parsed.data.device_color),
+        device_internal_code: normalizeOptional(parsed.data.device_internal_code),
         device_condition: normalizeOptional(parsed.data.device_condition),
         reported_issue: parsed.data.reported_issue.trim(),
         technician_id: normalizeOptional(parsed.data.technician_id) || null,

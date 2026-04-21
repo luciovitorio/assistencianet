@@ -41,6 +41,13 @@ const revalidateClientsPage = () => {
   revalidatePath('/dashboard/clientes')
 }
 
+const sanitizeSearchTerm = (value: string) =>
+  value.trim().replace(/[,%]/g, ' ').replace(/\s+/g, ' ').slice(0, 80)
+
+const mergeClientSearchResults = (
+  ...groups: Array<Array<{ id: string; name: string; phone: string | null; document: string | null }>>
+) => Array.from(new Map(groups.flat().map((client) => [client.id, client])).values())
+
 const isDuplicateClientDocumentError = (error: unknown) =>
   typeof error === 'object' &&
   error !== null &&
@@ -125,6 +132,63 @@ export async function createClient(data: ClientSchema) {
     }
   } catch (error: unknown) {
     return { error: getActionErrorMessage(error, 'Erro ao cadastrar cliente') }
+  }
+}
+
+export async function searchClientsForServiceOrder(search: string) {
+  try {
+    const { companyId } = await getCompanyContext()
+    const supabase = await createSupabaseClient()
+    const term = sanitizeSearchTerm(search)
+    const numericTerm = term.replace(/\D/g, '')
+
+    const baseSelect = 'id, name, phone, document'
+
+    if (!term) {
+      const { data, error } = await supabase
+        .from('clients')
+        .select(baseSelect)
+        .eq('company_id', companyId)
+        .eq('active', true)
+        .is('deleted_at', null)
+        .order('name', { ascending: true })
+        .limit(8)
+
+      if (error) throw error
+      return { clients: data ?? [] }
+    }
+
+    const { data: nameMatches, error: nameError } = await supabase
+      .from('clients')
+      .select(baseSelect)
+      .eq('company_id', companyId)
+      .eq('active', true)
+      .is('deleted_at', null)
+      .or(`name.ilike.${term}%,name.ilike.% ${term}%`)
+      .order('name', { ascending: true })
+      .limit(12)
+
+    if (nameError) throw nameError
+
+    if (numericTerm.length < 3) {
+      return { clients: nameMatches ?? [] }
+    }
+
+    const { data: numericMatches, error: numericError } = await supabase
+      .from('clients')
+      .select(baseSelect)
+      .eq('company_id', companyId)
+      .eq('active', true)
+      .is('deleted_at', null)
+      .or(`phone.ilike.%${numericTerm}%,document.ilike.%${numericTerm}%`)
+      .order('name', { ascending: true })
+      .limit(12)
+
+    if (numericError) throw numericError
+
+    return { clients: mergeClientSearchResults(nameMatches ?? [], numericMatches ?? []).slice(0, 12) }
+  } catch (error: unknown) {
+    return { error: getActionErrorMessage(error, 'Erro ao buscar clientes.') }
   }
 }
 

@@ -7,8 +7,16 @@ import { ServiceOrderList, type ServiceOrderData } from './_components/service-o
 
 type RelationValue<T> = T | T[] | null
 type ServiceOrderEstimateSummary = NonNullable<ServiceOrderData['service_order_estimates']>[number]
+type ServiceOrderClient = {
+  id: string
+  name: string
+  phone: string | null
+  document: string | null
+  email: string | null
+}
 
 type ServiceOrderQueryRow = Omit<ServiceOrderData, 'service_order_estimates'> & {
+  clients: RelationValue<ServiceOrderClient>
   service_order_estimates: Array<
     Omit<ServiceOrderEstimateSummary, 'profiles'> & {
       profiles: RelationValue<{ name: string }>
@@ -16,14 +24,21 @@ type ServiceOrderQueryRow = Omit<ServiceOrderData, 'service_order_estimates'> & 
   > | null
 }
 
-const normalizeServiceOrder = (order: ServiceOrderQueryRow): ServiceOrderData => ({
-  ...order,
-  service_order_estimates:
-    order.service_order_estimates?.map((estimate) => ({
-      ...estimate,
-      profiles: firstRelation(estimate.profiles),
-    })) ?? null,
-})
+const normalizeServiceOrder = (order: ServiceOrderQueryRow): ServiceOrderData => {
+  const serviceOrder = { ...order } as ServiceOrderData & {
+    clients?: RelationValue<ServiceOrderClient>
+  }
+  delete serviceOrder.clients
+
+  return {
+    ...serviceOrder,
+    service_order_estimates:
+      order.service_order_estimates?.map((estimate) => ({
+        ...estimate,
+        profiles: firstRelation(estimate.profiles),
+      })) ?? null,
+  }
+}
 
 export default async function OrdensDeServicoPage() {
   const supabase = await createClient()
@@ -49,7 +64,7 @@ export default async function OrdensDeServicoPage() {
   const serviceOrdersQuery = supabase
     .from('service_orders')
     .select(
-      'id, number, status, device_type, device_brand, device_model, device_serial, device_condition, reported_issue, estimated_delivery, notes, branch_id, client_id, technician_id, third_party_id, created_at, client_notified_at, client_notified_via, service_order_estimates(id, version, total_amount, status, valid_until, profiles!created_by(name))'
+      'id, number, status, device_type, device_brand, device_model, device_serial, device_color, device_internal_code, device_condition, reported_issue, estimated_delivery, notes, branch_id, client_id, technician_id, third_party_id, created_at, client_notified_at, client_notified_via, clients!client_id(id, name, phone, document, email), service_order_estimates(id, version, total_amount, status, valid_until, profiles!created_by(name))'
     )
     .eq('company_id', companyId)
     .is('deleted_at', null)
@@ -62,7 +77,6 @@ export default async function OrdensDeServicoPage() {
   const [
     { data: serviceOrders },
     { data: branches },
-    { data: clients },
     { data: employees },
     { data: activeThirdParties },
     columnVisibility,
@@ -72,13 +86,6 @@ export default async function OrdensDeServicoPage() {
       .from('branches')
       .select('id, name, is_main')
       .eq('company_id', companyId)
-      .is('deleted_at', null)
-      .order('name', { ascending: true }),
-    supabase
-      .from('clients')
-      .select('id, name, phone, document, email')
-      .eq('company_id', companyId)
-      .eq('active', true)
       .is('deleted_at', null)
       .order('name', { ascending: true }),
     supabase
@@ -98,16 +105,21 @@ export default async function OrdensDeServicoPage() {
     getTableColumnsVisibility(isAdmin ? 'ordens-de-servico:admin' : 'ordens-de-servico'),
   ])
 
-  const normalizedServiceOrders = ((serviceOrders ?? []) as ServiceOrderQueryRow[]).map(
-    normalizeServiceOrder,
-  )
+  const serviceOrderRows = (serviceOrders ?? []) as ServiceOrderQueryRow[]
+  const normalizedServiceOrders = serviceOrderRows.map(normalizeServiceOrder)
+  const clientsById = new Map<string, ServiceOrderClient>()
+
+  for (const order of serviceOrderRows) {
+    const client = firstRelation(order.clients)
+    if (client) clientsById.set(client.id, client)
+  }
 
   return (
     <div className="space-y-6">
       <ServiceOrderList
         initialOrders={normalizedServiceOrders}
         branches={branches || []}
-        clients={clients || []}
+        clients={Array.from(clientsById.values())}
         employees={employees || []}
         thirdParties={activeThirdParties || []}
         currentBranchId={currentBranchId}

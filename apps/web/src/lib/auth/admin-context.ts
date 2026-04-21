@@ -5,6 +5,7 @@ type PermissionArea =
   | 'filiais'
   | 'funcionarios'
   | 'clientes'
+  | 'equipamentos'
   | 'fornecedores'
   | 'terceiros'
   | 'pecas'
@@ -21,6 +22,7 @@ const AREA_ERROR_MESSAGES: Record<PermissionArea, string> = {
   filiais: 'Você não tem permissão para gerenciar filiais.',
   funcionarios: 'Você não tem permissão para gerenciar funcionários.',
   clientes: 'Você não tem permissão para gerenciar clientes.',
+  equipamentos: 'Você não tem permissão para gerenciar equipamentos.',
   fornecedores: 'Você não tem permissão para gerenciar fornecedores.',
   terceiros: 'Você não tem permissão para gerenciar terceirizadas.',
   pecas: 'Você não tem permissão para gerenciar peças.',

@@ -22,7 +22,7 @@ export default async function ConfiguracoesSistemaPage() {
 
   const { data: companySettings } = await supabase
     .from('company_settings')
-    .select('device_types, default_warranty_days, default_estimate_validity_days')
+    .select('default_warranty_days, default_estimate_validity_days')
     .eq('company_id', companyId)
     .maybeSingle()
 

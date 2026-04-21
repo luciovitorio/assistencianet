@@ -76,6 +76,8 @@ export interface ServiceOrderData {
   device_brand: string | null
   device_model: string | null
   device_serial: string | null
+  device_color: string | null
+  device_internal_code: string | null
   device_condition: string | null
   reported_issue: string
   estimated_delivery: string | null
@@ -618,7 +620,9 @@ export function ServiceOrderList({
                     order.device_type ? { label: 'Tipo', value: order.device_type } : null,
                     order.device_brand ? { label: 'Marca', value: order.device_brand } : null,
                     order.device_model ? { label: 'Modelo', value: order.device_model } : null,
+                    order.device_color ? { label: 'Cor', value: order.device_color } : null,
                     order.device_serial ? { label: 'S/N', value: order.device_serial } : null,
+                    order.device_internal_code ? { label: 'Código interno', value: order.device_internal_code } : null,
                   ].filter((item): item is { label: string; value: string } => item !== null)
 
                   return (
