@@ -39,6 +39,8 @@ interface DashboardShellProps {
 const SIDEBAR_EXPANDED_STORAGE_KEY = 'dashboard-sidebar-expanded'
 const SIDEBAR_EXPANDED_COOKIE_KEY = 'dashboard_sidebar_expanded'
 
+type SidebarMenuId = 'cadastros' | 'financeiro' | 'configuracoes'
+
 function SidebarLink({
   href,
   icon: Icon,
@@ -131,28 +133,34 @@ function SidebarSubItem({
 }
 
 function SidebarMenu({
+  id,
   icon: Icon,
   label,
   active = false,
+  openMenu,
+  setOpenMenu,
   isExpanded,
   setIsExpanded,
   children,
 }: {
+  id: SidebarMenuId
   icon: React.ElementType
   label: string
   active?: boolean
+  openMenu: SidebarMenuId | null
+  setOpenMenu: (menu: SidebarMenuId | null) => void
   isExpanded: boolean
   setIsExpanded: (val: boolean) => void
   children: React.ReactNode
 }) {
-  const [isOpen, setIsOpen] = useState(false)
+  const isOpen = openMenu === id
 
   const handleToggle = () => {
     if (!isExpanded) {
       setIsExpanded(true)
-      setIsOpen(true)
+      setOpenMenu(id)
     } else {
-      setIsOpen(!isOpen)
+      setOpenMenu(isOpen ? null : id)
     }
   }
 
@@ -226,11 +234,23 @@ export function DashboardShell({
   const inRelatorios = pathname.startsWith('/dashboard/relatorios')
   const inConfiguracoes =
     pathname.startsWith('/dashboard/configuracoes') || pathname.startsWith('/dashboard/logs')
+  const activeSidebarMenu: SidebarMenuId | null = inCadastros
+    ? 'cadastros'
+    : inFinanceiro
+      ? 'financeiro'
+      : inConfiguracoes
+        ? 'configuracoes'
+        : null
+  const [openMenu, setOpenMenu] = useState<SidebarMenuId | null>(activeSidebarMenu)
 
   useEffect(() => {
     window.localStorage.setItem(SIDEBAR_EXPANDED_STORAGE_KEY, String(isExpanded))
     document.cookie = `${SIDEBAR_EXPANDED_COOKIE_KEY}=${String(isExpanded)}; path=/; max-age=31536000; samesite=lax`
   }, [isExpanded])
+
+  useEffect(() => {
+    setOpenMenu(activeSidebarMenu)
+  }, [activeSidebarMenu])
 
   return (
     <RouteTransitionProvider>
@@ -279,9 +299,12 @@ export function DashboardShell({
 
           {isAdmin && (
             <SidebarMenu
+              id="cadastros"
               icon={Folder}
               label="Cadastros"
               active={inCadastros}
+              openMenu={openMenu}
+              setOpenMenu={setOpenMenu}
               isExpanded={isExpanded}
               setIsExpanded={setIsExpanded}
             >
@@ -354,9 +377,12 @@ export function DashboardShell({
           />
           {isAdmin && (
             <SidebarMenu
+              id="financeiro"
               icon={DollarSign}
               label="Financeiro"
               active={inFinanceiro}
+              openMenu={openMenu}
+              setOpenMenu={setOpenMenu}
               isExpanded={isExpanded}
               setIsExpanded={setIsExpanded}
             >
@@ -394,9 +420,12 @@ export function DashboardShell({
         <div className="mt-auto flex flex-col space-y-4 pb-2 px-2">
           {isAdmin && (
             <SidebarMenu
+              id="configuracoes"
               icon={Settings}
               label="Configurações"
               active={inConfiguracoes}
+              openMenu={openMenu}
+              setOpenMenu={setOpenMenu}
               isExpanded={isExpanded}
               setIsExpanded={setIsExpanded}
             >
