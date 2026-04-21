@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
-import { ArrowLeft, Building2, CalendarDays, Check, Clock, Pencil, Smartphone, UserRound, Wrench } from 'lucide-react'
+import { ArrowLeft, Building2, CalendarDays, Check, Clock, Pencil, Printer, Smartphone, UserRound, Wrench } from 'lucide-react'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { getCompanyContext } from '@/lib/auth/company-context'
@@ -357,6 +357,15 @@ export default async function ServiceOrderDetailPage({ params }: ServiceOrderPag
             </div>
 
             <div className="flex items-center gap-2">
+              <a
+                href={`/recibos/ordem-de-servico/${serviceOrder.id}?autoPrint=1`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={cn(buttonVariants({ variant: 'outline' }), 'gap-2')}
+              >
+                <Printer className="size-4 text-muted-foreground" />
+                Imprimir OS
+              </a>
               {canEditServiceOrder && (
                 <Link
                   href={`/dashboard/ordens-de-servico/${serviceOrder.id}/editar`}

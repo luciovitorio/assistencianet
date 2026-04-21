@@ -31,6 +31,7 @@ import { searchEquipmentModelsForServiceOrder } from '@/app/actions/equipments'
 import { createServiceOrder, editServiceOrder } from '@/app/actions/service-orders'
 import { ClientDialog } from '@/app/dashboard/clientes/_components/client-dialog'
 import { EquipmentDialog } from '@/app/dashboard/equipamentos/_components/equipment-dialog'
+import { PrintServiceOrderDialog } from './print-service-order-dialog'
 import {
   serviceOrderSchema,
   editServiceOrderSchema,
@@ -303,6 +304,11 @@ export function ServiceOrderForm({
   const [isNavigatingAway, setIsNavigatingAway] = React.useState(false)
   const [extraClients, setExtraClients] = React.useState<ClientOption[]>([])
   const [extraEquipments, setExtraEquipments] = React.useState<EquipmentOption[]>([])
+  const [pendingPrint, setPendingPrint] = React.useState<{
+    id: string
+    number: number
+    clientName: string | null
+  } | null>(null)
   const allClients = React.useMemo(
     () => mergeClientsById(clients, extraClients),
     [clients, extraClients],
@@ -376,7 +382,7 @@ export function ServiceOrderForm({
   }, [selectedEquipment, setValue])
 
   const onSubmit = (data: ServiceOrderSchema) => {
-    if (isPending || isNavigatingAway) return
+    if (isPending || isNavigatingAway || pendingPrint) return
     startTransition(async () => {
       try {
         if (isEdit && initialData) {
@@ -388,9 +394,13 @@ export function ServiceOrderForm({
           router.refresh()
         } else {
           const result = await createServiceOrder(data)
-          if (result?.error) throw new Error(result.error)
-          setIsNavigatingAway(true)
-          navigate(`/dashboard/ordens-de-servico/${result.id}`)
+          if (result?.error || !result?.id || result.number == null) {
+            throw new Error(result?.error ?? 'Erro ao abrir ordem de serviço')
+          }
+          toast.success(`OS #${result.number} criada com sucesso.`)
+          const clientName =
+            allClients.find((client) => client.id === data.client_id)?.name ?? null
+          setPendingPrint({ id: result.id, number: result.number, clientName })
         }
       } catch (error: unknown) {
         toast.error((error as Error).message || `Ocorreu um erro ao ${isEdit ? 'atualizar' : 'abrir'} a OS.`)
@@ -398,10 +408,27 @@ export function ServiceOrderForm({
     })
   }
 
-  const isBusy = isPending || isNavigatingAway
+  const isBusy = isPending || isNavigatingAway || !!pendingPrint
+
+  const handlePrintDialogClose = () => {
+    if (!pendingPrint) return
+    const targetId = pendingPrint.id
+    setPendingPrint(null)
+    setIsNavigatingAway(true)
+    navigate(`/dashboard/ordens-de-servico/${targetId}`)
+  }
 
   return (
     <div className="space-y-6">
+      {pendingPrint && (
+        <PrintServiceOrderDialog
+          open
+          onClose={handlePrintDialogClose}
+          serviceOrderId={pendingPrint.id}
+          serviceOrderNumber={pendingPrint.number}
+          clientName={pendingPrint.clientName}
+        />
+      )}
       <div className="rounded-2xl border border-slate-200 bg-[linear-gradient(135deg,rgba(15,23,42,0.04),rgba(15,118,110,0.06),rgba(255,255,255,1))] p-5 shadow-sm shadow-slate-950/5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex items-start gap-4">

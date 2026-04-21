@@ -57,7 +57,13 @@
       "Bash(curl -s http://localhost:3001/dashboard/clientes -o /dev/null -w \"%{http_code}\\\\n\")",
       "Bash(PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -c \"SELECT polname, polcmd, pg_get_expr\\(polqual, polrelid\\) AS using_expr, pg_get_expr\\(polwithcheck, polrelid\\) AS with_check_expr FROM pg_policy WHERE polrelid = 'public.clients'::regclass;\")",
       "Bash(node scripts/test-rls-delete.js)",
-      "Bash(DEBUG=pw:api npx playwright test src/tests/e2e/clientes.spec.ts -g \"TC-CLI-046\" --reporter=line)"
+      "Bash(DEBUG=pw:api npx playwright test src/tests/e2e/clientes.spec.ts -g \"TC-CLI-046\" --reporter=line)",
+      "Bash(git commit -m ' *)",
+      "Bash(git add *)",
+      "Bash(git push *)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" -X POST https://assistencianet-web.vercel.app/api/webhooks/evolution -H \"Content-Type: application/json\" -d '{}')",
+      "Bash(pnpm tsc *)",
+      "Bash(echo \"exit=$?\")"
     ]
   }
 }
