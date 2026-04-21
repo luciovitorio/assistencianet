@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getAdminContext } from '@/lib/auth/admin-context'
+import { getTableColumnsVisibility } from '@/lib/table-columns'
 import { ClientList } from './_components/client-list'
 
 const sortClientsByBranchPreference = <
@@ -41,7 +42,7 @@ export default async function ClientesPage() {
     redirect('/dashboard')
   }
 
-  const [{ data: clients }, { data: branches }] = await Promise.all([
+  const [{ data: clients }, { data: branches }, columnVisibility] = await Promise.all([
     supabase
       .from('clients')
       .select('id, name, document, phone, email, address, notes, active, origin_branch_id, zip_code, street, number, complement, city, state, classification, classification_manual')
@@ -53,6 +54,7 @@ export default async function ClientesPage() {
       .eq('company_id', companyId)
       .is('deleted_at', null)
       .order('name', { ascending: true }),
+    getTableColumnsVisibility('clientes'),
   ])
 
   const resolvedDefaultOriginBranchId =
@@ -68,6 +70,7 @@ export default async function ClientesPage() {
         branches={branches || []}
         currentBranchId={currentBranchId}
         defaultOriginBranchId={resolvedDefaultOriginBranchId}
+        initialColumnVisibility={columnVisibility}
         isAdmin
       />
     </div>

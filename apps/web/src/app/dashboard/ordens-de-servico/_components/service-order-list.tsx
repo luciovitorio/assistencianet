@@ -38,13 +38,17 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import {
   DataTableCard,
+  DataTableColumnToggle,
   DataTableFilterPopover,
   DataTablePagination,
   DataTableSearch,
   DataTableToolbar,
+  useTableColumnVisibility,
+  type DataTableColumnDef,
   type DataTableFilterOption,
 } from '@/components/ui/data-table'
 import { useRouteTransition } from '@/components/ui/route-transition-indicator'
@@ -119,6 +123,7 @@ interface ServiceOrderListProps {
   employees: EmployeeOption[]
   thirdParties: ThirdPartyOption[]
   currentBranchId: string | null
+  initialColumnVisibility: Record<string, boolean> | null
   isAdmin: boolean
 }
 
@@ -129,12 +134,31 @@ type DialogState =
 
 const DISPATCHABLE_STATUSES: ServiceOrderStatus[] = ['aguardando', 'em_analise', 'aprovado', 'aguardando_peca']
 
+const SERVICE_ORDER_COLUMNS_BASE: DataTableColumnDef[] = [
+  { id: 'number', label: 'OS', locked: true },
+  { id: 'client', label: 'Cliente', locked: true },
+  { id: 'device', label: 'Equipamento', defaultVisible: true },
+  { id: 'status', label: 'Status', locked: true },
+  { id: 'estimate', label: 'Orçamento', defaultVisible: true },
+  { id: 'technician', label: 'Técnico', defaultVisible: true },
+  { id: 'entry', label: 'Entrada', defaultVisible: true },
+  { id: 'notified', label: 'Notificado', defaultVisible: false },
+  { id: 'actions', label: 'Ações', locked: true },
+]
+
+const SERVICE_ORDER_COLUMNS_ADMIN: DataTableColumnDef[] = [
+  ...SERVICE_ORDER_COLUMNS_BASE.slice(0, 7),
+  { id: 'branch', label: 'Filial', defaultVisible: false },
+  ...SERVICE_ORDER_COLUMNS_BASE.slice(7),
+]
+
 export function ServiceOrderList({
   initialOrders,
   branches,
   clients,
   employees,
   thirdParties,
+  initialColumnVisibility,
   isAdmin,
 }: ServiceOrderListProps) {
   const router = useRouter()
@@ -154,6 +178,17 @@ export function ServiceOrderList({
   const [rowsPerPage, setRowsPerPage] = React.useState(10)
   const [currentPage, setCurrentPage] = React.useState(1)
   const deferredSearch = React.useDeferredValue(search)
+  const columnsForUser = isAdmin ? SERVICE_ORDER_COLUMNS_ADMIN : SERVICE_ORDER_COLUMNS_BASE
+  const {
+    visibility: columnVisibility,
+    toggle: toggleColumn,
+    reset: resetColumns,
+    isVisible: isColumnVisible,
+  } = useTableColumnVisibility(
+    isAdmin ? 'ordens-de-servico:admin' : 'ordens-de-servico',
+    columnsForUser,
+    initialColumnVisibility,
+  )
 
   React.useEffect(() => {
     setOrders(initialOrders)
@@ -489,6 +524,13 @@ export function ServiceOrderList({
                 Limpar filtros
               </Button>
             )}
+
+            <DataTableColumnToggle
+              columns={columnsForUser}
+              visibility={columnVisibility}
+              onToggle={toggleColumn}
+              onReset={resetColumns}
+            />
           </>
         }
         actions={
@@ -528,27 +570,37 @@ export function ServiceOrderList({
                 <tr className="border-b border-border bg-muted/40">
                   <th className="text-left font-medium text-muted-foreground px-4 py-3">OS</th>
                   <th className="text-left font-medium text-muted-foreground px-4 py-3">Cliente</th>
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 hidden md:table-cell">
-                    Equipamento
-                  </th>
+                  {isColumnVisible('device') && (
+                    <th className="text-left font-medium text-muted-foreground px-4 py-3">
+                      Equipamento
+                    </th>
+                  )}
                   <th className="text-left font-medium text-muted-foreground px-4 py-3">Status</th>
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 hidden lg:table-cell">
-                    Orçamento
-                  </th>
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 hidden lg:table-cell">
-                    Técnico
-                  </th>
-                  {isAdmin && (
-                    <th className="text-left font-medium text-muted-foreground px-4 py-3 hidden xl:table-cell">
+                  {isColumnVisible('estimate') && (
+                    <th className="text-left font-medium text-muted-foreground px-4 py-3">
+                      Orçamento
+                    </th>
+                  )}
+                  {isColumnVisible('technician') && (
+                    <th className="text-left font-medium text-muted-foreground px-4 py-3">
+                      Técnico
+                    </th>
+                  )}
+                  {isAdmin && isColumnVisible('branch') && (
+                    <th className="text-left font-medium text-muted-foreground px-4 py-3">
                       Filial
                     </th>
                   )}
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 hidden lg:table-cell">
-                    Entrada
-                  </th>
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 hidden xl:table-cell">
-                    Notificado
-                  </th>
+                  {isColumnVisible('entry') && (
+                    <th className="text-left font-medium text-muted-foreground px-4 py-3">
+                      Entrada
+                    </th>
+                  )}
+                  {isColumnVisible('notified') && (
+                    <th className="text-left font-medium text-muted-foreground px-4 py-3">
+                      Notificado
+                    </th>
+                  )}
                   <th className="text-right font-medium text-muted-foreground px-4 py-3">Ações</th>
                 </tr>
               </thead>
@@ -561,16 +613,20 @@ export function ServiceOrderList({
                   const branchName = order.branch_id ? branchMap[order.branch_id] : null
                   const status = order.status as ServiceOrderStatus
                   const isActionPending = actionOrderId === order.id
-                  const deviceLabel = [order.device_type, order.device_brand, order.device_model]
-                    .filter(Boolean)
-                    .join(' · ')
+                  const deviceName = order.device_model || order.device_type || '—'
+                  const deviceDetails = [
+                    order.device_type ? { label: 'Tipo', value: order.device_type } : null,
+                    order.device_brand ? { label: 'Marca', value: order.device_brand } : null,
+                    order.device_model ? { label: 'Modelo', value: order.device_model } : null,
+                    order.device_serial ? { label: 'S/N', value: order.device_serial } : null,
+                  ].filter((item): item is { label: string; value: string } => item !== null)
 
                   return (
                     <tr key={order.id} className="hover:bg-muted/20 transition-colors">
                       <td className="px-4 py-3">
                         <Link
                           href={`/dashboard/ordens-de-servico/${order.id}`}
-                          className="font-bold text-primary text-base hover:underline"
+                          className="font-bold text-primary text-sm hover:underline"
                         >
                           #{order.number}
                         </Link>
@@ -583,14 +639,29 @@ export function ServiceOrderList({
                         )}
                       </td>
 
-                      <td className="px-4 py-3 hidden md:table-cell text-muted-foreground">
-                        <div className="max-w-52 truncate">{deviceLabel || '—'}</div>
-                        {order.device_serial && (
-                          <div className="text-xs truncate max-w-52">
-                            S/N: {order.device_serial}
-                          </div>
-                        )}
-                      </td>
+                      {isColumnVisible('device') && (
+                        <td className="px-4 py-3 text-muted-foreground">
+                          {deviceDetails.length > 0 ? (
+                            <Tooltip>
+                              <TooltipTrigger className="max-w-36 truncate text-left">
+                                {deviceName}
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="max-w-xs">
+                                <div className="flex flex-col gap-1">
+                                  {deviceDetails.map((detail) => (
+                                    <div key={detail.label} className="flex gap-1.5">
+                                      <span className="font-semibold">{detail.label}:</span>
+                                      <span>{detail.value}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          ) : (
+                            <span>—</span>
+                          )}
+                        </td>
+                      )}
 
                       <td className="px-4 py-3">
                         <span
@@ -602,89 +673,97 @@ export function ServiceOrderList({
                         </span>
                       </td>
 
-                      <td className="px-4 py-3 hidden lg:table-cell">
-                        {(() => {
-                          const est = getLatestEstimate(order.service_order_estimates)
-                          if (!est) return <span className="text-muted-foreground/40">—</span>
-                          const isExpired = isServiceOrderEstimateExpired(
-                            est.valid_until,
-                            est.status
-                          )
-                          return (
-                            <div className="flex flex-col gap-0.5">
-                              <span className="text-xs font-semibold text-foreground">
-                                {currencyFormatter.format(Number(est.total_amount))}
-                              </span>
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-[11px] text-muted-foreground">
-                                  v{est.version}
+                      {isColumnVisible('estimate') && (
+                        <td className="px-4 py-3">
+                          {(() => {
+                            const est = getLatestEstimate(order.service_order_estimates)
+                            if (!est) return <span className="text-muted-foreground/40">—</span>
+                            const isExpired = isServiceOrderEstimateExpired(
+                              est.valid_until,
+                              est.status
+                            )
+                            return (
+                              <div className="flex flex-col gap-0.5">
+                                <span className="text-xs font-semibold text-foreground">
+                                  {currencyFormatter.format(Number(est.total_amount))}
                                 </span>
-                                {isExpired && (
-                                  <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-rose-700">
-                                    <AlertTriangle className="size-3" />
-                                    Vencido
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[11px] text-muted-foreground">
+                                    v{est.version}
                                   </span>
-                                )}
+                                  {isExpired && (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-rose-700">
+                                      <AlertTriangle className="size-3" />
+                                      Vencido
+                                    </span>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          )
-                        })()}
-                      </td>
+                            )
+                          })()}
+                        </td>
+                      )}
 
-                      <td className="px-4 py-3 hidden lg:table-cell text-muted-foreground">
-                        {(() => {
-                          const name =
-                            technicianName ??
-                            getLatestEstimate(order.service_order_estimates)?.profiles?.name ??
-                            null
-                          return name ? (
-                            <div className="flex items-center gap-1.5">
-                              <User className="size-3.5" />
-                              <span>{name}</span>
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground/50">—</span>
-                          )
-                        })()}
-                      </td>
+                      {isColumnVisible('technician') && (
+                        <td className="px-4 py-3 text-muted-foreground">
+                          {(() => {
+                            const name =
+                              technicianName ??
+                              getLatestEstimate(order.service_order_estimates)?.profiles?.name ??
+                              null
+                            return name ? (
+                              <div className="flex items-center gap-1.5">
+                                <User className="size-3.5" />
+                                <span>{name}</span>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground/50">—</span>
+                            )
+                          })()}
+                        </td>
+                      )}
 
-                      {isAdmin && (
-                        <td className="px-4 py-3 hidden xl:table-cell text-muted-foreground">
+                      {isAdmin && isColumnVisible('branch') && (
+                        <td className="px-4 py-3 text-muted-foreground">
                           {branchName || '—'}
                         </td>
                       )}
 
-                      <td className="px-4 py-3 hidden lg:table-cell text-muted-foreground">
-                        <div className="flex items-center gap-1.5">
-                          <Calendar className="size-3.5" />
-                          <span>{formatDate(order.created_at)}</span>
-                        </div>
-                        {order.estimated_delivery && (
-                          <div className="text-xs text-muted-foreground">
-                            Prev.:{' '}
-                            {new Date(order.estimated_delivery + 'T12:00:00').toLocaleDateString(
-                              'pt-BR'
-                            )}
-                          </div>
-                        )}
-                      </td>
-
-                      <td className="px-4 py-3 hidden xl:table-cell">
-                        {order.client_notified_at && order.client_notified_via ? (
+                      {isColumnVisible('entry') && (
+                        <td className="px-4 py-3 text-xs text-muted-foreground">
                           <div className="flex items-center gap-1.5">
-                            {order.client_notified_via === 'whatsapp' ? (
-                              <MessageCircle className="size-3.5 shrink-0 text-[#25D366]" />
-                            ) : (
-                              <Mail className="size-3.5 shrink-0 text-blue-500" />
-                            )}
-                            <span className="text-xs text-muted-foreground">
-                              {formatDate(order.client_notified_at)}
-                            </span>
+                            <Calendar className="size-3.5" />
+                            <span>{formatDate(order.created_at)}</span>
                           </div>
-                        ) : (
-                          <span className="text-muted-foreground/40">—</span>
-                        )}
-                      </td>
+                          {order.estimated_delivery && (
+                            <div className="text-[11px] text-muted-foreground">
+                              Prev.:{' '}
+                              {new Date(order.estimated_delivery + 'T12:00:00').toLocaleDateString(
+                                'pt-BR'
+                              )}
+                            </div>
+                          )}
+                        </td>
+                      )}
+
+                      {isColumnVisible('notified') && (
+                        <td className="px-4 py-3">
+                          {order.client_notified_at && order.client_notified_via ? (
+                            <div className="flex items-center gap-1.5">
+                              {order.client_notified_via === 'whatsapp' ? (
+                                <MessageCircle className="size-3.5 shrink-0 text-[#25D366]" />
+                              ) : (
+                                <Mail className="size-3.5 shrink-0 text-blue-500" />
+                              )}
+                              <span className="text-xs text-muted-foreground">
+                                {formatDate(order.client_notified_at)}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground/40">—</span>
+                          )}
+                        </td>
+                      )}
 
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end">

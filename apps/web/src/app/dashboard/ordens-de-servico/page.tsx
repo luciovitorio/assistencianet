@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getCompanyContext } from '@/lib/auth/company-context'
 import { firstRelation } from '@/lib/supabase/relations'
+import { getTableColumnsVisibility } from '@/lib/table-columns'
 import { ServiceOrderList, type ServiceOrderData } from './_components/service-order-list'
 
 type RelationValue<T> = T | T[] | null
@@ -64,6 +65,7 @@ export default async function OrdensDeServicoPage() {
     { data: clients },
     { data: employees },
     { data: activeThirdParties },
+    columnVisibility,
   ] = await Promise.all([
     serviceOrdersQuery,
     supabase
@@ -93,6 +95,7 @@ export default async function OrdensDeServicoPage() {
       .eq('active', true)
       .is('deleted_at', null)
       .order('name'),
+    getTableColumnsVisibility(isAdmin ? 'ordens-de-servico:admin' : 'ordens-de-servico'),
   ])
 
   const normalizedServiceOrders = ((serviceOrders ?? []) as ServiceOrderQueryRow[]).map(
@@ -108,6 +111,7 @@ export default async function OrdensDeServicoPage() {
         employees={employees || []}
         thirdParties={activeThirdParties || []}
         currentBranchId={currentBranchId}
+        initialColumnVisibility={columnVisibility}
         isAdmin={isAdmin}
       />
     </div>

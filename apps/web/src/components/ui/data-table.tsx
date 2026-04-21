@@ -6,6 +6,7 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  Columns3,
   PlusCircle,
   Search,
 } from "lucide-react"
@@ -36,7 +37,7 @@ function DataTableToolbar({
 }: DataTableToolbarProps) {
   return (
     <div
-      className={cn("mb-4 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between", className)}
+      className={cn("mb-4 flex flex-col gap-3 2xl:flex-row 2xl:items-center 2xl:justify-between", className)}
       {...props}
     >
       <div className="flex flex-1 flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center">
@@ -289,8 +290,192 @@ function DataTablePagination({
   )
 }
 
+export interface DataTableColumnDef {
+  id: string
+  label: string
+  locked?: boolean
+  defaultVisible?: boolean
+}
+
+const COLUMN_VISIBILITY_COOKIE_PREFIX = "table-col:"
+const COLUMN_VISIBILITY_COOKIE_VERSION = "v1"
+const COLUMN_VISIBILITY_COOKIE_MAX_AGE = 60 * 60 * 24 * 365
+
+function buildColumnDefaults(columns: DataTableColumnDef[]): Record<string, boolean> {
+  const next: Record<string, boolean> = {}
+  for (const column of columns) {
+    next[column.id] = column.locked ? true : column.defaultVisible !== false
+  }
+  return next
+}
+
+function mergeSavedVisibility(
+  defaults: Record<string, boolean>,
+  columns: DataTableColumnDef[],
+  saved: Record<string, boolean> | null | undefined,
+): Record<string, boolean> {
+  if (!saved) return defaults
+  const next = { ...defaults }
+  for (const column of columns) {
+    if (column.locked) {
+      next[column.id] = true
+      continue
+    }
+    const value = saved[column.id]
+    if (typeof value === "boolean") {
+      next[column.id] = value
+    }
+  }
+  return next
+}
+
+export function useTableColumnVisibility(
+  tableKey: string,
+  columns: DataTableColumnDef[],
+  initialVisibility?: Record<string, boolean> | null,
+) {
+  const defaults = React.useMemo(() => buildColumnDefaults(columns), [columns])
+  const cookieName = `${COLUMN_VISIBILITY_COOKIE_PREFIX}${tableKey}:${COLUMN_VISIBILITY_COOKIE_VERSION}`
+
+  const [visibility, setVisibility] = React.useState<Record<string, boolean>>(() =>
+    mergeSavedVisibility(defaults, columns, initialVisibility),
+  )
+
+  const persist = React.useCallback(
+    (next: Record<string, boolean> | null) => {
+      if (typeof document === "undefined") return
+      try {
+        if (next === null) {
+          document.cookie = `${cookieName}=; path=/; max-age=0; samesite=lax`
+        } else {
+          const encoded = encodeURIComponent(JSON.stringify(next))
+          document.cookie = `${cookieName}=${encoded}; path=/; max-age=${COLUMN_VISIBILITY_COOKIE_MAX_AGE}; samesite=lax`
+        }
+      } catch {
+        // Cookies may be blocked; keep in-memory state.
+      }
+    },
+    [cookieName],
+  )
+
+  const toggle = React.useCallback(
+    (id: string) => {
+      const column = columns.find((c) => c.id === id)
+      if (!column || column.locked) return
+      setVisibility((current) => {
+        const next = { ...current, [id]: !(current[id] !== false) }
+        persist(next)
+        return next
+      })
+    },
+    [columns, persist],
+  )
+
+  const reset = React.useCallback(() => {
+    setVisibility(defaults)
+    persist(null)
+  }, [defaults, persist])
+
+  const isVisible = React.useCallback(
+    (id: string) => visibility[id] !== false,
+    [visibility],
+  )
+
+  return { visibility, toggle, reset, isVisible }
+}
+
+interface DataTableColumnToggleProps {
+  columns: DataTableColumnDef[]
+  visibility: Record<string, boolean>
+  onToggle: (id: string) => void
+  onReset: () => void
+}
+
+function DataTableColumnToggle({
+  columns,
+  visibility,
+  onToggle,
+  onReset,
+}: DataTableColumnToggleProps) {
+  const toggleable = React.useMemo(() => columns.filter((c) => !c.locked), [columns])
+  const visibleCount = toggleable.filter((c) => visibility[c.id] !== false).length
+  const isCustomized = toggleable.some(
+    (c) => (visibility[c.id] !== false) !== (c.defaultVisible !== false),
+  )
+
+  return (
+    <Popover>
+      <PopoverTrigger
+        className={cn(
+          "inline-flex h-9 items-center gap-2 rounded-lg border border-dashed border-border bg-background px-3 text-sm font-medium text-foreground transition-colors outline-none hover:bg-muted focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+          isCustomized && "border-solid border-primary/30 bg-primary/5 text-primary",
+        )}
+      >
+        <Columns3 className="size-4" />
+        <span>Colunas</span>
+        <span
+          className={cn(
+            "inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-xs font-semibold",
+            isCustomized
+              ? "bg-primary/12 text-primary"
+              : "bg-muted text-muted-foreground",
+          )}
+        >
+          {visibleCount}/{toggleable.length}
+        </span>
+      </PopoverTrigger>
+
+      <PopoverContent align="start" className="w-64 gap-0 p-0">
+        <div className="border-b border-border px-3 py-2">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Exibir colunas
+          </p>
+        </div>
+
+        <div className="max-h-64 overflow-y-auto px-2 py-1.5">
+          {toggleable.length === 0 ? (
+            <div className="px-2 py-4 text-center text-sm text-muted-foreground">
+              Nenhuma coluna configurável.
+            </div>
+          ) : (
+            toggleable.map((column) => {
+              const checked = visibility[column.id] !== false
+              return (
+                <button
+                  key={column.id}
+                  type="button"
+                  onClick={() => onToggle(column.id)}
+                  className={cn(
+                    "flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-muted",
+                    checked && "bg-muted/70",
+                  )}
+                >
+                  <Checkbox checked={checked} />
+                  <span className="flex-1 text-sm font-medium text-foreground">
+                    {column.label}
+                  </span>
+                </button>
+              )
+            })
+          )}
+        </div>
+
+        <div className="flex items-center justify-between border-t border-border px-2.5 py-2">
+          <span className="text-xs text-muted-foreground">
+            {visibleCount} de {toggleable.length} visíveis
+          </span>
+          <Button variant="ghost" size="sm" onClick={onReset} disabled={!isCustomized}>
+            Redefinir
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
 export {
   DataTableCard,
+  DataTableColumnToggle,
   DataTableFilterPopover,
   DataTablePagination,
   DataTableSearch,

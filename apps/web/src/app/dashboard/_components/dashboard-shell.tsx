@@ -18,7 +18,6 @@ import {
   ChevronDown,
   ChevronRight,
   Folder,
-  History,
   BarChart3,
 } from 'lucide-react'
 import { logout } from '@/app/actions/auth'
@@ -225,7 +224,8 @@ export function DashboardShell({
   const inEstoque = pathname.startsWith('/dashboard/estoque')
   const inFinanceiro = pathname.startsWith('/dashboard/financeiro')
   const inRelatorios = pathname.startsWith('/dashboard/relatorios')
-  const inConfiguracoes = pathname.startsWith('/dashboard/configuracoes')
+  const inConfiguracoes =
+    pathname.startsWith('/dashboard/configuracoes') || pathname.startsWith('/dashboard/logs')
 
   useEffect(() => {
     window.localStorage.setItem(SIDEBAR_EXPANDED_STORAGE_KEY, String(isExpanded))
@@ -234,7 +234,7 @@ export function DashboardShell({
 
   return (
     <RouteTransitionProvider>
-      <div className="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased min-h-screen flex">
+      <div className="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased min-h-screen">
       {/* SIDEBAR */}
       <aside
         className={`fixed left-0 top-0 h-screen bg-white dark:bg-slate-900 border-r border-border py-4 flex flex-col space-y-4 z-50 transition-all duration-300 ease-in-out ${
@@ -393,16 +393,6 @@ export function DashboardShell({
 
         <div className="mt-auto flex flex-col space-y-4 pb-2 px-2">
           {isAdmin && (
-            <SidebarLink
-              href="/dashboard/logs"
-              icon={History}
-              label="Logs do Sistema"
-              active={pathname.startsWith('/dashboard/logs')}
-              isExpanded={isExpanded}
-            />
-          )}
-
-          {isAdmin && (
             <SidebarMenu
               icon={Settings}
               label="Configurações"
@@ -420,6 +410,12 @@ export function DashboardShell({
                 href="/dashboard/configuracoes/automacao"
                 label="Automação"
                 active={pathname.startsWith('/dashboard/configuracoes/automacao')}
+                isExpanded={isExpanded}
+              />
+              <SidebarSubItem
+                href="/dashboard/logs"
+                label="Logs do Sistema"
+                active={pathname.startsWith('/dashboard/logs')}
                 isExpanded={isExpanded}
               />
             </SidebarMenu>
@@ -457,7 +453,7 @@ export function DashboardShell({
 
       {/* MAIN CONTENT WRAPPER */}
       <div
-        className={`flex-1 transition-all duration-300 min-h-screen ${isExpanded ? 'ml-64' : 'ml-20'}`}
+        className={`transition-all duration-300 min-h-screen ${isExpanded ? 'ml-64' : 'ml-20'}`}
       >
         {/* TOP NAVBAR */}
         <header

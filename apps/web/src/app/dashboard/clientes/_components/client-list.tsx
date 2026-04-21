@@ -6,10 +6,13 @@ import { Plus, Edit2, Trash2, Building2, MapPin, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DataTableCard,
+  DataTableColumnToggle,
   DataTableFilterPopover,
   DataTablePagination,
   DataTableSearch,
   DataTableToolbar,
+  useTableColumnVisibility,
+  type DataTableColumnDef,
   type DataTableFilterOption,
 } from '@/components/ui/data-table'
 import {
@@ -50,6 +53,7 @@ interface ClientListProps {
   branches: BranchOption[]
   currentBranchId: string | null
   defaultOriginBranchId: string | null
+  initialColumnVisibility: Record<string, boolean> | null
   isAdmin: boolean
 }
 
@@ -61,11 +65,22 @@ type DialogState =
 type StatusFilter = 'active' | 'inactive'
 type ClassificationFilter = ClientClassification
 
+const CLIENT_COLUMNS: DataTableColumnDef[] = [
+  { id: 'name', label: 'Cliente', locked: true },
+  { id: 'document', label: 'Documento', defaultVisible: true },
+  { id: 'contact', label: 'Contato', defaultVisible: true },
+  { id: 'branch', label: 'Filial de origem', defaultVisible: true },
+  { id: 'address', label: 'Endereço', defaultVisible: false },
+  { id: 'status', label: 'Status', locked: true },
+  { id: 'actions', label: 'Ações', locked: true },
+]
+
 export function ClientList({
   initialClients,
   branches,
   currentBranchId,
   defaultOriginBranchId,
+  initialColumnVisibility,
   isAdmin,
 }: ClientListProps) {
   const router = useRouter()
@@ -78,6 +93,12 @@ export function ClientList({
   const [rowsPerPage, setRowsPerPage] = React.useState(10)
   const [currentPage, setCurrentPage] = React.useState(1)
   const deferredSearch = React.useDeferredValue(search)
+  const {
+    visibility: columnVisibility,
+    toggle: toggleColumn,
+    reset: resetColumns,
+    isVisible: isColumnVisible,
+  } = useTableColumnVisibility('clientes', CLIENT_COLUMNS, initialColumnVisibility)
 
   React.useEffect(() => {
     setClients(initialClients)
@@ -273,6 +294,13 @@ export function ClientList({
                 Limpar filtros
               </Button>
             )}
+
+            <DataTableColumnToggle
+              columns={CLIENT_COLUMNS}
+              visibility={columnVisibility}
+              onToggle={toggleColumn}
+              onReset={resetColumns}
+            />
           </>
         }
         actions={isAdmin ? (
@@ -315,10 +343,18 @@ export function ClientList({
               <thead>
                 <tr className="border-b border-border bg-muted/40">
                   <th className="text-left font-medium text-muted-foreground px-4 py-3">Cliente</th>
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 hidden md:table-cell">Documento</th>
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3">Contato</th>
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 hidden lg:table-cell">Filial de origem</th>
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 hidden xl:table-cell">Endereço</th>
+                  {isColumnVisible('document') && (
+                    <th className="text-left font-medium text-muted-foreground px-4 py-3">Documento</th>
+                  )}
+                  {isColumnVisible('contact') && (
+                    <th className="text-left font-medium text-muted-foreground px-4 py-3">Contato</th>
+                  )}
+                  {isColumnVisible('branch') && (
+                    <th className="text-left font-medium text-muted-foreground px-4 py-3">Filial de origem</th>
+                  )}
+                  {isColumnVisible('address') && (
+                    <th className="text-left font-medium text-muted-foreground px-4 py-3">Endereço</th>
+                  )}
                   <th className="text-left font-medium text-muted-foreground px-4 py-3">Status</th>
                   <th className="text-right font-medium text-muted-foreground px-4 py-3">Ações</th>
                 </tr>
@@ -339,32 +375,40 @@ export function ClientList({
                         )}
                       </td>
 
-                      <td className="px-4 py-3 hidden md:table-cell text-muted-foreground">
-                        {client.document || '—'}
-                      </td>
+                      {isColumnVisible('document') && (
+                        <td className="px-4 py-3 text-muted-foreground">
+                          {client.document || '—'}
+                        </td>
+                      )}
 
-                      <td className="px-4 py-3 text-muted-foreground">
-                        <div>{client.phone || '—'}</div>
-                        {client.email && (
-                          <div className="text-xs truncate max-w-52">{client.email}</div>
-                        )}
-                      </td>
+                      {isColumnVisible('contact') && (
+                        <td className="px-4 py-3 text-muted-foreground">
+                          <div>{client.phone || '—'}</div>
+                          {client.email && (
+                            <div className="text-xs truncate max-w-52">{client.email}</div>
+                          )}
+                        </td>
+                      )}
 
-                      <td className="px-4 py-3 hidden lg:table-cell text-muted-foreground">
-                        <div className="inline-flex items-center gap-2">
-                          <MapPin className="size-3.5" />
-                          <span>{branchName || '—'}</span>
-                          {isPreferred ? (
-                            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
-                              Prioridade
-                            </span>
-                          ) : null}
-                        </div>
-                      </td>
+                      {isColumnVisible('branch') && (
+                        <td className="px-4 py-3 text-muted-foreground">
+                          <div className="inline-flex items-center gap-2">
+                            <MapPin className="size-3.5" />
+                            <span>{branchName || '—'}</span>
+                            {isPreferred ? (
+                              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                                Prioridade
+                              </span>
+                            ) : null}
+                          </div>
+                        </td>
+                      )}
 
-                      <td className="px-4 py-3 hidden xl:table-cell text-muted-foreground max-w-80 truncate">
-                        {client.address || '—'}
-                      </td>
+                      {isColumnVisible('address') && (
+                        <td className="px-4 py-3 text-muted-foreground max-w-80 truncate">
+                          {client.address || '—'}
+                        </td>
+                      )}
 
                       <td className="px-4 py-3">
                         <div className="flex flex-col gap-1">
