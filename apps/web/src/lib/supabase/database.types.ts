@@ -539,66 +539,6 @@ export type Database = {
           },
         ]
       }
-      equipment_models: {
-        Row: {
-          active: boolean
-          company_id: string
-          created_at: string
-          deleted_at: string | null
-          deleted_by: string | null
-          id: string
-          manufacturer: string
-          model: string
-          notes: string | null
-          type: string
-          updated_at: string
-          voltage: string | null
-        }
-        Insert: {
-          active?: boolean
-          company_id: string
-          created_at?: string
-          deleted_at?: string | null
-          deleted_by?: string | null
-          id?: string
-          manufacturer: string
-          model: string
-          notes?: string | null
-          type: string
-          updated_at?: string
-          voltage?: string | null
-        }
-        Update: {
-          active?: boolean
-          company_id?: string
-          created_at?: string
-          deleted_at?: string | null
-          deleted_by?: string | null
-          id?: string
-          manufacturer?: string
-          model?: string
-          notes?: string | null
-          type?: string
-          updated_at?: string
-          voltage?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "equipment_models_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "equipment_models_deleted_by_fkey"
-            columns: ["deleted_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       employees: {
         Row: {
           active: boolean
@@ -668,6 +608,66 @@ export type Database = {
           },
           {
             foreignKeyName: "employees_deleted_by_fkey"
+            columns: ["deleted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      equipment_models: {
+        Row: {
+          active: boolean
+          company_id: string
+          created_at: string
+          deleted_at: string | null
+          deleted_by: string | null
+          id: string
+          manufacturer: string
+          model: string
+          notes: string | null
+          type: string
+          updated_at: string
+          voltage: string | null
+        }
+        Insert: {
+          active?: boolean
+          company_id: string
+          created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          id?: string
+          manufacturer: string
+          model: string
+          notes?: string | null
+          type: string
+          updated_at?: string
+          voltage?: string | null
+        }
+        Update: {
+          active?: boolean
+          company_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          id?: string
+          manufacturer?: string
+          model?: string
+          notes?: string | null
+          type?: string
+          updated_at?: string
+          voltage?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_models_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_models_deleted_by_fkey"
             columns: ["deleted_by"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -1546,6 +1546,159 @@ export type Database = {
           },
         ]
       }
+      technician_payout_items: {
+        Row: {
+          active: boolean
+          client_name: string
+          completed_at: string
+          created_at: string
+          id: string
+          labor_rate: number
+          os_number: string
+          payout_id: string
+          service_order_id: string
+        }
+        Insert: {
+          active?: boolean
+          client_name: string
+          completed_at: string
+          created_at?: string
+          id?: string
+          labor_rate: number
+          os_number: string
+          payout_id: string
+          service_order_id: string
+        }
+        Update: {
+          active?: boolean
+          client_name?: string
+          completed_at?: string
+          created_at?: string
+          id?: string
+          labor_rate?: number
+          os_number?: string
+          payout_id?: string
+          service_order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "technician_payout_items_os_fkey"
+            columns: ["service_order_id"]
+            isOneToOne: false
+            referencedRelation: "service_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "technician_payout_items_payout_fkey"
+            columns: ["payout_id"]
+            isOneToOne: false
+            referencedRelation: "technician_payouts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      technician_payouts: {
+        Row: {
+          bill_id: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          id: string
+          labor_rate_snapshot: number | null
+          notes: string | null
+          os_count: number
+          paid_at: string | null
+          period_end: string
+          period_start: string
+          receipt_number: string
+          status: string
+          technician_id: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          bill_id?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          id?: string
+          labor_rate_snapshot?: number | null
+          notes?: string | null
+          os_count?: number
+          paid_at?: string | null
+          period_end: string
+          period_start: string
+          receipt_number: string
+          status?: string
+          technician_id: string
+          total_amount: number
+          updated_at?: string
+        }
+        Update: {
+          bill_id?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          id?: string
+          labor_rate_snapshot?: number | null
+          notes?: string | null
+          os_count?: number
+          paid_at?: string | null
+          period_end?: string
+          period_start?: string
+          receipt_number?: string
+          status?: string
+          technician_id?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "technician_payouts_bill_fkey"
+            columns: ["bill_id"]
+            isOneToOne: false
+            referencedRelation: "bills"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "technician_payouts_cancelled_by_fkey"
+            columns: ["cancelled_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "technician_payouts_company_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "technician_payouts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "technician_payouts_technician_fkey"
+            columns: ["technician_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       third_parties: {
         Row: {
           active: boolean
@@ -1930,6 +2083,71 @@ export type Database = {
           },
         ]
       }
+      whatsapp_ratings: {
+        Row: {
+          assigned_to: string | null
+          branch_id: string | null
+          company_id: string
+          contact_name: string | null
+          conversation_id: string | null
+          created_at: string
+          id: string
+          phone_number: string
+          rating: number
+        }
+        Insert: {
+          assigned_to?: string | null
+          branch_id?: string | null
+          company_id: string
+          contact_name?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          phone_number: string
+          rating: number
+        }
+        Update: {
+          assigned_to?: string | null
+          branch_id?: string | null
+          company_id?: string
+          contact_name?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          phone_number?: string
+          rating?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_ratings_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_ratings_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_ratings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_ratings_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       v_stock_available: {
@@ -1998,6 +2216,7 @@ export type Database = {
       }
     }
     Functions: {
+      cleanup_expired_whatsapp_messages: { Args: never; Returns: number }
       create_stock_transfer: {
         Args: {
           p_company_id: string
@@ -2021,6 +2240,10 @@ export type Database = {
         Returns: undefined
       }
       fn_notify_third_party_overdue: { Args: never; Returns: undefined }
+      generate_technician_payout_number: {
+        Args: { p_company_id: string }
+        Returns: string
+      }
       is_active_company_admin: {
         Args: { p_company_id: string }
         Returns: boolean

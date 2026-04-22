@@ -4,15 +4,21 @@ import { getCompanyContext } from '@/lib/auth/company-context'
 import { getTechnicianProduction } from '@/app/actions/technician-production'
 import { ProductionReport } from './_components/production-report'
 
-function getCurrentMonthRange() {
+function toIso(d: Date) {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${dd}`
+}
+
+function getCurrentFridayWeek() {
   const now = new Date()
-  const year = now.getFullYear()
-  const month = String(now.getMonth() + 1).padStart(2, '0')
-  const lastDay = new Date(year, now.getMonth() + 1, 0).getDate()
-  return {
-    start: `${year}-${month}-01`,
-    end: `${year}-${month}-${String(lastDay).padStart(2, '0')}`,
-  }
+  const daysUntilFriday = (5 - now.getDay() + 7) % 7
+  const end = new Date(now)
+  end.setDate(end.getDate() + daysUntilFriday)
+  const start = new Date(end)
+  start.setDate(start.getDate() - 6)
+  return { start: toIso(start), end: toIso(end) }
 }
 
 export default async function ProducaoTecnicosPage() {
@@ -31,7 +37,7 @@ export default async function ProducaoTecnicosPage() {
 
   if (!isAdmin) redirect('/dashboard')
 
-  const { start, end } = getCurrentMonthRange()
+  const { start, end } = getCurrentFridayWeek()
   const { data: rows } = await getTechnicianProduction(start, end)
 
   return (

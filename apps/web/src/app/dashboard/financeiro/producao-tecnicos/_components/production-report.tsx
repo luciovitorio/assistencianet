@@ -1,17 +1,38 @@
 'use client'
 
 import * as React from 'react'
-import { AlertCircle, ClipboardList, Wrench, Users } from 'lucide-react'
+import Link from 'next/link'
+import { AlertCircle, ClipboardList, Receipt, Wrench, Users, History } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button-variants'
+import { cn } from '@/lib/utils'
 import { DatePickerField } from '@/components/ui/date-picker-field'
 import { DataTableCard, DataTableToolbar } from '@/components/ui/data-table'
 import { getTechnicianProduction, type TechnicianProductionRow } from '@/app/actions/technician-production'
+import { ClosePayoutDialog } from './close-payout-dialog'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function formatCurrency(value: number) {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+}
+
+function toIso(d: Date) {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${dd}`
+}
+
+function getCurrentFridayWeek() {
+  const now = new Date()
+  const daysUntilFriday = (5 - now.getDay() + 7) % 7
+  const end = new Date(now)
+  end.setDate(end.getDate() + daysUntilFriday)
+  const start = new Date(end)
+  start.setDate(start.getDate() - 6)
+  return { start: toIso(start), end: toIso(end) }
 }
 
 function getCurrentMonthRange() {
@@ -38,6 +59,7 @@ export function ProductionReport({ initialRows, initialStart, initialEnd }: Prod
   const [startDate, setStartDate] = React.useState(initialStart)
   const [endDate, setEndDate] = React.useState(initialEnd)
   const [isPending, startTransition] = React.useTransition()
+  const [payoutOpen, setPayoutOpen] = React.useState(false)
 
   const summary = React.useMemo(() => ({
     total_os: rows.reduce((acc, r) => acc + r.os_count, 0),
@@ -45,6 +67,25 @@ export function ProductionReport({ initialRows, initialStart, initialEnd }: Prod
     technicians_with_rate: rows.filter((r) => r.labor_rate != null).length,
     technicians_without_rate: rows.filter((r) => r.labor_rate == null).length,
   }), [rows])
+
+  const eligibleCount = React.useMemo(
+    () => rows.filter((r) => r.os_count > 0 && r.labor_rate != null).length,
+    [rows],
+  )
+
+  const refresh = React.useCallback(
+    (start: string, end: string) => {
+      startTransition(async () => {
+        const result = await getTechnicianProduction(start, end)
+        if (result.error) {
+          toast.error(result.error)
+          return
+        }
+        setRows(result.data ?? [])
+      })
+    },
+    [],
+  )
 
   const handleFilter = () => {
     if (!startDate || !endDate) {
@@ -55,38 +96,40 @@ export function ProductionReport({ initialRows, initialStart, initialEnd }: Prod
       toast.error('A data inicial não pode ser maior que a data final.')
       return
     }
-    startTransition(async () => {
-      const result = await getTechnicianProduction(startDate, endDate)
-      if (result.error) {
-        toast.error(result.error)
-        return
-      }
-      setRows(result.data ?? [])
-    })
+    refresh(startDate, endDate)
+  }
+
+  const handleCurrentFridayWeek = () => {
+    const { start, end } = getCurrentFridayWeek()
+    setStartDate(start)
+    setEndDate(end)
+    refresh(start, end)
   }
 
   const handleCurrentMonth = () => {
     const { start, end } = getCurrentMonthRange()
     setStartDate(start)
     setEndDate(end)
-    startTransition(async () => {
-      const result = await getTechnicianProduction(start, end)
-      if (result.error) {
-        toast.error(result.error)
-        return
-      }
-      setRows(result.data ?? [])
-    })
+    refresh(start, end)
   }
 
   return (
     <div className="space-y-6">
       {/* Cabeçalho */}
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">Produção de Técnicos</h2>
-        <p className="text-muted-foreground">
-          OS concluídas por técnico e valor de mão de obra a pagar no período.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Produção de Técnicos</h2>
+          <p className="text-muted-foreground">
+            OS concluídas por técnico no período. Feche a produção para gerar recibos e lançar em Contas a Pagar.
+          </p>
+        </div>
+        <Link
+          href="/dashboard/financeiro/producao-tecnicos/fechamentos"
+          className={cn(buttonVariants({ variant: 'outline' }), 'gap-2')}
+        >
+          <History className="size-4" />
+          Ver Fechamentos
+        </Link>
       </div>
 
       {/* Cards de resumo */}
@@ -121,23 +164,28 @@ export function ProductionReport({ initialRows, initialStart, initialEnd }: Prod
       <DataTableToolbar
         filters={
           <div className="flex flex-wrap items-end gap-3">
-            <DatePickerField
-              label="De"
-              value={startDate}
-              onChange={setStartDate}
-            />
-            <DatePickerField
-              label="Até"
-              value={endDate}
-              onChange={setEndDate}
-            />
+            <DatePickerField label="De" value={startDate} onChange={setStartDate} />
+            <DatePickerField label="Até" value={endDate} onChange={setEndDate} />
             <Button onClick={handleFilter} disabled={isPending} loading={isPending}>
               Filtrar
+            </Button>
+            <Button variant="outline" onClick={handleCurrentFridayWeek} disabled={isPending}>
+              Semana (sex→sex)
             </Button>
             <Button variant="outline" onClick={handleCurrentMonth} disabled={isPending}>
               Mês atual
             </Button>
           </div>
+        }
+        actions={
+          <Button
+            onClick={() => setPayoutOpen(true)}
+            disabled={isPending || eligibleCount === 0}
+            className="gap-2"
+          >
+            <Receipt className="size-4" />
+            Gerar Fechamento
+          </Button>
         }
       />
 
@@ -231,6 +279,15 @@ export function ProductionReport({ initialRows, initialStart, initialEnd }: Prod
           </a>.
         </p>
       )}
+
+      <ClosePayoutDialog
+        open={payoutOpen}
+        onOpenChange={setPayoutOpen}
+        rows={rows}
+        periodStart={startDate}
+        periodEnd={endDate}
+        onSuccess={() => refresh(startDate, endDate)}
+      />
     </div>
   )
 }

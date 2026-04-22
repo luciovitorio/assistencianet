@@ -408,7 +408,17 @@ export function DashboardShell({
               <SidebarSubItem
                 href="/dashboard/financeiro/producao-tecnicos"
                 label="Produção de Técnicos"
-                active={pathname.startsWith('/dashboard/financeiro/producao-tecnicos')}
+                active={
+                  pathname === '/dashboard/financeiro/producao-tecnicos' ||
+                  (pathname.startsWith('/dashboard/financeiro/producao-tecnicos') &&
+                    !pathname.startsWith('/dashboard/financeiro/producao-tecnicos/fechamentos'))
+                }
+                isExpanded={isExpanded}
+              />
+              <SidebarSubItem
+                href="/dashboard/financeiro/producao-tecnicos/fechamentos"
+                label="Fechamentos"
+                active={pathname.startsWith('/dashboard/financeiro/producao-tecnicos/fechamentos')}
                 isExpanded={isExpanded}
               />
             </SidebarMenu>

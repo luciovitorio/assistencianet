@@ -48,9 +48,12 @@ export async function getTechnicianProduction(
     // Conta OS concluídas por técnico no período usando completed_at —
     // registrado no momento em que a OS é marcada como "pronta",
     // independente de quando o cliente retira o equipamento.
-    const { data: osCounts, error: osError } = await supabase
+    // OS já incluídas em um fechamento ativo (technician_payout_items.active=true)
+    // são excluídas para que um segundo fechamento no mesmo período pegue apenas
+    // as OS novas.
+    const { data: osRows, error: osError } = await supabase
       .from('service_orders')
-      .select('technician_id')
+      .select('id, technician_id')
       .eq('company_id', companyId)
       .in('status', ['pronto', 'finalizado'])
       .is('deleted_at', null)
@@ -60,11 +63,25 @@ export async function getTechnicianProduction(
 
     if (osError) throw osError
 
+    const osIds = (osRows ?? []).map((o) => o.id)
+    let takenSet = new Set<string>()
+
+    if (osIds.length > 0) {
+      const { data: takenRows, error: takenError } = await supabase
+        .from('technician_payout_items')
+        .select('service_order_id')
+        .in('service_order_id', osIds)
+        .eq('active', true)
+
+      if (takenError) throw takenError
+      takenSet = new Set((takenRows ?? []).map((r) => r.service_order_id))
+    }
+
     const countByTechnician: Record<string, number> = {}
-    for (const os of osCounts ?? []) {
-      if (os.technician_id) {
-        countByTechnician[os.technician_id] = (countByTechnician[os.technician_id] ?? 0) + 1
-      }
+    for (const os of osRows ?? []) {
+      if (!os.technician_id) continue
+      if (takenSet.has(os.id)) continue
+      countByTechnician[os.technician_id] = (countByTechnician[os.technician_id] ?? 0) + 1
     }
 
     const rows: TechnicianProductionRow[] = technicians.map((t) => {
