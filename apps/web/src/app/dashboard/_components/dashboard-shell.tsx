@@ -193,7 +193,7 @@ function SidebarMenu({
       {/* Submenu items */}
       <div
         className={`overflow-hidden transition-all duration-300 ease-in-out ${
-          isExpanded && isOpen ? 'max-h-72 opacity-100 mt-1' : 'max-h-0 opacity-0'
+          isExpanded && isOpen ? 'max-h-128 opacity-100 mt-1' : 'max-h-0 opacity-0'
         }`}
       >
         <div
