@@ -517,6 +517,7 @@ function AjusteForm({
             {...field}
             value={String(field.value ?? '')}
             onChange={(e) => field.onChange(e.target.value)}
+            onFocus={(e) => e.target.select()}
           />
         )}
       />
