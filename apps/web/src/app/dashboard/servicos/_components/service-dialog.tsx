@@ -86,7 +86,12 @@ export function ServiceDialog({ service, open, onOpenChange }: ServiceDialogProp
         name: service?.name || '',
         code: service?.code || '',
         category: (service?.category as ServiceCategory) || 'reparo',
-        price: service?.price != null ? String(Math.round(service.price * 100)) : '',
+        price:
+          service?.price != null
+            ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                service.price,
+              )
+            : '',
         estimated_duration_minutes: service?.estimated_duration_minutes ?? null,
         warranty_days: service?.warranty_days ?? 0,
         notes: service?.notes || '',

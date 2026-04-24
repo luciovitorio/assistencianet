@@ -98,8 +98,18 @@ export function PartDialog({ part, suppliers, open, onOpenChange }: PartDialogPr
         category: (part?.category as PartCategory) || 'peca_reposicao',
         unit: (part?.unit as PartUnit) || 'unidade',
         supplier_id: part?.supplier_id || '',
-        cost_price: part?.cost_price != null ? String(Math.round(part.cost_price * 100)) : '',
-        sale_price: part?.sale_price != null ? String(Math.round(part.sale_price * 100)) : '',
+        cost_price:
+          part?.cost_price != null
+            ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                part.cost_price,
+              )
+            : '',
+        sale_price:
+          part?.sale_price != null
+            ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                part.sale_price,
+              )
+            : '',
         min_stock: part?.min_stock ?? 0,
         notes: part?.notes || '',
         active: part?.active !== false,
