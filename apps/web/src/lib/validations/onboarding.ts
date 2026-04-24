@@ -11,6 +11,7 @@ export const empresaSchema = z.object({
   segment: z.string().optional(),
   phone: z.string().optional(),
   email: z.string().email('E-mail inválido').optional().or(z.literal('')),
+  owner_operates: z.boolean().default(true),
 })
 
 // branchSchema used for action-side validation (address is the combined street+number+complement)
@@ -39,7 +40,8 @@ export const filiaisSchema = z.object({
   branches: z.array(branchSchema).min(1, 'Adicione ao menos uma filial'),
 })
 
-export type EmpresaSchema = z.infer<typeof empresaSchema>
+export type EmpresaSchema = z.input<typeof empresaSchema>
+export type EmpresaValues = z.output<typeof empresaSchema>
 export type BranchSchema = z.infer<typeof branchSchema>
 export type BranchFormSchema = z.infer<typeof branchFormSchema>
 export type FiliaisSchema = z.infer<typeof filiaisSchema>

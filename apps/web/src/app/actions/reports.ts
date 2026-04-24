@@ -491,7 +491,7 @@ async function fetchTechnicians(
     .select('id, name')
     .eq('company_id', companyId)
     .is('deleted_at', null)
-    .eq('role', 'tecnico')
+    .or('role.eq.tecnico,is_owner.eq.true')
     .order('name', { ascending: true })
 
   if (error) throw error

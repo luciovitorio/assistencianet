@@ -459,6 +459,7 @@ export type Database = {
           onboarding_completed: boolean | null
           onboarding_step: number | null
           owner_id: string
+          owner_operates: boolean
           phone: string | null
           segment: string | null
           updated_at: string | null
@@ -473,6 +474,7 @@ export type Database = {
           onboarding_completed?: boolean | null
           onboarding_step?: number | null
           owner_id: string
+          owner_operates?: boolean
           phone?: string | null
           segment?: string | null
           updated_at?: string | null
@@ -487,6 +489,7 @@ export type Database = {
           onboarding_completed?: boolean | null
           onboarding_step?: number | null
           owner_id?: string
+          owner_operates?: boolean
           phone?: string | null
           segment?: string | null
           updated_at?: string | null
@@ -550,6 +553,7 @@ export type Database = {
           deleted_by: string | null
           email: string | null
           id: string
+          is_owner: boolean
           labor_rate: number | null
           name: string
           phone: string | null
@@ -567,6 +571,7 @@ export type Database = {
           deleted_by?: string | null
           email?: string | null
           id?: string
+          is_owner?: boolean
           labor_rate?: number | null
           name: string
           phone?: string | null
@@ -584,6 +589,7 @@ export type Database = {
           deleted_by?: string | null
           email?: string | null
           id?: string
+          is_owner?: boolean
           labor_rate?: number | null
           name?: string
           phone?: string | null

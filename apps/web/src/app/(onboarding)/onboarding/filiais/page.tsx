@@ -1,9 +1,10 @@
 'use client'
 
 import Link from 'next/link'
-import { useTransition } from 'react'
-import { useForm, useFieldArray } from 'react-hook-form'
+import { useState, useTransition } from 'react'
+import { Controller, useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { Loader2 } from 'lucide-react'
 import { saveFiliais } from '@/app/actions/onboarding'
 import { branchFormSchema, type FiliaisFormSchema } from '@/lib/validations/onboarding'
 import { z } from 'zod'
@@ -39,6 +40,7 @@ async function fetchAddressByCep(cep: string) {
 
 export default function OnboardingFiliaisPage() {
   const [isPending, startTransition] = useTransition()
+  const [fetchingCepIndex, setFetchingCepIndex] = useState<number | null>(null)
 
   const {
     register,
@@ -57,11 +59,13 @@ export default function OnboardingFiliaisPage() {
   async function handleCepChange(index: number, maskedValue: string) {
     const digits = maskedValue.replace(/\D/g, '')
     if (digits.length !== 8) return
+    setFetchingCepIndex(index)
     const address = await fetchAddressByCep(digits)
+    setFetchingCepIndex(null)
     if (!address) return
-    setValue(`branches.${index}.street`, address.street)
-    setValue(`branches.${index}.city`, address.city)
-    setValue(`branches.${index}.state`, address.state)
+    setValue(`branches.${index}.street`, address.street, { shouldValidate: true })
+    setValue(`branches.${index}.city`, address.city, { shouldValidate: true })
+    setValue(`branches.${index}.state`, address.state, { shouldValidate: true })
   }
 
   function onSubmit(data: FiliaisFormSchema) {
@@ -136,13 +140,27 @@ export default function OnboardingFiliaisPage() {
                 />
 
                 <div className="grid grid-cols-2 gap-4">
-                  <MaskedInputField
-                    mask="cep"
-                    label="CEP"
-                    placeholder="00000-000"
-                    {...register(`branches.${i}.zip_code`, {
-                      onChange: (e) => handleCepChange(i, e.target.value),
-                    })}
+                  <Controller
+                    control={control}
+                    name={`branches.${i}.zip_code`}
+                    render={({ field }) => (
+                      <MaskedInputField
+                        mask="cep"
+                        label="CEP"
+                        placeholder="00000-000"
+                        rightIcon={
+                          fetchingCepIndex === i ? (
+                            <Loader2 className="animate-spin" />
+                          ) : undefined
+                        }
+                        {...field}
+                        value={field.value || ''}
+                        onChange={(e) => {
+                          field.onChange(e)
+                          handleCepChange(i, e.target.value)
+                        }}
+                      />
+                    )}
                   />
                   <MaskedInputField
                     mask="phone"

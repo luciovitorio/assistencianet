@@ -1,7 +1,7 @@
 'use client'
 
 import { useTransition } from 'react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { saveEmpresa } from '@/app/actions/onboarding'
 import { empresaSchema, type EmpresaSchema } from '@/lib/validations/onboarding'
@@ -10,6 +10,8 @@ import { Button } from '@/components/ui/button'
 import { InputField } from '@/components/ui/input-field'
 import { MaskedInputField } from '@/components/ui/masked-input-field'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
@@ -17,6 +19,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+
+const SEGMENT_LABELS: Record<string, string> = {
+  autorizada: 'Autorizada',
+  multimarca: 'Multimarca',
+  autorizada_multimarca: 'Autorizada + Multimarca',
+  outro: 'Outro',
+}
 
 interface EmpresaFormProps {
   defaultName?: string
@@ -30,16 +39,20 @@ export function EmpresaForm({ defaultName = '' }: EmpresaFormProps) {
     handleSubmit,
     setValue,
     setError,
+    control,
     formState: { errors },
   } = useForm<EmpresaSchema>({
     resolver: zodResolver(empresaSchema),
-    defaultValues: { name: defaultName },
+    defaultValues: { name: defaultName, owner_operates: true },
   })
 
   function onSubmit(data: EmpresaSchema) {
     startTransition(async () => {
       const formData = new FormData()
-      Object.entries(data).forEach(([k, v]) => { if (v) formData.set(k, String(v)) })
+      Object.entries(data).forEach(([k, v]) => {
+        if (v === undefined || v === null || v === '') return
+        formData.set(k, String(v))
+      })
       const result = await saveEmpresa(null, formData)
       if (result?.error) setError('root', { message: result.error })
     })
@@ -84,13 +97,16 @@ export function EmpresaForm({ defaultName = '' }: EmpresaFormProps) {
               <label className="block text-sm font-medium text-foreground">Segmento</label>
               <Select onValueChange={(v) => setValue('segment', v as string)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione..." />
+                  <SelectValue placeholder="Selecione...">
+                    {(value: string) => SEGMENT_LABELS[value] ?? 'Selecione...'}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="autorizada">Autorizada</SelectItem>
-                  <SelectItem value="multimarca">Multimarca</SelectItem>
-                  <SelectItem value="autorizada_multimarca">Autorizada + Multimarca</SelectItem>
-                  <SelectItem value="outro">Outro</SelectItem>
+                  {Object.entries(SEGMENT_LABELS).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -109,6 +125,30 @@ export function EmpresaForm({ defaultName = '' }: EmpresaFormProps) {
               placeholder="contato@empresa.com"
               error={errors.email?.message}
               {...register('email')}
+            />
+          </div>
+
+          <div className="rounded-lg border bg-muted/30 p-4">
+            <Controller
+              control={control}
+              name="owner_operates"
+              render={({ field }) => (
+                <Label className="flex items-start gap-3 cursor-pointer">
+                  <Checkbox
+                    checked={field.value ?? true}
+                    onCheckedChange={(checked) => field.onChange(checked === true)}
+                    className="mt-0.5"
+                  />
+                  <div className="space-y-1">
+                    <span className="font-medium">Sou o dono e também vou atender clientes</span>
+                    <p className="text-muted-foreground text-xs font-normal">
+                      Marque esta opção se você também vai atender conversas do WhatsApp e
+                      consertar equipamentos. Você aparecerá nas listas de atendentes e técnicos.
+                      Pode alterar depois em Configurações.
+                    </p>
+                  </div>
+                </Label>
+              )}
             />
           </div>
 

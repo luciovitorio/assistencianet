@@ -116,6 +116,7 @@ export interface EmployeeOption {
   id: string
   name: string
   role: string
+  is_owner?: boolean
 }
 
 interface ServiceOrderListProps {

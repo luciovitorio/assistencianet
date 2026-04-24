@@ -175,7 +175,7 @@ export async function updateEmployee(id: string, data: EmployeeSchema | Employee
 
     const { data: currentEmployee, error: currentEmployeeError } = await supabase
       .from('employees')
-      .select('id, name, user_id, active')
+      .select('id, name, user_id, active, is_owner')
       .eq('id', id)
       .eq('company_id', companyId)
       .is('deleted_at', null)
@@ -183,6 +183,10 @@ export async function updateEmployee(id: string, data: EmployeeSchema | Employee
 
     if (currentEmployeeError || !currentEmployee) {
       throw new Error('Funcionário não encontrado.')
+    }
+
+    if (currentEmployee.is_owner) {
+      throw new Error('Este registro é do dono da empresa e deve ser gerenciado em Configurações.')
     }
 
     await ensureEmployeeEmailIsAvailable(email, {
@@ -275,7 +279,7 @@ export async function deleteEmployee(id: string) {
 
     const { data: employee, error: employeeError } = await supabase
       .from('employees')
-      .select('id, name, user_id, active')
+      .select('id, name, user_id, active, is_owner')
       .eq('id', id)
       .eq('company_id', companyId)
       .is('deleted_at', null)
@@ -283,6 +287,10 @@ export async function deleteEmployee(id: string) {
 
     if (employeeError || !employee) {
       throw new Error('Funcionário não encontrado.')
+    }
+
+    if (employee.is_owner) {
+      throw new Error('Não é possível excluir o registro do dono da empresa.')
     }
 
     const deletedAt = new Date().toISOString()
@@ -358,7 +366,7 @@ export async function inviteEmployee(employeeId: string) {
     const supabase = await createClient()
     const { data: employee, error: employeeError } = await supabase
       .from('employees')
-      .select('id, name, email, role, user_id, company_id')
+      .select('id, name, email, role, user_id, company_id, is_owner')
       .eq('id', employeeId)
       .eq('company_id', companyId)
       .is('deleted_at', null)
@@ -366,6 +374,10 @@ export async function inviteEmployee(employeeId: string) {
 
     if (employeeError || !employee) {
       throw new Error('Funcionário não encontrado.')
+    }
+
+    if (employee.is_owner) {
+      throw new Error('O dono da empresa já tem acesso próprio — não precisa de convite.')
     }
 
     if (!employee.email) {
@@ -436,7 +448,7 @@ export async function revokeEmployeeAccess(employeeId: string) {
     const supabase = await createClient()
     const { data: employee, error: employeeError } = await supabase
       .from('employees')
-      .select('id, name, user_id')
+      .select('id, name, user_id, is_owner')
       .eq('id', employeeId)
       .eq('company_id', companyId)
       .is('deleted_at', null)
@@ -444,6 +456,10 @@ export async function revokeEmployeeAccess(employeeId: string) {
 
     if (employeeError || !employee) {
       throw new Error('Funcionário não encontrado.')
+    }
+
+    if (employee.is_owner) {
+      throw new Error('Não é possível revogar o acesso do dono da empresa.')
     }
 
     if (!employee.user_id) {
@@ -495,7 +511,7 @@ export async function createEmployeeDirectAccess(
     const supabase = await createClient()
     const { data: employee, error: employeeError } = await supabase
       .from('employees')
-      .select('id, name, role, company_id, user_id')
+      .select('id, name, role, company_id, user_id, is_owner')
       .eq('id', employeeId)
       .eq('company_id', companyId)
       .is('deleted_at', null)
@@ -503,6 +519,10 @@ export async function createEmployeeDirectAccess(
 
     if (employeeError || !employee) {
       throw new Error('Funcionário não encontrado.')
+    }
+
+    if (employee.is_owner) {
+      throw new Error('O dono da empresa já tem acesso próprio.')
     }
 
     if (employee.user_id) {

@@ -30,6 +30,7 @@ export interface EmployeeData {
   branch_id: string | null
   user_id: string | null
   labor_rate: number | null
+  is_owner?: boolean
 }
 
 interface BranchOption {
@@ -354,7 +355,14 @@ export function EmployeeList({ initialEmployees, branches, isAdmin }: EmployeeLi
                     >
                       {/* Nome */}
                       <td className="px-4 py-3">
-                        <div className="font-medium text-foreground">{employee.name}</div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-foreground">{employee.name}</span>
+                          {employee.is_owner && (
+                            <span className="inline-block text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                              Dono
+                            </span>
+                          )}
+                        </div>
                         {!employee.active && (
                           <span className="text-[10px] uppercase tracking-wider font-bold text-destructive">
                             Inativo
@@ -413,99 +421,107 @@ export function EmployeeList({ initialEmployees, branches, isAdmin }: EmployeeLi
                       {isAdmin && (
                         <td className="px-4 py-3">
                           <div className="flex items-center justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="size-8 text-muted-foreground hover:text-foreground"
-                              onClick={() =>
-                                setDialog({
-                                  type: 'edit',
-                                  employee: {
-                                    id: employee.id,
-                                    name: employee.name,
-                                    role: employee.role,
-                                    email: employee.email,
-                                    phone: employee.phone,
-                                    cpf: employee.cpf,
-                                    branch_id: employee.branch_id,
-                                    active: employee.active,
-                                    labor_rate: employee.labor_rate,
-                                  },
-                                })
-                              }
-                              title="Editar"
-                              aria-label={`Editar funcionário ${employee.name}`}
-                            >
-                              <Edit2 className="size-4" />
-                            </Button>
+                            {employee.is_owner ? (
+                              <span className="text-xs text-muted-foreground italic pr-2">
+                                Gerenciado em Configurações
+                              </span>
+                            ) : (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="size-8 text-muted-foreground hover:text-foreground"
+                                  onClick={() =>
+                                    setDialog({
+                                      type: 'edit',
+                                      employee: {
+                                        id: employee.id,
+                                        name: employee.name,
+                                        role: employee.role,
+                                        email: employee.email,
+                                        phone: employee.phone,
+                                        cpf: employee.cpf,
+                                        branch_id: employee.branch_id,
+                                        active: employee.active,
+                                        labor_rate: employee.labor_rate,
+                                      },
+                                    })
+                                  }
+                                  title="Editar"
+                                  aria-label={`Editar funcionário ${employee.name}`}
+                                >
+                                  <Edit2 className="size-4" />
+                                </Button>
 
-                            {!hasAccess && hasEmail && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="size-8 text-muted-foreground hover:text-primary"
-                                onClick={() =>
-                                  setDialog({
-                                    type: 'invite',
-                                    id: employee.id,
-                                    name: employee.name,
-                                    email: employee.email!,
-                                  })
-                                }
-                                title="Convidar por e-mail"
-                                aria-label={`Convidar funcionário ${employee.name} por e-mail`}
-                              >
-                                <Mail className="size-4" />
-                              </Button>
+                                {!hasAccess && hasEmail && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="size-8 text-muted-foreground hover:text-primary"
+                                    onClick={() =>
+                                      setDialog({
+                                        type: 'invite',
+                                        id: employee.id,
+                                        name: employee.name,
+                                        email: employee.email!,
+                                      })
+                                    }
+                                    title="Convidar por e-mail"
+                                    aria-label={`Convidar funcionário ${employee.name} por e-mail`}
+                                  >
+                                    <Mail className="size-4" />
+                                  </Button>
+                                )}
+
+                                {!hasAccess && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="size-8 text-muted-foreground hover:text-amber-600"
+                                    onClick={() =>
+                                      setDialog({
+                                        type: 'direct',
+                                        id: employee.id,
+                                        name: employee.name,
+                                        email: employee.email,
+                                      })
+                                    }
+                                    title="Definir senha provisória"
+                                    aria-label={`Definir senha provisória para ${employee.name}`}
+                                  >
+                                    <KeyRound className="size-4" />
+                                  </Button>
+                                )}
+
+                                {hasAccess && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="size-8 text-muted-foreground hover:text-destructive"
+                                    onClick={() =>
+                                      setDialog({ type: 'revoke', id: employee.id, name: employee.name })
+                                    }
+                                    title="Revogar acesso"
+                                    aria-label={`Revogar acesso de ${employee.name}`}
+                                  >
+                                    <ShieldOff className="size-4" />
+                                  </Button>
+                                )}
+
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="size-8 text-muted-foreground hover:text-destructive"
+                                  onClick={() =>
+                                    setDialog({ type: 'delete', id: employee.id, name: employee.name })
+                                  }
+                                  title="Excluir"
+                                  aria-label={`Excluir funcionário ${employee.name}`}
+                                >
+                                  <Trash2 className="size-4" />
+                                </Button>
+                              </>
                             )}
-
-                            {!hasAccess && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="size-8 text-muted-foreground hover:text-amber-600"
-                                onClick={() =>
-                                  setDialog({
-                                    type: 'direct',
-                                    id: employee.id,
-                                    name: employee.name,
-                                    email: employee.email,
-                                  })
-                                }
-                                title="Definir senha provisória"
-                                aria-label={`Definir senha provisória para ${employee.name}`}
-                              >
-                                <KeyRound className="size-4" />
-                              </Button>
-                            )}
-
-                            {hasAccess && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="size-8 text-muted-foreground hover:text-destructive"
-                                onClick={() =>
-                                  setDialog({ type: 'revoke', id: employee.id, name: employee.name })
-                                }
-                                title="Revogar acesso"
-                                aria-label={`Revogar acesso de ${employee.name}`}
-                              >
-                                <ShieldOff className="size-4" />
-                              </Button>
-                            )}
-
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="size-8 text-muted-foreground hover:text-destructive"
-                              onClick={() =>
-                                setDialog({ type: 'delete', id: employee.id, name: employee.name })
-                              }
-                              title="Excluir"
-                              aria-label={`Excluir funcionário ${employee.name}`}
-                            >
-                              <Trash2 className="size-4" />
-                            </Button>
                           </div>
                         </td>
                       )}

@@ -5,6 +5,54 @@ import { createClient } from '@/lib/supabase/server'
 import { createAuditLog } from '@/lib/audit/audit-log'
 import { empresaSchema, filiaisSchema } from '@/lib/validations/onboarding'
 
+async function ensureOwnerEmployee(params: {
+  companyId: string
+  userId: string
+  mainBranchId: string | null
+}) {
+  const { companyId, userId, mainBranchId } = params
+  const supabase = await createClient()
+
+  const { data: existing } = await supabase
+    .from('employees')
+    .select('id')
+    .eq('company_id', companyId)
+    .eq('is_owner', true)
+    .is('deleted_at', null)
+    .maybeSingle()
+
+  if (existing) {
+    if (mainBranchId) {
+      await supabase
+        .from('employees')
+        .update({ branch_id: mainBranchId, user_id: userId, active: true })
+        .eq('id', existing.id)
+    }
+    return
+  }
+
+  const { data: { user } } = await supabase.auth.getUser()
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('name')
+    .eq('id', userId)
+    .maybeSingle<{ name: string }>()
+
+  const name = profile?.name?.trim() || (user?.user_metadata?.name as string | undefined) || 'Dono'
+  const email = user?.email ?? null
+
+  await supabase.from('employees').insert({
+    company_id: companyId,
+    branch_id: mainBranchId,
+    user_id: userId,
+    name,
+    email,
+    role: 'admin',
+    active: true,
+    is_owner: true,
+  })
+}
+
 export async function saveEmpresa(_prev: unknown, formData: FormData) {
   const parsed = empresaSchema.safeParse({
     name: formData.get('name'),
@@ -12,6 +60,7 @@ export async function saveEmpresa(_prev: unknown, formData: FormData) {
     segment: formData.get('segment') || undefined,
     phone: formData.get('phone') || undefined,
     email: formData.get('email') || undefined,
+    owner_operates: formData.get('owner_operates') !== 'false',
   })
 
   if (!parsed.success) {
@@ -78,7 +127,7 @@ export async function saveFiliais(_prev: unknown, formData: FormData) {
 
   const { data: company } = await supabase
     .from('companies')
-    .select('id')
+    .select('id, owner_operates')
     .eq('owner_id', user.id)
     .single()
 
@@ -100,8 +149,20 @@ export async function saveFiliais(_prev: unknown, formData: FormData) {
     ...b,
   }))
 
-  const { error } = await supabase.from('branches').insert(branches)
+  const { data: insertedBranches, error } = await supabase
+    .from('branches')
+    .insert(branches)
+    .select('id, is_main')
+
   if (error) return { error: error.message }
+
+  if (company.owner_operates) {
+    await ensureOwnerEmployee({
+      companyId: company.id,
+      userId: user.id,
+      mainBranchId: insertedBranches?.find((b) => b.is_main)?.id ?? null,
+    })
+  }
 
   await supabase
     .from('companies')

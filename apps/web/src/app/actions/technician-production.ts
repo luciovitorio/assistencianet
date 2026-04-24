@@ -35,7 +35,7 @@ export async function getTechnicianProduction(
       .from('employees')
       .select('id, name, labor_rate, branch_id, branches(name)')
       .eq('company_id', companyId)
-      .eq('role', 'tecnico')
+      .or('role.eq.tecnico,is_owner.eq.true')
       .is('deleted_at', null)
       .order('name', { ascending: true })
 

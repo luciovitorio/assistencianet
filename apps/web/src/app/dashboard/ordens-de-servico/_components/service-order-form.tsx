@@ -58,6 +58,7 @@ export interface EmployeeOption {
   id: string
   name: string
   role: string
+  is_owner?: boolean
 }
 
 export interface EquipmentOption {
@@ -317,7 +318,7 @@ export function ServiceOrderForm({
     () => Array.from(new Map([...equipments, ...extraEquipments].map((equipment) => [equipment.id, equipment])).values()),
     [equipments, extraEquipments],
   )
-  const technicians = employees.filter((employee) => employee.role === 'tecnico')
+  const technicians = employees.filter((employee) => employee.role === 'tecnico' || employee.is_owner)
   const num = isEdit && initialData ? initialData.number : (nextNumber || 0)
   const osDisplayNumber = `${String(num).slice(0, 4)}-${String(num).slice(4).padStart(4, '0')}`
 

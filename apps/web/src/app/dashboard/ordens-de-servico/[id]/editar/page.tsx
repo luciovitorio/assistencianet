@@ -46,7 +46,7 @@ export default async function EditarOrdemDeServicoPage({
       .order('name', { ascending: true }),
     supabase
       .from('employees')
-      .select('id, name, role')
+      .select('id, name, role, is_owner')
       .eq('company_id', companyId)
       .eq('active', true)
       .is('deleted_at', null)

@@ -63,7 +63,9 @@
       "Bash(git push *)",
       "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" -X POST https://assistencianet-web.vercel.app/api/webhooks/evolution -H \"Content-Type: application/json\" -d '{}')",
       "Bash(pnpm tsc *)",
-      "Bash(echo \"exit=$?\")"
+      "Bash(echo \"exit=$?\")",
+      "Bash(python -c ' *)",
+      "Bash(npm -w apps/web run lint)"
     ]
   }
 }

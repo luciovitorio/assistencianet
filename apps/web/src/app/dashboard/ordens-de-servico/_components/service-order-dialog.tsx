@@ -356,7 +356,7 @@ export function ServiceOrderDialog({
 
   const isBusy = isPending || isNavigatingAway
 
-  const technicians = employees.filter((e) => e.role === 'tecnico')
+  const technicians = employees.filter((e) => e.role === 'tecnico' || e.is_owner)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
