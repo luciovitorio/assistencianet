@@ -28,7 +28,11 @@ import {
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { sendEstimate } from '@/app/actions/service-order-estimates'
-import { registerClientResponse, updateServiceOrderStatus } from '@/app/actions/service-orders'
+import {
+  registerClientResponse,
+  registerManualClientResponse,
+  updateServiceOrderStatus,
+} from '@/app/actions/service-orders'
 import { Button } from '@/components/ui/button'
 import { buttonVariants } from '@/components/ui/button-variants'
 import {
@@ -369,6 +373,32 @@ export function ServiceOrderList({
     })
   }
 
+  const handleManualClientResponse = (
+    serviceOrderId: string,
+    serviceOrderNumber: number,
+    response: 'aprovado' | 'reprovado'
+  ) => {
+    setActionOrderId(serviceOrderId)
+    React.startTransition(async () => {
+      try {
+        const result = await registerManualClientResponse(serviceOrderId, response)
+        if (result?.error) {
+          toast.error(result.error)
+        } else {
+          const label =
+            result?.message ??
+            (response === 'aprovado'
+              ? 'orçamento aprovado manualmente pelo cliente'
+              : 'orçamento recusado manualmente pelo cliente')
+          toast.success(`OS #${serviceOrderNumber}: ${label}.`)
+          router.refresh()
+        }
+      } finally {
+        setActionOrderId(null)
+      }
+    })
+  }
+
   const handleSendEstimate = async (
     serviceOrderId: string,
     estimateId: string,
@@ -440,6 +470,21 @@ export function ServiceOrderList({
 
   const hasDraftEstimate = (order: ServiceOrderData) =>
     order.service_order_estimates?.some((estimate) => estimate.status === 'rascunho') ?? false
+
+  const hasClientDigitalContact = (client: ClientOption | null | undefined) =>
+    Boolean(client?.phone?.trim() || client?.email?.trim())
+
+  const canRegisterManualClientResponse = (
+    order: ServiceOrderData,
+    client: ClientOption | null | undefined
+  ) => {
+    const latestEstimate = getLatestEstimate(order.service_order_estimates)
+    return (
+      !hasClientDigitalContact(client) &&
+      latestEstimate?.status === 'rascunho' &&
+      ['aguardando', 'em_analise', 'reprovado', 'enviado_terceiro'].includes(order.status)
+    )
+  }
 
   const canCancelOrder = (order: ServiceOrderData) =>
     [
@@ -635,6 +680,7 @@ export function ServiceOrderList({
                   const branchName = order.branch_id ? branchMap[order.branch_id] : null
                   const status = order.status as ServiceOrderStatus
                   const isActionPending = actionOrderId === order.id
+                  const canRegisterManualResponse = canRegisterManualClientResponse(order, client)
                   const deviceName = order.device_model || order.device_type || '—'
                   const deviceDetails = [
                     order.device_type ? { label: 'Tipo', value: order.device_type } : null,
@@ -883,6 +929,39 @@ export function ServiceOrderList({
                                     >
                                       <ThumbsDown className="size-4" />
                                       Cliente reprovou
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
+                                {canRegisterManualResponse && (
+                                  <>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                      disabled={isActionPending}
+                                      onClick={(e) => {
+                                        e.preventDefault()
+                                        handleManualClientResponse(
+                                          order.id,
+                                          order.number,
+                                          'aprovado'
+                                        )
+                                      }}
+                                    >
+                                      <ThumbsUp className="size-4" />
+                                      Aceite manual
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      disabled={isActionPending}
+                                      onClick={(e) => {
+                                        e.preventDefault()
+                                        handleManualClientResponse(
+                                          order.id,
+                                          order.number,
+                                          'reprovado'
+                                        )
+                                      }}
+                                    >
+                                      <ThumbsDown className="size-4" />
+                                      Recusa manual
                                     </DropdownMenuItem>
                                   </>
                                 )}

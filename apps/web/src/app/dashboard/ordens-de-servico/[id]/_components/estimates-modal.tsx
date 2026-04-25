@@ -171,6 +171,7 @@ export function EstimatesModal({
               clientName={clientName}
               clientPhone={clientPhone}
               clientEmail={clientEmail}
+              onManualResponseSuccess={() => setOpen(false)}
             />
           </div>
         </DialogContent>

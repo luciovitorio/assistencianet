@@ -426,6 +426,9 @@ export default async function ServiceOrderDetailPage({ params }: ServiceOrderPag
             thirdParties={activeThirdParties ?? []}
             currentThirdPartyName={currentThirdParty?.name ?? null}
             hasSentEstimate={initialEstimates.some((e) => e.status === 'enviado')}
+            hasDraftEstimate={hasDraftEstimate}
+            clientPhone={client?.phone ?? null}
+            clientEmail={client?.email ?? null}
           />
 
           <StatusStepper status={status} />

@@ -6,7 +6,12 @@ import { toast } from 'sonner'
 import { Building2, CheckCircle2, Printer, ThumbsDown, ThumbsUp, Truck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useRouteTransition } from '@/components/ui/route-transition-indicator'
-import { registerClientResponse, updateServiceOrderPaymentStatus, updateServiceOrderStatus } from '@/app/actions/service-orders'
+import {
+  registerClientResponse,
+  registerManualClientResponse,
+  updateServiceOrderPaymentStatus,
+  updateServiceOrderStatus,
+} from '@/app/actions/service-orders'
 import {
   PAYMENT_STATUS_COLORS,
   PAYMENT_STATUS_LABELS,
@@ -35,6 +40,9 @@ interface ServiceOrderActionsProps {
   thirdParties: ThirdPartyOption[]
   currentThirdPartyName: string | null
   hasSentEstimate: boolean
+  hasDraftEstimate: boolean
+  clientPhone: string | null
+  clientEmail: string | null
 }
 
 const DISPATCHABLE_STATUSES: ServiceOrderStatus[] = ['aguardando', 'em_analise', 'aprovado', 'aguardando_peca']
@@ -51,6 +59,9 @@ export function ServiceOrderActions({
   thirdParties,
   currentThirdPartyName,
   hasSentEstimate,
+  hasDraftEstimate,
+  clientPhone,
+  clientEmail,
 }: ServiceOrderActionsProps) {
   const router = useRouter()
   const { navigate } = useRouteTransition()
@@ -58,6 +69,11 @@ export function ServiceOrderActions({
   const [pickupSheetOpen, setPickupSheetOpen] = React.useState(false)
   const [dispatchOpen, setDispatchOpen] = React.useState(false)
   const [returnOpen, setReturnOpen] = React.useState(false)
+  const hasClientDigitalContact = Boolean(clientPhone?.trim() || clientEmail?.trim())
+  const canRegisterManualResponse =
+    !hasClientDigitalContact &&
+    hasDraftEstimate &&
+    ['aguardando', 'em_analise', 'reprovado', 'enviado_terceiro'].includes(status)
 
   const handleReceiptReprint = () => {
     if (!receiptCashEntryId) {
@@ -82,6 +98,23 @@ export function ServiceOrderActions({
             ? `OS #${serviceOrderNumber}: orçamento aprovado pelo cliente.`
             : `OS #${serviceOrderNumber}: orçamento recusado pelo cliente.`
         )
+        router.refresh()
+      }
+    })
+  }
+
+  const handleManualClientResponse = (response: 'aprovado' | 'reprovado') => {
+    startTransition(async () => {
+      const result = await registerManualClientResponse(serviceOrderId, response)
+      if (result?.error) {
+        toast.error(result.error)
+      } else {
+        const label =
+          result?.message ??
+          (response === 'aprovado'
+            ? 'orçamento aprovado manualmente pelo cliente'
+            : 'orçamento recusado manualmente pelo cliente')
+        toast.success(`OS #${serviceOrderNumber}: ${label}.`)
         router.refresh()
       }
     })
@@ -158,6 +191,30 @@ export function ServiceOrderActions({
           >
             <ThumbsDown className="size-3.5" />
             Cliente reprovou
+          </Button>
+        </>
+      )}
+
+      {canRegisterManualResponse && (
+        <>
+          <Button
+            size="sm"
+            disabled={isPending}
+            onClick={() => handleManualClientResponse('aprovado')}
+            className="gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700"
+          >
+            <ThumbsUp className="size-3.5" />
+            Aceite manual
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={isPending}
+            onClick={() => handleManualClientResponse('reprovado')}
+            className="gap-1.5 border-rose-200 text-rose-700 hover:bg-rose-50"
+          >
+            <ThumbsDown className="size-3.5" />
+            Recusa manual
           </Button>
         </>
       )}

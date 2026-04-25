@@ -349,6 +349,105 @@ export async function registerClientResponse(
   }
 }
 
+export async function registerManualClientResponse(
+  id: string,
+  response: 'aprovado' | 'reprovado',
+) {
+  try {
+    const { companyId } = await getCompanyContext()
+    const supabase = await createSupabaseClient()
+
+    const { data: os, error: osError } = await supabase
+      .from('service_orders')
+      .select('id, number, status')
+      .eq('id', id)
+      .eq('company_id', companyId)
+      .is('deleted_at', null)
+      .single()
+
+    if (osError || !os) {
+      return { error: 'Ordem de serviço não encontrada.' }
+    }
+
+    const { data: estimate, error: estimateError } = await supabase
+      .from('service_order_estimates')
+      .select('id, version, status')
+      .eq('service_order_id', id)
+      .eq('company_id', companyId)
+      .in('status', ['rascunho', 'enviado'])
+      .is('deleted_at', null)
+      .order('version', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (estimateError) throw estimateError
+
+    if (!estimate) {
+      return { error: 'Nenhum orçamento disponível para registrar a resposta do cliente.' }
+    }
+
+    const now = new Date().toISOString()
+
+    if (estimate.status === 'rascunho') {
+      const { error: estimateUpdateError } = await supabase
+        .from('service_order_estimates')
+        .update({
+          status: 'enviado',
+          approval_channel: 'balcao',
+          sent_at: now,
+        })
+        .eq('id', estimate.id)
+        .eq('company_id', companyId)
+
+      if (estimateUpdateError) throw estimateUpdateError
+
+      if (os.status !== 'enviado_terceiro') {
+        const { error: osUpdateError } = await supabase
+          .from('service_orders')
+          .update({
+            status: 'aguardando_aprovacao',
+            client_notified_at: now,
+            client_notified_via: null,
+          })
+          .eq('id', id)
+          .eq('company_id', companyId)
+
+        if (osUpdateError) throw osUpdateError
+      }
+
+      await createAuditLog({
+        action: 'update',
+        entityType: 'service_order_estimate',
+        entityId: estimate.id,
+        companyId,
+        summary: `OS #${os.number}: orçamento v${estimate.version} informado manualmente ao cliente.`,
+        metadata: {
+          service_order_id: id,
+          previous_status: 'rascunho',
+          new_status: 'enviado',
+          approval_channel: 'balcao',
+        },
+      })
+    }
+
+    const result = await applyEstimateClientResponse({
+      supabase,
+      companyId,
+      serviceOrderId: id,
+      response,
+    })
+
+    if ('error' in result) {
+      return { error: result.error }
+    }
+
+    return { success: true as const, message: result.message }
+  } catch (error: unknown) {
+    if (error instanceof Error) return { error: error.message }
+    return { error: 'Erro ao registrar resposta manual do cliente.' }
+  }
+}
+
 export async function markClientNotified(
   id: string,
   via: 'whatsapp' | 'email',

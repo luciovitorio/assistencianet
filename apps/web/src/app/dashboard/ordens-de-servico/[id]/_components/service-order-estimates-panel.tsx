@@ -13,6 +13,8 @@ import {
   FileText,
   Plus,
   Send,
+  ThumbsDown,
+  ThumbsUp,
   Trash2,
   X,
 } from 'lucide-react'
@@ -30,6 +32,7 @@ import {
   createServiceOrderEstimate,
   updateServiceOrderEstimateDraft,
 } from '@/app/actions/service-order-estimates'
+import { registerManualClientResponse } from '@/app/actions/service-orders'
 import { SendEstimateDialog } from './send-estimate-dialog'
 import { addDaysToDateInputValue } from '@/lib/company-settings'
 import { applyMoneyMask } from '@/lib/masks'
@@ -101,6 +104,7 @@ interface ServiceOrderEstimatesPanelProps {
   clientName: string | null
   clientPhone: string | null
   clientEmail: string | null
+  onManualResponseSuccess?: () => void
 }
 
 interface PendingSend {
@@ -336,6 +340,7 @@ export function ServiceOrderEstimatesPanel({
   clientName,
   clientPhone,
   clientEmail,
+  onManualResponseSuccess,
 }: ServiceOrderEstimatesPanelProps) {
   const router = useRouter()
   const { navigate } = useRouteTransition()
@@ -431,6 +436,25 @@ export function ServiceOrderEstimatesPanel({
       } catch (error: unknown) {
         toast.error(error instanceof Error ? error.message : 'Erro ao criar orcamento.')
       }
+    })
+  }
+
+  const handleManualClientResponse = (response: 'aprovado' | 'reprovado') => {
+    startTransition(async () => {
+      const result = await registerManualClientResponse(serviceOrderId, response)
+      if (result?.error) {
+        toast.error(result.error)
+        return
+      }
+
+      const label =
+        result?.message ??
+        (response === 'aprovado'
+          ? 'orçamento aprovado manualmente pelo cliente'
+          : 'orçamento recusado manualmente pelo cliente')
+      toast.success(`OS #${serviceOrderNumber}: ${label}.`)
+      onManualResponseSuccess?.()
+      router.refresh()
     })
   }
 
@@ -537,18 +561,43 @@ export function ServiceOrderEstimatesPanel({
                           <p className="mt-1 text-sm text-muted-foreground">
                             Criado em {dateFormatter.format(new Date(estimate.created_at))}
                           </p>
-                          {mode !== 'history' && estimate.status === 'rascunho' && (
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              className="mt-2 gap-1.5"
-                              onClick={() => setResendEstimate(estimate)}
-                              disabled={!canManageEstimates}
-                            >
-                              <Send className="size-3.5" />
-                              Enviar ao cliente
-                            </Button>
+                          {estimate.status === 'rascunho' && (
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              {mode !== 'history' && (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  className="gap-1.5"
+                                  onClick={() => setResendEstimate(estimate)}
+                                  disabled={!canManageEstimates}
+                                >
+                                  <Send className="size-3.5" />
+                                  Enviar ao cliente
+                                </Button>
+                              )}
+                              <Button
+                                type="button"
+                                size="sm"
+                                className="gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700"
+                                onClick={() => handleManualClientResponse('aprovado')}
+                                disabled={isPending || !canManageEstimates}
+                              >
+                                <ThumbsUp className="size-3.5" />
+                                Aceite manual
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="gap-1.5 border-rose-200 text-rose-700 hover:bg-rose-50"
+                                onClick={() => handleManualClientResponse('reprovado')}
+                                disabled={isPending || !canManageEstimates}
+                              >
+                                <ThumbsDown className="size-3.5" />
+                                Recusa manual
+                              </Button>
+                            </div>
                           )}
                         </div>
 
