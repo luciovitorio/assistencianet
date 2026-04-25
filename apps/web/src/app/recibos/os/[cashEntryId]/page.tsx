@@ -19,6 +19,7 @@ const currencyFormatter = new Intl.NumberFormat('pt-BR', {
 const dateTimeFormatter = new Intl.DateTimeFormat('pt-BR', {
   dateStyle: 'short',
   timeStyle: 'short',
+  timeZone: 'America/Sao_Paulo',
 })
 
 const formatCurrency = (value: number) => currencyFormatter.format(value)
