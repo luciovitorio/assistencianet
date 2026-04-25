@@ -172,8 +172,17 @@ export async function createPayouts(data: PayoutCreateSchema) {
         continue
       }
 
-      const laborRate = technician.labor_rate ? Number(technician.labor_rate) : 0
+      const laborRateSnapshot = technician.labor_rate != null ? Number(technician.labor_rate) : null
+      const itemLaborRate = laborRateSnapshot ?? 0
       const totalAmount = Number(line.total_amount)
+
+      if (laborRateSnapshot == null && totalAmount <= 0) {
+        skipped.push({
+          technicianName: technician.name,
+          reason: 'Informe o total a pagar para técnico sem valor de mão de obra cadastrado.',
+        })
+        continue
+      }
 
       // 4. Gera número de recibo via RPC
       const { data: receiptNumber, error: numberError } = await supabase.rpc(
@@ -197,7 +206,7 @@ export async function createPayouts(data: PayoutCreateSchema) {
           period_start: parsed.data.period_start,
           period_end: parsed.data.period_end,
           os_count: freshOs.length,
-          labor_rate_snapshot: laborRate,
+          labor_rate_snapshot: laborRateSnapshot,
           total_amount: totalAmount,
           status: 'aberto',
           notes: line.notes?.trim() || null,
@@ -223,7 +232,7 @@ export async function createPayouts(data: PayoutCreateSchema) {
         os_number: String(os.number ?? ''),
         client_name: firstRelation(os.clients)?.name ?? '—',
         completed_at: os.completed_at!,
-        labor_rate: laborRate,
+        labor_rate: itemLaborRate,
         active: true,
       }))
 

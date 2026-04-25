@@ -15,6 +15,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { InputField } from '@/components/ui/input-field'
+import { MaskedInputField } from '@/components/ui/masked-input-field'
 import { cn } from '@/lib/utils'
 import { createPayouts } from '@/app/actions/technician-payouts'
 import type { TechnicianProductionRow } from '@/app/actions/technician-production'
@@ -49,13 +50,13 @@ type LineState = {
 
 function buildInitialLines(rows: TechnicianProductionRow[]): LineState[] {
   return rows
-    .filter((r) => r.os_count > 0 && r.labor_rate != null)
+    .filter((r) => r.os_count > 0)
     .map((r) => ({
       technicianId: r.technician_id,
       technicianName: r.technician_name,
       osCount: r.os_count,
       laborRate: r.labor_rate,
-      totalInput: r.total_labor.toFixed(2).replace('.', ','),
+      totalInput: r.total_labor > 0 ? formatCurrency(r.total_labor) : '',
       notes: '',
       selected: true,
     }))
@@ -109,6 +110,10 @@ export function ClosePayoutDialog({
       const total = parseMoney(line.totalInput)
       if (!Number.isFinite(total) || total < 0) {
         toast.error(`Valor inválido para ${line.technicianName}.`)
+        return
+      }
+      if (line.laborRate == null && total <= 0) {
+        toast.error(`Informe o total a pagar para ${line.technicianName}.`)
         return
       }
     }
@@ -168,8 +173,7 @@ export function ClosePayoutDialog({
           <div className="flex flex-col items-center justify-center py-10 text-center">
             <Wrench className="size-10 text-muted-foreground/30 mb-3" />
             <p className="text-sm text-muted-foreground max-w-sm">
-              Nenhum técnico elegível no período. Verifique se há OS concluídas e se os técnicos têm valor de mão de obra
-              configurado.
+              Nenhum técnico elegível no período. Verifique se há OS concluídas ainda não incluídas em outro fechamento.
             </p>
           </div>
         ) : (
@@ -205,20 +209,19 @@ export function ClosePayoutDialog({
                       <div className="text-right">
                         <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Valor/OS</div>
                         <div className="tabular-nums text-muted-foreground">
-                          {line.laborRate != null ? formatCurrency(line.laborRate) : '—'}
+                          {line.laborRate != null ? formatCurrency(line.laborRate) : 'Manual'}
                         </div>
                       </div>
-                      <div className="w-36">
-                        <div className="text-[10px] uppercase tracking-wide text-muted-foreground text-right">
-                          Total a pagar
-                        </div>
-                        <InputField
+                      <div className="w-40">
+                        <MaskedInputField
+                          mask="money"
+                          label="Total a pagar"
+                          placeholder="R$ 0,00"
                           value={line.totalInput}
                           onChange={(e) =>
                             handleUpdate(line.technicianId, { totalInput: e.target.value })
                           }
                           disabled={!line.selected}
-                          inputMode="decimal"
                           className="text-right h-8"
                         />
                       </div>

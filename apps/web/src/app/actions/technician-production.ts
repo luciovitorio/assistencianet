@@ -86,7 +86,7 @@ export async function getTechnicianProduction(
 
     const rows: TechnicianProductionRow[] = technicians.map((t) => {
       const osCount = countByTechnician[t.id] ?? 0
-      const laborRate = t.labor_rate ? Number(t.labor_rate) : null
+      const laborRate = t.labor_rate != null ? Number(t.labor_rate) : null
       const totalLabor = laborRate != null ? osCount * laborRate : 0
       const branch = firstRelation(t.branches as BranchRelation)
 

@@ -69,7 +69,7 @@ export function ProductionReport({ initialRows, initialStart, initialEnd }: Prod
   }), [rows])
 
   const eligibleCount = React.useMemo(
-    () => rows.filter((r) => r.os_count > 0 && r.labor_rate != null).length,
+    () => rows.filter((r) => r.os_count > 0).length,
     [rows],
   )
 
@@ -140,7 +140,7 @@ export function ProductionReport({ initialRows, initialStart, initialEnd }: Prod
           icon={<ClipboardList className="size-5 text-primary" />}
         />
         <SummaryCard
-          label="Total mão de obra"
+          label="Total calculado"
           value={formatCurrency(summary.total_labor)}
           icon={<Wrench className="size-5 text-amber-600" />}
           highlight={summary.total_labor > 0}
@@ -240,7 +240,7 @@ export function ProductionReport({ initialRows, initialStart, initialEnd }: Prod
                         <span className="font-semibold text-foreground">{formatCurrency(row.total_labor)}</span>
                       ) : (
                         <span className="text-muted-foreground/50">
-                          {row.labor_rate == null ? '—' : formatCurrency(0)}
+                          {row.labor_rate == null ? 'Manual no fechamento' : formatCurrency(0)}
                         </span>
                       )}
                     </td>
@@ -272,11 +272,7 @@ export function ProductionReport({ initialRows, initialStart, initialEnd }: Prod
       {summary.technicians_without_rate > 0 && (
         <p className="text-xs text-muted-foreground flex items-center gap-1.5">
           <AlertCircle className="size-3.5 text-destructive shrink-0" />
-          Técnicos sem valor de mão de obra definido não são incluídos no total.
-          Configure o valor em{' '}
-          <a href="/dashboard/funcionarios" className="underline underline-offset-2 hover:text-foreground">
-            Funcionários
-          </a>.
+          Técnicos sem valor de mão de obra definido entram no fechamento com total manual informado na confirmação.
         </p>
       )}
 
