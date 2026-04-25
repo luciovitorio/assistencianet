@@ -138,6 +138,16 @@ export async function updateServiceOrderStatus(
           .eq('status', 'ativa')
 
         if (reservations && reservations.length > 0) {
+          const partIds = [...new Set(reservations.map((reservation) => reservation.part_id))]
+          const { data: parts, error: partsError } = await supabase
+            .from('parts')
+            .select('id, cost_price')
+            .eq('company_id', companyId)
+            .in('id', partIds)
+
+          if (partsError) throw partsError
+
+          const costByPart = new Map((parts ?? []).map((part) => [part.id, part.cost_price]))
           const { error: movementsError } = await supabase
             .from('stock_movements')
             .insert(
@@ -147,6 +157,7 @@ export async function updateServiceOrderStatus(
                 part_id: r.part_id,
                 movement_type: 'saida',
                 quantity: -r.quantity,
+                unit_cost: costByPart.get(r.part_id) ?? null,
                 entry_date: movementEntryDate,
                 reference_type: 'service_order',
                 reference_id: id,

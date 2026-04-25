@@ -926,9 +926,10 @@ export function ServiceOrderEstimatesPanel({
                                   {...register(`items.${index}.description`)}
                                 />
                               )}
-                              {errors.items?.[index]?.description && (
+                              {(errors.items?.[index]?.description || errors.items?.[index]?.part_id) && (
                                 <p className="text-xs text-destructive">
-                                  {errors.items[index]?.description?.message}
+                                  {errors.items[index]?.description?.message ??
+                                    errors.items[index]?.part_id?.message}
                                 </p>
                               )}
                             </div>

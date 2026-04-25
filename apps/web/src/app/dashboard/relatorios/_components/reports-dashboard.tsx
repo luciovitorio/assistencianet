@@ -185,7 +185,7 @@ export function ReportsDashboard({ initialData, initialStart, initialEnd }: Repo
         <SummaryCard
           label="Margem líquida"
           value={formatPercent(report.financial.netMargin)}
-          helper="Faturamento menos despesas do período"
+          helper="Faturamento menos despesas pagas no período"
           icon={<Percent className="size-5 text-indigo-600" />}
         />
       </section>
@@ -232,7 +232,7 @@ export function ReportsDashboard({ initialData, initialStart, initialEnd }: Repo
             <MiniMetric label="Lucro bruto peças" value={formatCurrency(report.financial.partsGrossProfit)} />
             <MiniMetric label="Custo das peças" value={formatCurrency(report.financial.partsCost)} />
           </div>
-          <MoneyList title="Despesas por categoria" rows={report.financial.expensesByCategory} emptyLabel="Nenhuma despesa no período." />
+          <MoneyList title="Despesas pagas por categoria" rows={report.financial.expensesByCategory} emptyLabel="Nenhuma despesa paga no período." />
         </ReportSection>
 
         <ReportSection title="Comparativo entre filiais" description="Faturamento, despesas e OS abertas no período.">

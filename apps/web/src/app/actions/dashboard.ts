@@ -190,8 +190,10 @@ export async function getDashboardOverview(): Promise<{
         .select('id, branch_id, amount')
         .eq('company_id', companyId)
         .is('deleted_at', null)
-        .gte('due_date', period.startDate)
-        .lte('due_date', period.endDate)
+        .eq('status', 'pago')
+        .not('paid_at', 'is', null)
+        .gte('paid_at', period.startDate)
+        .lte('paid_at', periodEnd)
         .limit(5000),
       supabase
         .from('service_orders')

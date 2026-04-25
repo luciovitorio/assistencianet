@@ -81,7 +81,7 @@ export async function AdminDashboard() {
         <KpiCard
           label="Despesas operacionais"
           value={formatCurrency(kpis.operationalExpenses)}
-          helper={`Resultado: ${formatCurrency(kpis.netResult)}`}
+          helper={`Pagas no mês · Resultado: ${formatCurrency(kpis.netResult)}`}
           icon={<ReceiptText className="size-5" />}
           tone="expense"
         />
@@ -97,7 +97,7 @@ export async function AdminDashboard() {
               <div>
                 <h3 className="text-lg font-semibold">Comparativo entre filiais</h3>
                 <p className="text-sm text-muted-foreground">
-                  Receita, despesas, OS abertas e OS entregues no mês.
+                  Receita, despesas pagas, OS abertas e OS entregues no mês.
                 </p>
               </div>
             </div>
@@ -114,10 +114,10 @@ export async function AdminDashboard() {
 
         <div className="rounded-lg border bg-card p-6 shadow-sm">
           <h3 className="text-lg font-semibold">Resumo financeiro</h3>
-          <p className="text-sm text-muted-foreground">Mês atual consolidado.</p>
+          <p className="text-sm text-muted-foreground">Mês atual por caixa realizado.</p>
           <div className="mt-6 space-y-4">
             <FinancialLine label="Faturamento" value={kpis.revenue} tone="positive" />
-            <FinancialLine label="Despesas" value={kpis.operationalExpenses} tone="negative" />
+            <FinancialLine label="Despesas pagas" value={kpis.operationalExpenses} tone="negative" />
             <div className="border-t pt-4">
               <FinancialLine
                 label="Resultado"

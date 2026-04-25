@@ -111,6 +111,14 @@ export const serviceOrderEstimateItemSchema = z
         message: 'Quantidade de peca deve ser um numero inteiro.',
       })
     }
+
+    if (item.item_type === 'peca' && !item.part_id) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['part_id'],
+        message: 'Selecione a peca no catalogo.',
+      })
+    }
   })
 
 export const serviceOrderEstimateSchema = z.object({

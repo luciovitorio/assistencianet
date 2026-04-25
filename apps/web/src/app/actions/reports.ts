@@ -89,6 +89,7 @@ type EstimateRow = {
 
 type EstimateItemRow = {
   estimate_id: string
+  service_order_id: string
   item_type: string
   line_total: number
   part_id: string | null
@@ -100,6 +101,8 @@ type PartRow = {
   name: string
   min_stock: number
   cost_price: number | null
+  active: boolean
+  deleted_at: string | null
 }
 
 type StockMovementRow = {
@@ -110,6 +113,7 @@ type StockMovementRow = {
   unit_cost: number | null
   entry_date: string
   reference_type: string | null
+  reference_id: string | null
 }
 
 type ReservationRow = {
@@ -197,6 +201,35 @@ const toBranchId = (branchId?: string) => {
   return branchId
 }
 
+const getMovementCost = (movement: StockMovementRow, partById: Map<string, PartRow>) => {
+  const quantity = Math.abs(Number(movement.quantity))
+  const unitCost = Number(movement.unit_cost ?? partById.get(movement.part_id)?.cost_price ?? 0)
+  return quantity * unitCost
+}
+
+const buildServiceOrderPartsCostMap = (
+  movements: StockMovementRow[],
+  partById: Map<string, PartRow>,
+  serviceOrderIds?: Set<string>,
+) => {
+  const costByServiceOrder = new Map<string, number>()
+
+  for (const movement of movements) {
+    if (
+      movement.reference_type !== 'service_order' ||
+      movement.movement_type !== 'saida' ||
+      !movement.reference_id ||
+      (serviceOrderIds && !serviceOrderIds.has(movement.reference_id))
+    ) {
+      continue
+    }
+
+    incrementCount(costByServiceOrder, movement.reference_id, getMovementCost(movement, partById))
+  }
+
+  return costByServiceOrder
+}
+
 export async function getBusinessReports(
   filters: ReportsFilters,
 ): Promise<{ data: BusinessReportsData | null; error?: string }> {
@@ -256,10 +289,12 @@ export async function getBusinessReports(
     })
 
     const partById = new Map(parts.map((part) => [part.id, part]))
+    const stockMetricParts = parts.filter((part) => part.active && !part.deleted_at)
     const estimateIds = cashEntries
       .map((entry) => entry.estimate_id)
       .filter((id): id is string => Boolean(id))
     const estimateItems = await fetchEstimateItems(supabase, companyId, estimateIds)
+    const paidServiceOrderIds = new Set(cashEntries.map((entry) => entry.service_order_id))
     const openReceivables = await fetchOpenReceivables(
       supabase,
       companyId,
@@ -267,7 +302,7 @@ export async function getBusinessReports(
     )
 
     const stockMetrics = buildStockMetrics({
-      parts,
+      parts: stockMetricParts,
       partById,
       branches,
       movements: stockMovements,
@@ -276,6 +311,11 @@ export async function getBusinessReports(
       endDate: filters.endDate,
       branchId,
     })
+    const paidOrderPartsCostByServiceOrder = buildServiceOrderPartsCostMap(
+      stockMovements,
+      partById,
+      paidServiceOrderIds,
+    )
 
     const financialMetrics = buildFinancialMetrics({
       cashEntries,
@@ -285,7 +325,7 @@ export async function getBusinessReports(
       openReceivables,
       serviceOrders,
       branches,
-      stockPartsCostByServiceOrder: stockMetrics.partsCostByServiceOrder,
+      paidOrderPartsCostByServiceOrder,
     })
 
     return {
@@ -402,7 +442,7 @@ async function fetchEstimateItems(
 
   const { data, error } = await supabase
     .from('service_order_estimate_items')
-    .select('estimate_id, item_type, line_total, part_id, quantity')
+    .select('estimate_id, service_order_id, item_type, line_total, part_id, quantity')
     .eq('company_id', companyId)
     .in('estimate_id', uniqueIds)
     .limit(3000)
@@ -417,10 +457,8 @@ async function fetchParts(
 ) {
   const { data, error } = await supabase
     .from('parts')
-    .select('id, name, min_stock, cost_price')
+    .select('id, name, min_stock, cost_price, active, deleted_at')
     .eq('company_id', companyId)
-    .eq('active', true)
-    .is('deleted_at', null)
     .limit(2000)
 
   if (error) throw error
@@ -434,7 +472,7 @@ async function fetchStockMovements(
 ) {
   let query = supabase
     .from('stock_movements')
-    .select('part_id, branch_id, movement_type, quantity, unit_cost, entry_date, reference_type')
+    .select('part_id, branch_id, movement_type, quantity, unit_cost, entry_date, reference_type, reference_id')
     .eq('company_id', companyId)
     .limit(5000)
 
@@ -476,9 +514,11 @@ async function fetchBills(
     .select('branch_id, category, amount, due_date, status, paid_at')
     .eq('company_id', companyId)
     .is('deleted_at', null)
-    .gte('due_date', startDate)
-    .lte('due_date', endDate)
-    .order('due_date', { ascending: true })
+    .eq('status', 'pago')
+    .not('paid_at', 'is', null)
+    .gte('paid_at', startDate)
+    .lte('paid_at', endDate + END_OF_DAY)
+    .order('paid_at', { ascending: true })
 
   if (branchId) query = query.eq('branch_id', branchId)
 
@@ -611,7 +651,7 @@ function buildFinancialMetrics({
   openReceivables,
   serviceOrders,
   branches,
-  stockPartsCostByServiceOrder,
+  paidOrderPartsCostByServiceOrder,
 }: {
   cashEntries: CashEntryRow[]
   estimateItems: EstimateItemRow[]
@@ -620,7 +660,7 @@ function buildFinancialMetrics({
   openReceivables: number
   serviceOrders: ServiceOrderRow[]
   branches: ReportBranchOption[]
-  stockPartsCostByServiceOrder: number
+  paidOrderPartsCostByServiceOrder: Map<string, number>
 }) {
   const revenue = cashEntries.reduce((total, entry) => total + Number(entry.net_amount), 0)
   const paidOrderCount = new Set(cashEntries.map((entry) => entry.service_order_id)).size
@@ -647,20 +687,31 @@ function buildFinancialMetrics({
   }
 
   let serviceGrossProfit = 0
-  let partsGrossProfit = 0
-  let estimatedPartsCost = 0
+  const partRevenueByServiceOrder = new Map<string, number>()
+  const estimatedPartCostByServiceOrder = new Map<string, number>()
 
   for (const item of estimateItems) {
     const lineTotal = Number(item.line_total)
-    if (item.item_type === 'servico') {
+    if (item.item_type !== 'peca') {
       serviceGrossProfit += lineTotal
       continue
     }
 
     const unitCost = item.part_id ? Number(partById.get(item.part_id)?.cost_price ?? 0) : 0
     const itemCost = unitCost * Number(item.quantity)
-    estimatedPartsCost += itemCost
-    partsGrossProfit += lineTotal - itemCost
+    incrementCount(partRevenueByServiceOrder, item.service_order_id, lineTotal)
+    incrementCount(estimatedPartCostByServiceOrder, item.service_order_id, itemCost)
+  }
+
+  let partsGrossProfit = 0
+  let partsCost = 0
+  for (const [serviceOrderId, partRevenue] of partRevenueByServiceOrder.entries()) {
+    const partCost = paidOrderPartsCostByServiceOrder.has(serviceOrderId)
+      ? (paidOrderPartsCostByServiceOrder.get(serviceOrderId) ?? 0)
+      : (estimatedPartCostByServiceOrder.get(serviceOrderId) ?? 0)
+
+    partsCost += partCost
+    partsGrossProfit += partRevenue - partCost
   }
 
   const branchComparison = branches.map((branch) => {
@@ -682,7 +733,7 @@ function buildFinancialMetrics({
     averageTicket: paidOrderCount > 0 ? roundMoney(revenue / paidOrderCount) : 0,
     serviceGrossProfit: roundMoney(serviceGrossProfit),
     partsGrossProfit: roundMoney(partsGrossProfit),
-    partsCost: roundMoney(stockPartsCostByServiceOrder || estimatedPartsCost),
+    partsCost: roundMoney(partsCost),
     openReceivables: roundMoney(openReceivables),
     netMargin: revenue > 0 ? Math.round(((revenue - expenses) / revenue) * 1000) / 10 : null,
     expensesByCategory: [...expensesByCategory.entries()]
@@ -748,8 +799,7 @@ function buildStockMetrics({
     if (!isServiceOrderExit) continue
 
     const quantity = Math.abs(Number(movement.quantity))
-    const unitCost = Number(movement.unit_cost ?? partById.get(movement.part_id)?.cost_price ?? 0)
-    const totalCost = quantity * unitCost
+    const totalCost = getMovementCost(movement, partById)
 
     incrementCount(usedByPart, movement.part_id, quantity)
     incrementCount(costByPart, movement.part_id, totalCost)
