@@ -15,19 +15,36 @@ interface ClientResponseButtonsProps {
 export function ClientResponseButtons({ serviceOrderId, serviceOrderNumber }: ClientResponseButtonsProps) {
   const router = useRouter()
   const [isPending, startTransition] = React.useTransition()
+  const [pendingResponse, setPendingResponse] = React.useState<'aprovado' | 'reprovado' | null>(null)
 
   const handle = (response: 'aprovado' | 'reprovado') => {
+    const loadingToastId = toast.loading(
+      response === 'aprovado'
+        ? `Registrando aprovação da OS #${serviceOrderNumber}...`
+        : `Registrando recusa da OS #${serviceOrderNumber}...`
+    )
+    setPendingResponse(response)
     startTransition(async () => {
-      const result = await registerClientResponse(serviceOrderId, response)
-      if (result?.error) {
-        toast.error(result.error)
-      } else {
-        toast.success(
-          response === 'aprovado'
-            ? `OS #${serviceOrderNumber}: orçamento aprovado pelo cliente.`
-            : `OS #${serviceOrderNumber}: orçamento recusado pelo cliente.`
+      try {
+        const result = await registerClientResponse(serviceOrderId, response)
+        if (result?.error) {
+          toast.error(result.error, { id: loadingToastId })
+        } else {
+          toast.success(
+            response === 'aprovado'
+              ? `OS #${serviceOrderNumber}: orçamento aprovado pelo cliente.`
+              : `OS #${serviceOrderNumber}: orçamento recusado pelo cliente.`,
+            { id: loadingToastId }
+          )
+          router.refresh()
+        }
+      } catch (error: unknown) {
+        toast.error(
+          error instanceof Error ? error.message : 'Erro ao registrar resposta do cliente.',
+          { id: loadingToastId }
         )
-        router.refresh()
+      } finally {
+        setPendingResponse(null)
       }
     })
   }
@@ -39,7 +56,8 @@ export function ClientResponseButtons({ serviceOrderId, serviceOrderNumber }: Cl
       </p>
       <Button
         size="sm"
-        disabled={isPending}
+        disabled={isPending || pendingResponse !== null}
+        loading={pendingResponse === 'aprovado'}
         onClick={() => handle('aprovado')}
         className="gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700"
       >
@@ -49,7 +67,8 @@ export function ClientResponseButtons({ serviceOrderId, serviceOrderNumber }: Cl
       <Button
         size="sm"
         variant="outline"
-        disabled={isPending}
+        disabled={isPending || pendingResponse !== null}
+        loading={pendingResponse === 'reprovado'}
         onClick={() => handle('reprovado')}
         className="gap-1.5 border-rose-200 text-rose-700 hover:bg-rose-50"
       >

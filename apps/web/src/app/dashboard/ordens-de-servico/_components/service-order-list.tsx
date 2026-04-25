@@ -24,6 +24,7 @@ import {
   EyeIcon,
   AlertTriangle,
   FilePlus2,
+  Loader2,
 } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -352,21 +353,31 @@ export function ServiceOrderList({
     serviceOrderNumber: number,
     response: 'aprovado' | 'reprovado'
   ) => {
+    const loadingToastId = toast.loading(
+      response === 'aprovado'
+        ? `Registrando aprovação da OS #${serviceOrderNumber}...`
+        : `Registrando recusa da OS #${serviceOrderNumber}...`
+    )
     setActionOrderId(serviceOrderId)
     React.startTransition(async () => {
       try {
         const result = await registerClientResponse(serviceOrderId, response)
         if (result?.error) {
-          toast.error(result.error)
+          toast.error(result.error, { id: loadingToastId })
         } else {
           const label =
             result?.message ??
             (response === 'aprovado'
               ? 'orçamento aprovado pelo cliente'
               : 'orçamento recusado pelo cliente. A OS voltou para análise')
-          toast.success(`OS #${serviceOrderNumber}: ${label}.`)
+          toast.success(`OS #${serviceOrderNumber}: ${label}.`, { id: loadingToastId })
           router.refresh()
         }
+      } catch (error: unknown) {
+        toast.error(
+          error instanceof Error ? error.message : 'Erro ao registrar resposta do cliente.',
+          { id: loadingToastId }
+        )
       } finally {
         setActionOrderId(null)
       }
@@ -845,7 +856,11 @@ export function ServiceOrderList({
                               )}
                               title="Ações"
                             >
-                              <MoreHorizontal className="size-4" />
+                              {isActionPending ? (
+                                <Loader2 className="size-4 animate-spin" />
+                              ) : (
+                                <MoreHorizontal className="size-4" />
+                              )}
                               <span className="sr-only">Ações</span>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-44">
@@ -917,7 +932,11 @@ export function ServiceOrderList({
                                         handleClientResponse(order.id, order.number, 'aprovado')
                                       }}
                                     >
-                                      <ThumbsUp className="size-4" />
+                                      {isActionPending ? (
+                                        <Loader2 className="size-4 animate-spin" />
+                                      ) : (
+                                        <ThumbsUp className="size-4" />
+                                      )}
                                       Cliente aprovou
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
@@ -927,7 +946,11 @@ export function ServiceOrderList({
                                         handleClientResponse(order.id, order.number, 'reprovado')
                                       }}
                                     >
-                                      <ThumbsDown className="size-4" />
+                                      {isActionPending ? (
+                                        <Loader2 className="size-4 animate-spin" />
+                                      ) : (
+                                        <ThumbsDown className="size-4" />
+                                      )}
                                       Cliente reprovou
                                     </DropdownMenuItem>
                                   </>

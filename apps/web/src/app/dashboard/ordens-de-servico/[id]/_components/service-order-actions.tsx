@@ -69,6 +69,7 @@ export function ServiceOrderActions({
   const [pickupSheetOpen, setPickupSheetOpen] = React.useState(false)
   const [dispatchOpen, setDispatchOpen] = React.useState(false)
   const [returnOpen, setReturnOpen] = React.useState(false)
+  const [pendingClientResponse, setPendingClientResponse] = React.useState<'aprovado' | 'reprovado' | null>(null)
   const hasClientDigitalContact = Boolean(clientPhone?.trim() || clientEmail?.trim())
   const canRegisterManualResponse =
     !hasClientDigitalContact &&
@@ -88,17 +89,33 @@ export function ServiceOrderActions({
   }
 
   const handleClientResponse = (response: 'aprovado' | 'reprovado') => {
+    const loadingToastId = toast.loading(
+      response === 'aprovado'
+        ? `Registrando aprovação da OS #${serviceOrderNumber}...`
+        : `Registrando recusa da OS #${serviceOrderNumber}...`
+    )
+    setPendingClientResponse(response)
     startTransition(async () => {
-      const result = await registerClientResponse(serviceOrderId, response)
-      if (result?.error) {
-        toast.error(result.error)
-      } else {
-        toast.success(
-          response === 'aprovado'
-            ? `OS #${serviceOrderNumber}: orçamento aprovado pelo cliente.`
-            : `OS #${serviceOrderNumber}: orçamento recusado pelo cliente.`
+      try {
+        const result = await registerClientResponse(serviceOrderId, response)
+        if (result?.error) {
+          toast.error(result.error, { id: loadingToastId })
+        } else {
+          toast.success(
+            response === 'aprovado'
+              ? `OS #${serviceOrderNumber}: orçamento aprovado pelo cliente.`
+              : `OS #${serviceOrderNumber}: orçamento recusado pelo cliente.`,
+            { id: loadingToastId }
+          )
+          router.refresh()
+        }
+      } catch (error: unknown) {
+        toast.error(
+          error instanceof Error ? error.message : 'Erro ao registrar resposta do cliente.',
+          { id: loadingToastId }
         )
-        router.refresh()
+      } finally {
+        setPendingClientResponse(null)
       }
     })
   }
@@ -175,7 +192,8 @@ export function ServiceOrderActions({
         <>
           <Button
             size="sm"
-            disabled={isPending}
+            disabled={isPending || pendingClientResponse !== null}
+            loading={pendingClientResponse === 'aprovado'}
             onClick={() => handleClientResponse('aprovado')}
             className="gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700"
           >
@@ -185,7 +203,8 @@ export function ServiceOrderActions({
           <Button
             size="sm"
             variant="outline"
-            disabled={isPending}
+            disabled={isPending || pendingClientResponse !== null}
+            loading={pendingClientResponse === 'reprovado'}
             onClick={() => handleClientResponse('reprovado')}
             className="gap-1.5 border-rose-200 text-rose-700 hover:bg-rose-50"
           >
