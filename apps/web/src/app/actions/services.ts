@@ -67,7 +67,6 @@ export async function createService(data: ServiceSchema) {
         category: parsed.data.category,
         price: parsed.data.price ?? null,
         estimated_duration_minutes: parsed.data.estimated_duration_minutes ?? null,
-        warranty_days: parsed.data.warranty_days,
         notes: normalizeOptional(parsed.data.notes),
         active: parsed.data.active,
         company_id: companyId,
@@ -129,7 +128,6 @@ export async function updateService(id: string, data: ServiceSchema) {
         category: parsed.data.category,
         price: parsed.data.price ?? null,
         estimated_duration_minutes: parsed.data.estimated_duration_minutes ?? null,
-        warranty_days: parsed.data.warranty_days,
         notes: normalizeOptional(parsed.data.notes),
         active: parsed.data.active,
       })

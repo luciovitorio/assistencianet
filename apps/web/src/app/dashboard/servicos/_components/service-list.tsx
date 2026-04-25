@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Edit2, Trash2, X, Clock, ShieldCheck } from 'lucide-react'
+import { Plus, Edit2, Trash2, X, Clock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DataTableCard,
@@ -27,7 +27,6 @@ export interface ServiceData {
   category: string
   price: number | null
   estimated_duration_minutes: number | null
-  warranty_days: number
   notes: string | null
   active: boolean
 }
@@ -217,7 +216,6 @@ export function ServiceList({ initialServices }: ServiceListProps) {
                   <th className="text-left font-medium text-muted-foreground px-4 py-3">Categoria</th>
                   <th className="text-right font-medium text-muted-foreground px-4 py-3 hidden lg:table-cell">Preço</th>
                   <th className="text-center font-medium text-muted-foreground px-4 py-3 hidden md:table-cell">Duração</th>
-                  <th className="text-center font-medium text-muted-foreground px-4 py-3 hidden md:table-cell">Garantia</th>
                   <th className="text-right font-medium text-muted-foreground px-4 py-3">Ações</th>
                 </tr>
               </thead>
@@ -274,18 +272,6 @@ export function ServiceList({ initialServices }: ServiceListProps) {
                         )}
                       </td>
 
-                      {/* Garantia */}
-                      <td className="px-4 py-3 hidden md:table-cell text-center">
-                        {service.warranty_days > 0 ? (
-                          <span className="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 font-medium">
-                            <ShieldCheck className="size-3.5" />
-                            {service.warranty_days}d
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground/50 text-xs">—</span>
-                        )}
-                      </td>
-
                       {/* Ações */}
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-1">
@@ -303,7 +289,6 @@ export function ServiceList({ initialServices }: ServiceListProps) {
                                   category: service.category,
                                   price: service.price,
                                   estimated_duration_minutes: service.estimated_duration_minutes,
-                                  warranty_days: service.warranty_days,
                                   notes: service.notes,
                                   active: service.active,
                                 },

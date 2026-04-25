@@ -19,7 +19,7 @@ export default async function ServicosPage() {
 
   const { data: services } = await supabase
     .from('services')
-    .select('id, name, code, category, price, estimated_duration_minutes, warranty_days, notes, active')
+    .select('id, name, code, category, price, estimated_duration_minutes, notes, active')
     .eq('company_id', companyId)
     .is('deleted_at', null)
     .order('name', { ascending: true })

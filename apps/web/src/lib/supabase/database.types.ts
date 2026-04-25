@@ -1066,8 +1066,10 @@ export type Database = {
           equipment_model_id: string | null
           estimated_delivery: string | null
           id: string
+          is_warranty_rework: boolean
           notes: string | null
           number: number
+          parent_service_order_id: string | null
           payment_method: string | null
           payment_status: string
           pickup_notes: string | null
@@ -1107,8 +1109,10 @@ export type Database = {
           equipment_model_id?: string | null
           estimated_delivery?: string | null
           id?: string
+          is_warranty_rework?: boolean
           notes?: string | null
           number: number
+          parent_service_order_id?: string | null
           payment_method?: string | null
           payment_status?: string
           pickup_notes?: string | null
@@ -1148,8 +1152,10 @@ export type Database = {
           equipment_model_id?: string | null
           estimated_delivery?: string | null
           id?: string
+          is_warranty_rework?: boolean
           notes?: string | null
           number?: number
+          parent_service_order_id?: string | null
           payment_method?: string | null
           payment_status?: string
           pickup_notes?: string | null
@@ -1215,6 +1221,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "service_orders_parent_service_order_id_fkey"
+            columns: ["parent_service_order_id"]
+            isOneToOne: false
+            referencedRelation: "service_orders"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "service_orders_technician_id_fkey"
             columns: ["technician_id"]
             isOneToOne: false
@@ -1245,7 +1258,6 @@ export type Database = {
           notes: string | null
           price: number | null
           updated_at: string
-          warranty_days: number
         }
         Insert: {
           active?: boolean
@@ -1261,7 +1273,6 @@ export type Database = {
           notes?: string | null
           price?: number | null
           updated_at?: string
-          warranty_days?: number
         }
         Update: {
           active?: boolean
@@ -1277,7 +1288,6 @@ export type Database = {
           notes?: string | null
           price?: number | null
           updated_at?: string
-          warranty_days?: number
         }
         Relationships: [
           {

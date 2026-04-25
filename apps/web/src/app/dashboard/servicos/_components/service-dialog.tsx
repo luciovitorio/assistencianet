@@ -36,7 +36,6 @@ export interface ServiceFormState {
   category?: string
   price?: number | null
   estimated_duration_minutes?: number | null
-  warranty_days?: number
   notes?: string | null
   active?: boolean
 }
@@ -49,11 +48,10 @@ interface ServiceDialogProps {
 
 type ServiceFormValues = Omit<
   ServiceSchema,
-  'price' | 'estimated_duration_minutes' | 'warranty_days'
+  'price' | 'estimated_duration_minutes'
 > & {
   price?: string | number
   estimated_duration_minutes?: string | number | null
-  warranty_days: string | number
 }
 
 export function ServiceDialog({ service, open, onOpenChange }: ServiceDialogProps) {
@@ -74,7 +72,6 @@ export function ServiceDialog({ service, open, onOpenChange }: ServiceDialogProp
       category: 'reparo',
       price: '',
       estimated_duration_minutes: null,
-      warranty_days: 0,
       notes: '',
       active: true,
     },
@@ -93,7 +90,6 @@ export function ServiceDialog({ service, open, onOpenChange }: ServiceDialogProp
               )
             : '',
         estimated_duration_minutes: service?.estimated_duration_minutes ?? null,
-        warranty_days: service?.warranty_days ?? 0,
         notes: service?.notes || '',
         active: service?.active !== false,
       })
@@ -231,23 +227,6 @@ export function ServiceDialog({ service, open, onOpenChange }: ServiceDialogProp
                   {...field}
                   value={field.value == null ? '' : String(field.value)}
                   onChange={(e) => field.onChange(e.target.value === '' ? null : e.target.value)}
-                />
-              )}
-            />
-
-            {/* Garantia */}
-            <Controller
-              control={control}
-              name="warranty_days"
-              render={({ field }) => (
-                <InputField
-                  label="Garantia (dias)"
-                  placeholder="0"
-                  type="number"
-                  error={errors.warranty_days?.message}
-                  {...field}
-                  value={!field.value ? '' : String(field.value)}
-                  onChange={(e) => field.onChange(e.target.value)}
                 />
               )}
             />

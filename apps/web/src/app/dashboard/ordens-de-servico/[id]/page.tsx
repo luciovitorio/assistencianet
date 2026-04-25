@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
-import { ArrowLeft, Building2, CalendarDays, Check, Clock, Pencil, Printer, Smartphone, UserRound, Wrench } from 'lucide-react'
+import { ArrowLeft, Building2, CalendarDays, Check, Clock, Pencil, Printer, ShieldAlert, Smartphone, UserRound, Wrench } from 'lucide-react'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { getCompanyContext } from '@/lib/auth/company-context'
@@ -24,6 +24,9 @@ const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
 
 const formatDateTime = (value: string | null) =>
   value ? dateFormatter.format(new Date(value)) : 'Não informado'
+
+const formatOsNumber = (num: number) =>
+  `${String(num).slice(0, 4)}-${String(num).slice(4).padStart(4, '0')}`
 
 // ── Status stepper ────────────────────────────────────────────────────────────
 
@@ -153,7 +156,7 @@ export default async function ServiceOrderDetailPage({ params }: ServiceOrderPag
     supabase
       .from('service_orders')
       .select(
-        'id, number, status, payment_status, device_type, device_brand, device_model, device_serial, device_color, device_internal_code, device_condition, reported_issue, estimated_delivery, delivered_at, warranty_expires_at, notes, branch_id, client_id, technician_id, created_at, third_party_id, third_party_dispatched_at, third_party_expected_return_at, third_party_returned_at, third_party_notes',
+        'id, number, status, payment_status, device_type, device_brand, device_model, device_serial, device_color, device_internal_code, device_condition, reported_issue, estimated_delivery, delivered_at, warranty_expires_at, notes, branch_id, client_id, technician_id, created_at, third_party_id, third_party_dispatched_at, third_party_expected_return_at, third_party_returned_at, third_party_notes, parent_service_order_id, is_warranty_rework',
       )
       .eq('id', id)
       .eq('company_id', companyId)
@@ -199,6 +202,8 @@ export default async function ServiceOrderDetailPage({ params }: ServiceOrderPag
     { data: stockMovements },
     { data: activeReservations },
     { data: currentThirdParty },
+    { data: parentServiceOrder },
+    { data: childReworks },
   ] = await Promise.all([
     supabase
       .from('clients')
@@ -266,6 +271,21 @@ export default async function ServiceOrderDetailPage({ params }: ServiceOrderPag
           .eq('id', serviceOrder.third_party_id)
           .maybeSingle()
       : Promise.resolve({ data: null }),
+    serviceOrder.parent_service_order_id
+      ? supabase
+          .from('service_orders')
+          .select('id, number, warranty_expires_at')
+          .eq('id', serviceOrder.parent_service_order_id)
+          .eq('company_id', companyId)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    supabase
+      .from('service_orders')
+      .select('id, number, status, created_at')
+      .eq('parent_service_order_id', serviceOrder.id)
+      .eq('company_id', companyId)
+      .is('deleted_at', null)
+      .order('created_at', { ascending: false }),
   ])
 
   const fisico: Record<string, number> = {}
@@ -347,7 +367,15 @@ export default async function ServiceOrderDetailPage({ params }: ServiceOrderPag
                 <span className="sr-only">Voltar</span>
               </Link>
               <div>
-                <h1 className="text-2xl font-bold tracking-tight">OS #{serviceOrder.number}</h1>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="text-2xl font-bold tracking-tight">OS #{serviceOrder.number}</h1>
+                  {serviceOrder.is_warranty_rework && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300 bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">
+                      <ShieldAlert className="size-3.5" />
+                      Retrabalho em garantia
+                    </span>
+                  )}
+                </div>
                 <p className="mt-0.5 text-sm text-muted-foreground">
                   Aberta em {formatDateTime(serviceOrder.created_at)}
                   {branch?.name ? ` · ${branch.name}` : ''}
@@ -403,6 +431,33 @@ export default async function ServiceOrderDetailPage({ params }: ServiceOrderPag
           <StatusStepper status={status} />
         </CardContent>
       </Card>
+
+      {/* ── REWORK BANNER ─────────────────────────────────────────────────── */}
+      {serviceOrder.is_warranty_rework && parentServiceOrder && (
+        <div className="flex items-start gap-4 rounded-xl border border-emerald-300 bg-emerald-50 p-4">
+          <ShieldAlert className="mt-0.5 size-6 shrink-0 text-emerald-600" />
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold text-emerald-900">
+              Esta OS é um retrabalho em garantia
+            </p>
+            <p className="mt-0.5 text-sm text-emerald-800">
+              Vinculada à{' '}
+              <Link
+                href={`/dashboard/ordens-de-servico/${parentServiceOrder.id}`}
+                className="font-semibold underline underline-offset-2 hover:text-emerald-900"
+              >
+                OS #{formatOsNumber(parentServiceOrder.number)}
+              </Link>
+              {parentServiceOrder.warranty_expires_at && (
+                <>
+                  {' · Garantia da OS original até '}
+                  {new Date(parentServiceOrder.warranty_expires_at + 'T12:00:00').toLocaleDateString('pt-BR')}
+                </>
+              )}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* ── BODY ──────────────────────────────────────────────────────────── */}
       <div className="grid gap-6 xl:grid-cols-[1fr_300px]">
@@ -495,6 +550,33 @@ export default async function ServiceOrderDetailPage({ params }: ServiceOrderPag
                         Expirada em {new Date(serviceOrder.warranty_expires_at + 'T12:00:00').toLocaleDateString('pt-BR')}
                       </span>
                     )}
+                  </div>
+                )}
+                {serviceOrder.is_warranty_rework && parentServiceOrder && (
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs text-muted-foreground">Retrabalho de</span>
+                    <Link
+                      href={`/dashboard/ordens-de-servico/${parentServiceOrder.id}`}
+                      className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-200"
+                    >
+                      OS #{formatOsNumber(parentServiceOrder.number)}
+                    </Link>
+                  </div>
+                )}
+                {childReworks && childReworks.length > 0 && (
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="text-xs text-muted-foreground">Retrabalhos</span>
+                    <div className="flex flex-wrap justify-end gap-1">
+                      {childReworks.map((rework) => (
+                        <Link
+                          key={rework.id}
+                          href={`/dashboard/ordens-de-servico/${rework.id}`}
+                          className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700 hover:bg-amber-200"
+                        >
+                          #{formatOsNumber(rework.number)}
+                        </Link>
+                      ))}
+                    </div>
                   </div>
                 )}
               </CardContent>

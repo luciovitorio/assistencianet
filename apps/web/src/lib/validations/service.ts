@@ -54,11 +54,6 @@ export const serviceSchema = z.object({
     .min(0, 'Duração deve ser maior ou igual a zero')
     .optional()
     .nullable(),
-  warranty_days: z.coerce
-    .number({ message: 'Garantia deve ser um número' })
-    .int('Garantia deve ser inteiro')
-    .min(0, 'Garantia deve ser maior ou igual a zero')
-    .default(0),
   notes: z
     .string()
     .trim()

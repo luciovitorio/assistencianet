@@ -187,6 +187,14 @@ export const serviceOrderSchema = z.object({
     .optional()
     .nullable()
     .or(z.literal('')),
+  parent_service_order_id: z
+    .string()
+    .trim()
+    .uuid('OS original inválida')
+    .optional()
+    .nullable()
+    .or(z.literal('')),
+  is_warranty_rework: z.boolean().optional().default(false),
 })
 
 export type ServiceOrderSchema = z.input<typeof serviceOrderSchema>

@@ -12,9 +12,11 @@ import {
   CalendarClock,
   ClipboardList,
   Cpu,
+  ShieldAlert,
   ShieldCheck,
   User,
   Wrench,
+  X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { buttonVariants } from '@/components/ui/button-variants'
@@ -28,7 +30,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/u
 import { Textarea } from '@/components/ui/textarea'
 import { searchClientsForServiceOrder } from '@/app/actions/clients'
 import { searchEquipmentModelsForServiceOrder } from '@/app/actions/equipments'
-import { createServiceOrder, editServiceOrder } from '@/app/actions/service-orders'
+import {
+  createServiceOrder,
+  editServiceOrder,
+  getClientActiveWarranties,
+  type ActiveWarrantyOS,
+} from '@/app/actions/service-orders'
 import { ClientDialog } from '@/app/dashboard/clientes/_components/client-dialog'
 import { EquipmentDialog } from '@/app/dashboard/equipamentos/_components/equipment-dialog'
 import { PrintServiceOrderDialog } from './print-service-order-dialog'
@@ -71,6 +78,9 @@ export interface EquipmentOption {
 
 const mergeClientsById = (...groups: ClientOption[][]) =>
   Array.from(new Map(groups.flat().map((client) => [client.id, client])).values())
+
+const formatOsNumber = (num: number) =>
+  `${String(num).slice(0, 4)}-${String(num).slice(4).padStart(4, '0')}`
 
 const normalizeAutocompleteSearch = (value: string) =>
   value
@@ -382,6 +392,48 @@ export function ServiceOrderForm({
     setValue('device_model', selectedEquipment.model, { shouldValidate: true, shouldDirty: true })
   }, [selectedEquipment, setValue])
 
+  // ── Retrabalho em garantia ─────────────────────────────────────────
+  const selectedClientId = useWatch({ control, name: 'client_id' })
+  const [activeWarranties, setActiveWarranties] = React.useState<ActiveWarrantyOS[]>([])
+  const [linkedParent, setLinkedParent] = React.useState<ActiveWarrantyOS | null>(null)
+
+  React.useEffect(() => {
+    if (isEdit || !selectedClientId) {
+      setActiveWarranties([])
+      return
+    }
+    let cancelled = false
+    getClientActiveWarranties(selectedClientId).then((result) => {
+      if (!cancelled) setActiveWarranties(result)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [selectedClientId, isEdit])
+
+  const linkAsWarrantyRework = (os: ActiveWarrantyOS) => {
+    setLinkedParent(os)
+    setValue('parent_service_order_id', os.id)
+    setValue('is_warranty_rework', true)
+    if (os.equipment_model_id) {
+      setValue('equipment_model_id', os.equipment_model_id, { shouldValidate: true })
+    }
+    if (os.device_type) setValue('device_type', os.device_type)
+    if (os.device_brand) setValue('device_brand', os.device_brand)
+    if (os.device_model) setValue('device_model', os.device_model)
+    if (os.device_serial) setValue('device_serial', os.device_serial)
+    if (os.device_internal_code) setValue('device_internal_code', os.device_internal_code)
+    toast.success(
+      `Vinculado como retrabalho em garantia da OS #${formatOsNumber(os.number)}.`,
+    )
+  }
+
+  const unlinkWarrantyRework = () => {
+    setLinkedParent(null)
+    setValue('parent_service_order_id', '')
+    setValue('is_warranty_rework', false)
+  }
+
   const onSubmit = (data: ServiceOrderSchema) => {
     if (isPending || isNavigatingAway || pendingPrint) return
     startTransition(async () => {
@@ -471,6 +523,92 @@ export function ServiceOrderForm({
           </div>
         </div>
       </div>
+
+      {!isEdit && (linkedParent || activeWarranties.length > 0) && (
+        <div className="mb-6">
+          {linkedParent ? (
+            <div className="flex items-start gap-3 rounded-xl border border-emerald-300 bg-emerald-50 p-4">
+              <ShieldCheck className="mt-0.5 size-5 shrink-0 text-emerald-600" />
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-emerald-900">
+                  Retrabalho em garantia vinculado à OS #{formatOsNumber(linkedParent.number)}
+                </p>
+                <p className="mt-0.5 text-sm text-emerald-800">
+                  {[linkedParent.device_type, linkedParent.device_brand, linkedParent.device_model]
+                    .filter(Boolean)
+                    .join(' ')}
+                  {' · Garantia até '}
+                  {new Date(linkedParent.warranty_expires_at + 'T12:00:00').toLocaleDateString(
+                    'pt-BR',
+                  )}
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={unlinkWarrantyRework}
+                className="text-emerald-700 hover:bg-emerald-100 hover:text-emerald-900"
+              >
+                <X className="size-4" />
+                Desvincular
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4">
+              <ShieldAlert className="mt-0.5 size-5 shrink-0 text-amber-600" />
+              <div className="flex-1 min-w-0 space-y-2">
+                <p className="font-semibold text-amber-900">
+                  Este cliente tem {activeWarranties.length}{' '}
+                  {activeWarranties.length === 1 ? 'OS' : 'OSs'} em garantia ativa
+                </p>
+                <p className="text-sm text-amber-800">
+                  Se for retrabalho, vincule à OS original para não gerar nova cobrança.
+                </p>
+                <ul className="space-y-1.5 pt-1">
+                  {activeWarranties.map((os) => (
+                    <li
+                      key={os.id}
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm"
+                    >
+                      <div className="min-w-0">
+                        <span className="font-mono font-semibold text-amber-900">
+                          #{formatOsNumber(os.number)}
+                        </span>
+                        <span className="ml-2 text-foreground">
+                          {[os.device_type, os.device_brand, os.device_model]
+                            .filter(Boolean)
+                            .join(' ')}
+                        </span>
+                        {os.device_internal_code && (
+                          <span className="ml-2 text-xs text-muted-foreground">
+                            cód. {os.device_internal_code}
+                          </span>
+                        )}
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          até{' '}
+                          {new Date(os.warranty_expires_at + 'T12:00:00').toLocaleDateString(
+                            'pt-BR',
+                          )}
+                        </span>
+                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => linkAsWarrantyRework(os)}
+                        className="border-amber-400 text-amber-900 hover:bg-amber-100"
+                      >
+                        Vincular como retrabalho
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
         <div className="space-y-6 xl:sticky xl:top-6 xl:self-start">
@@ -615,6 +753,18 @@ export function ServiceOrderForm({
                     control={control}
                     name="equipment_model_id"
                     render={({ field }) => {
+                      if (linkedParent) {
+                        const eq = allEquipments.find((e) => e.id === field.value)
+                        return (
+                          <div className={cn(CONTROL, 'flex items-center bg-muted/50 px-3 text-sm text-foreground/70 cursor-not-allowed')}>
+                            {eq
+                              ? `${eq.type} · ${eq.manufacturer} ${eq.model}${eq.voltage ? ` · ${eq.voltage}` : ''}`
+                              : selectedEquipment
+                                ? `${selectedEquipment.type} · ${selectedEquipment.manufacturer} ${selectedEquipment.model}`
+                                : '—'}
+                          </div>
+                        )
+                      }
                       return (
                         <EquipmentSearchInput
                           equipments={allEquipments}
@@ -658,9 +808,9 @@ export function ServiceOrderForm({
                     {selectedEquipment?.voltage || '—'}
                   </div>
                 </div>
-                <Controller control={control} name="device_color" render={({ field }) => <InputField label="Cor" placeholder="Ex: Preto, branco, cromado" error={errors.device_color?.message} className={CONTROL} {...field} value={field.value || ''} />} />
-                <Controller control={control} name="device_serial" render={({ field }) => <InputField label="Número de série original" placeholder="Se estiver legível" error={errors.device_serial?.message} className={CONTROL} {...field} value={field.value || ''} />} />
-                <Controller control={control} name="device_internal_code" render={({ field }) => <InputField label="Código interno / etiqueta" placeholder="Ex: ORQ-000123" error={errors.device_internal_code?.message} className={CONTROL} {...field} value={field.value || ''} />} />
+                <Controller control={control} name="device_color" render={({ field }) => <InputField label="Cor" placeholder="Ex: Preto, branco, cromado" error={errors.device_color?.message} className={CONTROL} {...field} value={field.value || ''} disabled={!!linkedParent} />} />
+                <Controller control={control} name="device_serial" render={({ field }) => <InputField label="Número de série original" placeholder="Se estiver legível" error={errors.device_serial?.message} className={CONTROL} {...field} value={field.value || ''} disabled={!!linkedParent} />} />
+                <Controller control={control} name="device_internal_code" render={({ field }) => <InputField label="Código interno / etiqueta" placeholder="Ex: ORQ-000123" error={errors.device_internal_code?.message} className={CONTROL} {...field} value={field.value || ''} disabled={!!linkedParent} />} />
                 <div className="sm:col-span-2 xl:col-span-4">
                   <Controller
                     control={control}
@@ -674,6 +824,7 @@ export function ServiceOrderForm({
                         className={CONTROL}
                         {...field}
                         value={field.value || ''}
+                        disabled={!!linkedParent}
                       />
                     )}
                   />

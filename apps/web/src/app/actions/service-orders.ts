@@ -620,6 +620,45 @@ const getActiveEquipmentModel = async (
   return data
 }
 
+export type ActiveWarrantyOS = {
+  id: string
+  number: number
+  device_type: string | null
+  device_brand: string | null
+  device_model: string | null
+  device_serial: string | null
+  device_internal_code: string | null
+  warranty_expires_at: string
+  equipment_model_id: string | null
+}
+
+export async function getClientActiveWarranties(
+  clientId: string,
+): Promise<ActiveWarrantyOS[]> {
+  if (!clientId) return []
+  try {
+    const { companyId } = await getCompanyContext()
+    const supabase = await createSupabaseClient()
+    const today = new Date().toISOString().slice(0, 10)
+
+    const { data } = await supabase
+      .from('service_orders')
+      .select(
+        'id, number, device_type, device_brand, device_model, device_serial, device_internal_code, warranty_expires_at, equipment_model_id',
+      )
+      .eq('company_id', companyId)
+      .eq('client_id', clientId)
+      .is('deleted_at', null)
+      .not('warranty_expires_at', 'is', null)
+      .gte('warranty_expires_at', today)
+      .order('warranty_expires_at', { ascending: true })
+
+    return (data ?? []) as ActiveWarrantyOS[]
+  } catch {
+    return []
+  }
+}
+
 export async function createServiceOrder(data: ServiceOrderSchema) {
   try {
     const { companyId, user } = await getCompanyContext()
@@ -676,6 +715,8 @@ export async function createServiceOrder(data: ServiceOrderSchema) {
         technician_id: normalizeOptional(parsed.data.technician_id) || null,
         estimated_delivery: normalizeOptional(parsed.data.estimated_delivery) || null,
         notes: normalizeOptional(parsed.data.notes),
+        parent_service_order_id: normalizeOptional(parsed.data.parent_service_order_id) || null,
+        is_warranty_rework: parsed.data.is_warranty_rework ?? false,
         created_by: user.id,
         status: 'aguardando',
       })
