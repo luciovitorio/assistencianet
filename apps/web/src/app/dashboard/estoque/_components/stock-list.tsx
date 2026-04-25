@@ -137,13 +137,11 @@ export function StockList({
   const router = useRouter()
   const stockTableRef = React.useRef<HTMLDivElement | null>(null)
 
-  // Filial selecionada: prioridade → filial do usuário logado → única filial → todas
+  // Filial selecionada: parâmetro explícito da URL; sem parâmetro, mostra o consolidado.
   const [selectedBranch, setSelectedBranch] = React.useState<string>(() => {
     if (initialSelectedBranch && branches.some((b) => b.id === initialSelectedBranch)) {
       return initialSelectedBranch
     }
-    if (currentBranchId && branches.some((b) => b.id === currentBranchId)) return currentBranchId
-    if (branches.length === 1) return branches[0].id
     return ''
   })
 
@@ -166,18 +164,8 @@ export function StockList({
       return
     }
 
-    if (currentBranchId && branches.some((branch) => branch.id === currentBranchId)) {
-      setSelectedBranch(currentBranchId)
-      return
-    }
-
-    if (branches.length === 1) {
-      setSelectedBranch(branches[0].id)
-      return
-    }
-
     setSelectedBranch('')
-  }, [branches, currentBranchId, initialSelectedBranch])
+  }, [branches, initialSelectedBranch])
 
   // Monta os itens com saldo físico, reservado e disponível
   const stockItems = React.useMemo<StockItem[]>(() => {
@@ -330,7 +318,7 @@ export function StockList({
     return branches[0]?.id ?? ''
   }, [branches, currentBranchId])
 
-  const scopedBranchId = selectedBranch || (branches[0]?.id ?? '')
+  const scopedBranchId = selectedBranch || userDefaultBranchId
 
   return (
     <>
