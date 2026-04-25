@@ -4,6 +4,13 @@ import * as React from 'react'
 import { toast } from 'sonner'
 import { getServiceOrderEstimatesHistory } from '@/app/actions/service-order-estimates'
 import { type ServiceOrderStatus } from '@/lib/validations/service-order'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { EstimatesModal } from '../[id]/_components/estimates-modal'
 import { type ServiceOrderEstimateRecord } from '../[id]/_components/service-order-estimates-panel'
 
@@ -35,6 +42,7 @@ export function LazyEstimatesModal({
     if (!open) return
     let cancelled = false
     setLoading(true)
+    setEstimates(null)
     getServiceOrderEstimatesHistory(serviceOrderId)
       .then((result) => {
         if (cancelled) return
@@ -57,23 +65,20 @@ export function LazyEstimatesModal({
 
   if (loading || estimates === null) {
     return (
-      <EstimatesModal
-        hideSummaryCard
-        open={open}
-        onOpenChange={onOpenChange}
-        serviceOrderId={serviceOrderId}
-        serviceOrderNumber={serviceOrderNumber}
-        initialEstimates={[]}
-        catalogServices={[]}
-        catalogParts={[]}
-        stockAvailability={{}}
-        defaultWarrantyDays={0}
-        defaultEstimateValidityDays={0}
-        serviceOrderStatus={serviceOrderStatus}
-        clientName={clientName}
-        clientPhone={clientPhone}
-        clientEmail={clientEmail}
-      />
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="flex max-h-[90vh] flex-col overflow-hidden p-0 sm:max-w-[min(96vw,88rem)]">
+          <DialogHeader className="border-b px-6 py-4">
+            <DialogTitle>Histórico de orçamentos</DialogTitle>
+            <DialogDescription>
+              OS #{serviceOrderNumber}. Consulte versões, status e itens já enviados ao cliente.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-1 flex-col gap-3 px-6 py-5">
+            <div className="h-24 animate-pulse rounded-xl bg-muted" />
+            <div className="h-24 animate-pulse rounded-xl bg-muted" />
+          </div>
+        </DialogContent>
+      </Dialog>
     )
   }
 
