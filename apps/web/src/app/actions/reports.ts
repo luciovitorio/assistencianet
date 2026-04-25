@@ -70,9 +70,12 @@ type ServiceOrderRow = {
   status: string
   technician_id: string | null
   device_type: string
+  device_brand: string | null
+  device_model: string | null
   created_at: string
   completed_at: string | null
   branch_id: string | null
+  equipment_models: { voltage: string | null } | null
 }
 
 type EstimateRow = {
@@ -177,11 +180,13 @@ const topCountRows = (
   labels: Map<string, string>,
   fallbackLabel: string,
   limit = 6,
+  details?: Map<string, string>,
 ): ReportRankRow[] =>
   [...counts.entries()]
     .map(([id, value]) => ({
       id,
       label: labels.get(id) ?? fallbackLabel,
+      detail: details?.get(id),
       value,
     }))
     .sort((a, b) => b.value - a.value || a.label.localeCompare(b.label, 'pt-BR'))
@@ -308,7 +313,7 @@ async function fetchOpenedServiceOrders(
 ) {
   let query = supabase
     .from('service_orders')
-    .select('id, status, technician_id, device_type, created_at, completed_at, branch_id')
+    .select('id, status, technician_id, device_type, device_brand, device_model, created_at, completed_at, branch_id, equipment_models(voltage)')
     .eq('company_id', companyId)
     .is('deleted_at', null)
     .gte('created_at', startDate)
@@ -332,7 +337,7 @@ async function fetchCompletedServiceOrders(
 ) {
   let query = supabase
     .from('service_orders')
-    .select('id, status, technician_id, device_type, created_at, completed_at, branch_id')
+    .select('id, status, technician_id, device_type, device_brand, device_model, created_at, completed_at, branch_id, equipment_models(voltage)')
     .eq('company_id', companyId)
     .is('deleted_at', null)
     .not('completed_at', 'is', null)
@@ -547,12 +552,24 @@ function buildServiceOrderMetrics({
   const byTechnician = new Map<string, number>()
   const byDeviceType = new Map<string, number>()
   const deviceLabels = new Map<string, string>()
+  const deviceDetails = new Map<string, string>()
 
   for (const order of serviceOrders) {
     incrementCount(byTechnician, order.technician_id ?? 'sem-tecnico')
-    const deviceKey = order.device_type.trim().toLocaleLowerCase('pt-BR')
+
+    const typePart = order.device_type.trim().toLocaleLowerCase('pt-BR')
+    const brandPart = order.device_brand?.trim().toLocaleLowerCase('pt-BR') ?? ''
+    const modelPart = order.device_model?.trim().toLocaleLowerCase('pt-BR') ?? ''
+    const voltagePart = order.equipment_models?.voltage?.trim().toLocaleLowerCase('pt-BR') ?? ''
+    const deviceKey = [typePart, brandPart, modelPart, voltagePart].join('|')
+
     incrementCount(byDeviceType, deviceKey)
     deviceLabels.set(deviceKey, order.device_type)
+
+    const detail = [order.device_brand, order.device_model, order.equipment_models?.voltage]
+      .filter(Boolean)
+      .join(' • ')
+    if (detail) deviceDetails.set(deviceKey, detail)
   }
 
   const completedWithDuration = completedOrders.filter((order) => order.completed_at)
@@ -582,7 +599,7 @@ function buildServiceOrderMetrics({
         : null,
     refusalRate: Math.round(refusalRate * 10) / 10,
     byTechnician: topCountRows(byTechnician, technicianLabels, 'Sem técnico'),
-    byDeviceType: topCountRows(byDeviceType, deviceLabels, 'Sem tipo'),
+    byDeviceType: topCountRows(byDeviceType, deviceLabels, 'Sem tipo', 6, deviceDetails),
   }
 }
 

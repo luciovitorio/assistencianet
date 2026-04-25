@@ -341,7 +341,12 @@ function RankList({
       {rows.map((row) => (
         <div key={row.id} className="space-y-1.5">
           <div className="flex items-center justify-between gap-3 text-sm">
-            <span className="font-medium">{row.label}</span>
+            <div className="min-w-0">
+              <span className="font-medium">{row.label}</span>
+              {row.detail && (
+                <span className="ml-2 text-xs text-muted-foreground">{row.detail}</span>
+              )}
+            </div>
             <span className="shrink-0 tabular-nums text-muted-foreground">
               {formatNumber(row.value)}
               {showAmount && row.amount != null ? ` | ${formatCurrency(row.amount)}` : ''}
