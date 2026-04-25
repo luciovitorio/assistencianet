@@ -100,7 +100,7 @@ const buildBranchListText = (branches: Array<{ id: string; name: string }>): str
     .join('\n')
 
   return (
-    `Em qual filial você deseja atendimento?\n\n${options}\n\n` +
+    `Em qual filial você deseja atendimento?\n\n${options}\n0 - Voltar ao menu\n\n` +
     `Responda com o *número* da filial.`
   )
 }
@@ -526,12 +526,14 @@ const handleInvalidResponse = async (
     currentState === 'awaiting_os_number'
       ? 'Informe apenas o *número da OS* (ex: 1234) ou envie *0* para voltar ao menu.'
       : currentState === 'awaiting_branch'
-        ? 'Responda com o *número* da filial desejada.'
+        ? 'Responda com o *número* da filial desejada ou envie *0* para voltar ao menu.'
         : currentState === 'awaiting_estimate_response'
           ? 'Responda com *1* para aprovar, *2* para recusar, *3* para falar com atendente ou *0* para voltar ao menu.'
-          : currentState === 'awaiting_rating'
-            ? 'Envie apenas um número de *1 a 5* para avaliar o atendimento.'
-            : 'Não entendi. Responda com o *número* da opção do menu (ex: 1 ou 2).'
+          : currentState === 'awaiting_rating_consent'
+            ? 'Responda *1* para avaliar ou *2* para não avaliar.'
+            : currentState === 'awaiting_rating'
+              ? 'Envie apenas um número de *1 a 5* para avaliar ou *0* para encerrar.'
+              : 'Não entendi. Responda com o *número* da opção ou *0* para voltar ao menu.'
 
   await sendAndSave(supabase, evolutionClient, conversation, hint)
 }
