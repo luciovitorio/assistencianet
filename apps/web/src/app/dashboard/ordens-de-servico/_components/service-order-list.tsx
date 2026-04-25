@@ -20,6 +20,7 @@ import {
   MessageCircle,
   MoreHorizontal,
   Pencil,
+  Printer,
   EyeIcon,
   AlertTriangle,
   FilePlus2,
@@ -311,6 +312,14 @@ export function ServiceOrderList({
   }, [currentPage, totalPages])
 
   const closeDialog = () => setDialog({ type: 'none' })
+
+  const handlePrintServiceOrder = (serviceOrderId: string) => {
+    window.open(
+      `/recibos/ordem-de-servico/${serviceOrderId}?autoPrint=1`,
+      '_blank',
+      'noopener,noreferrer'
+    )
+  }
 
   const handleStatusChange = (
     serviceOrderId: string,
@@ -805,6 +814,15 @@ export function ServiceOrderList({
                                 >
                                   <ArrowRight className="size-4" />
                                   Abrir OS
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={(e) => {
+                                    e.preventDefault()
+                                    handlePrintServiceOrder(order.id)
+                                  }}
+                                >
+                                  <Printer className="size-4" />
+                                  Imprimir OS
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   disabled={!canEditOrder(order)}
