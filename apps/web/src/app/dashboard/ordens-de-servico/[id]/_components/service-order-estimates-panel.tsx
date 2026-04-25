@@ -136,6 +136,9 @@ const toNumber = (value: string | number | null | undefined) => {
   return Number.isFinite(parsed) ? parsed : 0
 }
 
+const toMoneyInputValue = (value: number | null | undefined) =>
+  applyMoneyMask(String(Math.round((value ?? 0) * 100)))
+
 // ─── DatePicker ───────────────────────────────────────────────────────────────
 
 function DatePicker({ value, onChange }: { value: string; onChange: (value: string) => void }) {
@@ -302,7 +305,7 @@ const estimateToFormValues = (
     estimate.valid_until ??
     (defaultEstimateValidityDays > 0 ? addDaysToDateInputValue(defaultEstimateValidityDays) : ''),
   warranty_days: estimate.warranty_days ?? defaultWarrantyDays,
-  discount_amount: String(estimate.discount_amount ?? 0),
+  discount_amount: toMoneyInputValue(estimate.discount_amount),
   notes: estimate.notes ?? '',
   items:
     estimate.items.length > 0
@@ -311,7 +314,7 @@ const estimateToFormValues = (
           item_type: item.item_type as ServiceOrderEstimateSchema['items'][number]['item_type'],
           description: item.description,
           quantity: String(item.quantity),
-          unit_price: String(item.unit_price),
+          unit_price: toMoneyInputValue(item.unit_price),
           notes: item.notes ?? '',
         }))
       : createDefaultValues(defaultWarrantyDays, defaultEstimateValidityDays).items,
@@ -862,7 +865,7 @@ export function ServiceOrderEstimatesPanel({
                                     if (price !== null) {
                                       setValue(
                                         `items.${index}.unit_price`,
-                                        applyMoneyMask(String(Math.round(price * 100)))
+                                        toMoneyInputValue(price)
                                       )
                                     }
                                   }}

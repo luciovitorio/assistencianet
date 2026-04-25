@@ -22,6 +22,7 @@ import {
   Pencil,
   EyeIcon,
   AlertTriangle,
+  FilePlus2,
 } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -422,6 +423,15 @@ export function ServiceOrderList({
   const canManageEstimatesForOrder = (order: ServiceOrderData) =>
     order.status !== 'cancelado' && order.status !== 'finalizado'
 
+  const canOpenEstimateEditor = (order: ServiceOrderData) =>
+    order.status === 'aguardando' ||
+    order.status === 'em_analise' ||
+    order.status === 'reprovado' ||
+    order.status === 'enviado_terceiro'
+
+  const hasDraftEstimate = (order: ServiceOrderData) =>
+    order.service_order_estimates?.some((estimate) => estimate.status === 'rascunho') ?? false
+
   const canCancelOrder = (order: ServiceOrderData) =>
     [
       'aguardando',
@@ -807,6 +817,17 @@ export function ServiceOrderList({
                                   <Pencil className="size-4" />
                                   {canEditOrder(order) ? 'Editar OS' : 'Edição bloqueada'}
                                 </DropdownMenuItem>
+                                {canOpenEstimateEditor(order) && (
+                                  <DropdownMenuItem
+                                    onClick={(e) => {
+                                      e.preventDefault()
+                                      navigate(`/dashboard/ordens-de-servico/${order.id}/orcamento`)
+                                    }}
+                                  >
+                                    <FilePlus2 className="size-4" />
+                                    {hasDraftEstimate(order) ? 'Editar orçamento' : 'Criar orçamento'}
+                                  </DropdownMenuItem>
+                                )}
                                 {(order.service_order_estimates?.length ?? 0) > 0 && (
                                   <DropdownMenuItem
                                     onClick={(e) => {

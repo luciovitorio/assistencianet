@@ -176,11 +176,11 @@ export default async function OrcamentosPage({
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Link
-            href={`/dashboard/ordens-de-servico/${id}`}
+            href="/dashboard/ordens-de-servico"
             className={cn(buttonVariants({ variant: 'outline', size: 'icon' }), 'shrink-0')}
           >
             <ArrowLeft className="size-4" />
-            <span className="sr-only">Voltar para OS</span>
+            <span className="sr-only">Voltar para listagem de OS</span>
           </Link>
           <div>
             <h1 className="text-xl font-bold tracking-tight">
