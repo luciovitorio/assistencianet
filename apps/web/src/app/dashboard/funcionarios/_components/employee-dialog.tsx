@@ -33,6 +33,11 @@ import { createEmployee, updateEmployee } from '@/app/actions/employees'
 const getLaborRateFieldValue = (value: unknown) =>
   typeof value === 'string' || typeof value === 'number' ? value : ''
 
+const formatLaborRate = (value: number | null | undefined) =>
+  value != null
+    ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
+    : ''
+
 export interface EmployeeFormState {
   id?: string
   name?: string
@@ -93,7 +98,7 @@ export function EmployeeDialog({ employee, branches, open, onOpenChange }: Emplo
         cpf: employee?.cpf || '',
         branch_id: employee?.branch_id || '',
         active: employee?.active !== false,
-        labor_rate: employee?.labor_rate ?? null,
+        labor_rate: formatLaborRate(employee?.labor_rate),
       })
     }
   }, [open, employee, reset])
@@ -287,12 +292,10 @@ export function EmployeeDialog({ employee, branches, open, onOpenChange }: Emplo
                   control={control}
                   name="labor_rate"
                   render={({ field }) => (
-                    <InputField
+                    <MaskedInputField
+                      mask="money"
                       label="Valor de mão de obra por OS (R$)"
-                      type="number"
-                      placeholder="Ex: 50.00"
-                      min="0"
-                      step="0.01"
+                      placeholder="R$ 0,00"
                       error={errors.labor_rate?.message}
                       {...field}
                       value={getLaborRateFieldValue(field.value)}

@@ -9,6 +9,28 @@ export const ROLE_LABELS: Record<EmployeeRole, string> = {
   tecnico: 'Técnico',
 }
 
+const nullableMoneyField = z.preprocess((value) => {
+  if (value === '' || value === null || value === undefined) {
+    return null
+  }
+
+  if (typeof value === 'number') {
+    return value
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value
+      .trim()
+      .replace(/R\$\s?/, '')
+      .replace(/\./g, '')
+      .replace(',', '.')
+
+    return normalized === '' ? null : Number(normalized)
+  }
+
+  return value
+}, z.number({ error: 'Valor inválido' }).nonnegative('O valor deve ser maior ou igual a zero').nullable().optional())
+
 export const employeeSchema = z.object({
   name: z.string()
     .trim()
@@ -24,13 +46,7 @@ export const employeeSchema = z.object({
     .min(1, 'Filial é obrigatória')
     .uuid('Filial é obrigatória'),
   active: z.boolean().default(true),
-  labor_rate: z.preprocess(
-    (v) => (v === '' || v === null || v === undefined ? null : Number(v)),
-    z.number({ error: 'Valor inválido' })
-      .nonnegative('O valor deve ser maior ou igual a zero')
-      .nullable()
-      .optional(),
-  ),
+  labor_rate: nullableMoneyField,
 })
 
 export type EmployeeSchema = z.input<typeof employeeSchema>

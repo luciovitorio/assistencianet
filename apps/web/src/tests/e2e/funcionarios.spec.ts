@@ -445,9 +445,8 @@ test.describe('Funcionários — cobertura do caderno manual', () => {
       await expect(dialog.getByLabel(/Valor de mão de obra/)).toBeHidden()
       await selectRole(page, 'Técnico')
       await expect(dialog.getByLabel(/Valor de mão de obra/)).toBeVisible()
-      await dialog.getByLabel(/Valor de mão de obra/).fill('-10')
-      await page.getByRole('button', { name: 'Salvar Funcionário' }).click()
-      await expect(dialog.getByRole('alert').filter({ hasText: 'O valor deve ser maior ou igual a zero' })).toBeVisible()
+      await dialog.getByLabel(/Valor de mão de obra/).fill('5010')
+      await expect(dialog.getByLabel(/Valor de mão de obra/)).toHaveValue('R$ 50,10')
     })
 
     test('TC-FUNC-036, TC-FUNC-041, TC-FUNC-043, TC-FUNC-044, TC-FUNC-045, TC-FUNC-046 e TC-FUNC-047 — cadastro, loading, cancelamento e reabertura', async ({ page }) => {
