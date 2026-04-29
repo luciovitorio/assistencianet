@@ -2,6 +2,17 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google'
 import { LandingFaq } from './_components/landing-faq'
+import {
+  FloatingPanel,
+  MotionBar,
+  MotionCard,
+  MotionChatBubble,
+  Reveal,
+  Stagger,
+  StaggerItem,
+  StaggerList,
+  StaggerListItem,
+} from './_components/landing-motion'
 import { LandingNav } from './_components/landing-nav'
 import s from './landing.module.css'
 import { BrandMark } from '@/components/brand-mark'
@@ -133,7 +144,7 @@ export default function LandingPage() {
       {/* ── HERO ── */}
       <section className={s.hero}>
         <div className={s['hero-inner']}>
-          <div>
+          <Reveal direction="right">
             <div className={s['hero-badge']}>
               <div className={s['hero-badge-dot']}></div>
               Novo: integração com PIX automático
@@ -151,10 +162,10 @@ export default function LandingPage() {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
               Sem cartão de crédito. Cancele quando quiser.
             </p>
-          </div>
+          </Reveal>
 
           {/* APP MOCKUP */}
-          <div className={s['mockup-wrap']}>
+          <FloatingPanel className={s['mockup-wrap']}>
             <div className={s['mockup-glow']}></div>
             <div className={s['mockup-shell']}>
               <div className={s['mockup-topbar']}>
@@ -217,7 +228,12 @@ export default function LandingPage() {
                       <div className={s['mockup-chart-title']}>OS concluídas / semana</div>
                       <div className={s['mockup-bars']}>
                         {[30, 55, 40, 70, 60, 85, 45].map((h, i) => (
-                          <div key={i} className={s['mockup-bar']} style={{ height: `${h}%`, background: i === 5 ? 'var(--primary)' : 'var(--primary-mid)' }} />
+                          <MotionBar
+                            key={i}
+                            className={s['mockup-bar']}
+                            height={`${h}%`}
+                            background={i === 5 ? 'var(--primary)' : 'var(--primary-mid)'}
+                          />
                         ))}
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
@@ -234,45 +250,45 @@ export default function LandingPage() {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
               WhatsApp Bot ativo — 3 notificações enviadas
             </div>
-          </div>
+          </FloatingPanel>
         </div>
       </section>
 
       {/* ── SOCIAL PROOF ── */}
       <div className={s.proof}>
-        <div className={s['proof-inner']}>
-          <div className={s['proof-stat']}>
+        <Stagger className={s['proof-inner']}>
+          <StaggerItem className={s['proof-stat']}>
             <div className={s['proof-stat-num']}>+<span>4.200</span></div>
             <div className={s['proof-stat-label']}>assistências técnicas</div>
-          </div>
+          </StaggerItem>
           <div className={s['proof-divider']}></div>
-          <div className={s['proof-stat']}>
+          <StaggerItem className={s['proof-stat']}>
             <div className={s['proof-stat-num']}><span>R$ 12M</span></div>
             <div className={s['proof-stat-label']}>em OS gerenciadas por mês</div>
-          </div>
+          </StaggerItem>
           <div className={s['proof-divider']}></div>
-          <div className={s['proof-stat']}>
+          <StaggerItem className={s['proof-stat']}>
             <div className={s['proof-stat-num']}><span>98</span>%</div>
             <div className={s['proof-stat-label']}>de satisfação dos clientes</div>
-          </div>
+          </StaggerItem>
           <div className={s['proof-divider']}></div>
-          <div className={s['proof-stat']}>
+          <StaggerItem className={s['proof-stat']}>
             <div className={s['proof-stat-num']}><span>2.1M</span></div>
             <div className={s['proof-stat-label']}>mensagens WhatsApp enviadas</div>
-          </div>
-        </div>
+          </StaggerItem>
+        </Stagger>
       </div>
 
       {/* ── FEATURES ── */}
       <section className={`${s.section} ${s.features}`} id="funcionalidades">
         <div className={s['section-inner']}>
-          <div className={s['features-header']}>
+          <Reveal className={s['features-header']}>
             <div className={s['section-tag']}>Funcionalidades</div>
             <h2 className={s['section-title']}>Tudo que sua assistência precisa</h2>
             <p className={s['section-sub']}>Do orçamento à entrega — controle completo do seu negócio em uma plataforma simples e poderosa.</p>
-          </div>
-          <div className={s['features-grid']}>
-            <div className={s['feature-card']}>
+          </Reveal>
+          <Stagger className={s['features-grid']}>
+            <MotionCard className={s['feature-card']}>
               <div className={s['feature-icon']}>
                 <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
               </div>
@@ -283,8 +299,8 @@ export default function LandingPage() {
                 <span className={s['feature-tag']}>Laudos PDF</span>
                 <span className={s['feature-tag']}>Assinatura digital</span>
               </div>
-            </div>
-            <div className={s['feature-card']}>
+            </MotionCard>
+            <MotionCard className={s['feature-card']}>
               <div className={`${s['feature-icon']} ${s.green}`}>
                 <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
               </div>
@@ -295,8 +311,8 @@ export default function LandingPage() {
                 <span className={s['feature-tag']}>Consulta de status</span>
                 <span className={s['feature-tag']}>Aprovação de orçamento</span>
               </div>
-            </div>
-            <div className={s['feature-card']}>
+            </MotionCard>
+            <MotionCard className={s['feature-card']}>
               <div className={`${s['feature-icon']} ${s.amber}`}>
                 <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
               </div>
@@ -307,8 +323,8 @@ export default function LandingPage() {
                 <span className={s['feature-tag']}>PIX integrado</span>
                 <span className={s['feature-tag']}>NF-e</span>
               </div>
-            </div>
-            <div className={s['feature-card']}>
+            </MotionCard>
+            <MotionCard className={s['feature-card']}>
               <div className={`${s['feature-icon']} ${s.teal}`}>
                 <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
               </div>
@@ -319,8 +335,8 @@ export default function LandingPage() {
                 <span className={s['feature-tag']}>Custo por OS</span>
                 <span className={s['feature-tag']}>Fornecedores</span>
               </div>
-            </div>
-            <div className={s['feature-card']}>
+            </MotionCard>
+            <MotionCard className={s['feature-card']}>
               <div className={`${s['feature-icon']} ${s.purple}`}>
                 <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
               </div>
@@ -331,8 +347,8 @@ export default function LandingPage() {
                 <span className={s['feature-tag']}>Multi-dispositivos</span>
                 <span className={s['feature-tag']}>CRM básico</span>
               </div>
-            </div>
-            <div className={s['feature-card']}>
+            </MotionCard>
+            <MotionCard className={s['feature-card']}>
               <div className={s['feature-icon']}>
                 <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
               </div>
@@ -343,23 +359,23 @@ export default function LandingPage() {
                 <span className={s['feature-tag']}>Metas</span>
                 <span className={s['feature-tag']}>Comparativo</span>
               </div>
-            </div>
-          </div>
+            </MotionCard>
+          </Stagger>
         </div>
       </section>
 
       {/* ── HOW IT WORKS ── */}
       <section className={`${s.section} ${s.how}`} id="como-funciona">
         <div className={s['section-inner']}>
-          <div style={{ textAlign: 'center' }}>
+          <Reveal style={{ textAlign: 'center' }}>
             <div className={s['section-tag']}>Como funciona</div>
             <h2 className={s['section-title']}>Da entrada à entrega, sem complicação</h2>
             <p className={s['section-sub']} style={{ margin: '0 auto' }}>Configure em minutos e comece a usar no mesmo dia — sem precisar de treinamento técnico.</p>
-          </div>
+          </Reveal>
           <div className={s['how-grid']}>
-            <ol className={s['how-steps']}>
+            <StaggerList className={s['how-steps']}>
               {howSteps.map((step) => (
-                <li
+                <StaggerListItem
                   key={step.n}
                   className={`${s['how-step']} ${step.n === 1 ? s.active : ''}`}
                 >
@@ -368,10 +384,10 @@ export default function LandingPage() {
                     <div className={s['how-step-title']}>{step.title}</div>
                     <div className={s['how-step-desc']}>{step.desc}</div>
                   </div>
-                </li>
+                </StaggerListItem>
               ))}
-            </ol>
-            <div className={s['how-visual']}>
+            </StaggerList>
+            <Reveal className={s['how-visual']} direction="left">
               <div className={s['how-screen']}>
                 <div className={s['how-screen-header']}>
                   <span>Ordens de Serviço</span>
@@ -401,7 +417,7 @@ export default function LandingPage() {
                   Olá, Carlos! Seu Samsung A54 está pronto para retirada. Valor: R$ 120,00 💚
                 </div>
               </div>
-            </div>
+            </Reveal>
           </div>
         </div>
       </section>
@@ -414,21 +430,21 @@ export default function LandingPage() {
               <div className={s['section-tag']} style={{ color: 'var(--green-dark)' }}>Bot WhatsApp</div>
               <h2 className={s['section-title']}>Seu cliente sempre<br />informado, sem esforço</h2>
               <p className={s['section-sub']}>O Bot SmartConserto envia mensagens automáticas em cada etapa do reparo — aprovação de orçamento, início do serviço, conclusão e cobrança.</p>
-              <div className={s['wapp-features']}>
+              <Stagger className={s['wapp-features']}>
                 {[
                   { icon: <svg viewBox="0 0 24 24"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>, title: 'Notificações automáticas', desc: 'Envios automáticos ao alterar o status da OS — sem digitar nada, sem esquecer de avisar.' },
                   { icon: <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>, title: 'Consulta de status pelo cliente', desc: 'O cliente digita o número da OS e recebe o status atualizado — sem ligar para a loja.' },
                   { icon: <svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>, title: 'Aprovação de orçamento online', desc: 'Cliente aprova ou recusa o orçamento direto pelo WhatsApp. A OS é atualizada automaticamente.' },
                 ].map((feat) => (
-                  <div key={feat.title} className={s['wapp-feat']}>
+                  <StaggerItem key={feat.title} className={s['wapp-feat']}>
                     <div className={s['wapp-feat-icon']}>{feat.icon}</div>
                     <div>
                       <div className={s['wapp-feat-title']}>{feat.title}</div>
                       <div className={s['wapp-feat-desc']}>{feat.desc}</div>
                     </div>
-                  </div>
+                  </StaggerItem>
                 ))}
-              </div>
+              </Stagger>
             </div>
             <div className={s['phone-wrap']}>
               <div className={s.phone}>
@@ -448,30 +464,30 @@ export default function LandingPage() {
                     </div>
                   </div>
                   <div className={s['phone-chat']}>
-                    <div className={`${s['chat-bubble']} ${s.bot}`}>
+                    <MotionChatBubble className={`${s['chat-bubble']} ${s.bot}`}>
                       Olá! 👋 Bem-vindo à SmartConserto. Digite o número da sua OS para consultar o status.
                       <div className={s['chat-time']}>14:22</div>
-                    </div>
-                    <div className={`${s['chat-bubble']} ${s.sent}`}>
+                    </MotionChatBubble>
+                    <MotionChatBubble className={`${s['chat-bubble']} ${s.sent}`} delay={0.08}>
                       OS-2846
                       <div className={s['chat-time']}>14:23</div>
-                    </div>
-                    <div className={`${s['chat-bubble']} ${s.bot}`}>
+                    </MotionChatBubble>
+                    <MotionChatBubble className={`${s['chat-bubble']} ${s.bot}`} delay={0.16}>
                       📱 <strong>OS-2846</strong> — Samsung Galaxy A54<br />
                       🔧 Serviço: Troca de bateria<br /><br />
                       ✅ <strong>Status: Pronto para retirada!</strong><br />
                       💰 Valor: R$ 120,00
                       <div className={s['chat-time']}>14:23</div>
-                    </div>
-                    <div className={`${s['chat-status']} ${s.pronto}`}>✅ Seu aparelho está pronto!</div>
-                    <div className={`${s['chat-bubble']} ${s.bot}`}>
+                    </MotionChatBubble>
+                    <MotionChatBubble className={`${s['chat-status']} ${s.pronto}`} delay={0.24}>✅ Seu aparelho está pronto!</MotionChatBubble>
+                    <MotionChatBubble className={`${s['chat-bubble']} ${s.bot}`} delay={0.32}>
                       Você pode retirar hoje das 9h às 18h. Aceita pagar via PIX? 😊
                       <div className={s['chat-time']}>14:23</div>
-                    </div>
-                    <div className={`${s['chat-bubble']} ${s.sent}`}>
+                    </MotionChatBubble>
+                    <MotionChatBubble className={`${s['chat-bubble']} ${s.sent}`} delay={0.4}>
                       Sim, mando o PIX agora!
                       <div className={s['chat-time']}>14:24</div>
-                    </div>
+                    </MotionChatBubble>
                   </div>
                 </div>
               </div>
@@ -483,15 +499,15 @@ export default function LandingPage() {
       {/* ── PRICING ── */}
       <section className={`${s.section} ${s.pricing}`} id="precos">
         <div className={s['section-inner']}>
-          <div className={s['pricing-header']}>
+          <Reveal className={s['pricing-header']}>
             <div className={s['section-tag']}>Planos</div>
             <h2 className={s['section-title']}>Simples, transparente, sem surpresas</h2>
             <p className={s['section-sub']}>Escolha o plano certo para o tamanho da sua assistência. Todos incluem 14 dias grátis.</p>
-          </div>
-          <div className={s['pricing-grid']}>
+          </Reveal>
+          <Stagger className={s['pricing-grid']}>
 
             {/* Básico */}
-            <div className={s['pricing-card']}>
+            <MotionCard className={s['pricing-card']}>
               <div className={s['pricing-plan']}>Básico</div>
               <div className={s['pricing-price']}><sup>R$</sup>97<span className={s['pricing-period']}>/mês</span></div>
               <div className={s['pricing-desc']}>Para assistências iniciantes que querem organizar as OS e clientes.</div>
@@ -505,10 +521,10 @@ export default function LandingPage() {
                 ))}
               </div>
               <Link href="/register" className={`${s['pricing-cta']} ${s.outline}`} style={{ display: 'block', textAlign: 'center', textDecoration: 'none' }}>Começar grátis</Link>
-            </div>
+            </MotionCard>
 
             {/* Profissional */}
-            <div className={`${s['pricing-card']} ${s.popular}`}>
+            <MotionCard className={`${s['pricing-card']} ${s.popular}`}>
               <div className={s['pricing-popular-badge']}>Mais popular</div>
               <div className={s['pricing-plan']} style={{ color: 'var(--primary)' }}>Profissional</div>
               <div className={s['pricing-price']}><sup>R$</sup>197<span className={s['pricing-period']}>/mês</span></div>
@@ -520,10 +536,10 @@ export default function LandingPage() {
                 ))}
               </div>
               <Link href="/register" className={`${s['pricing-cta']} ${s.filled}`} style={{ display: 'block', textAlign: 'center', textDecoration: 'none' }}>Começar grátis</Link>
-            </div>
+            </MotionCard>
 
             {/* Empresarial */}
-            <div className={s['pricing-card']}>
+            <MotionCard className={s['pricing-card']}>
               <div className={s['pricing-plan']}>Empresarial</div>
               <div className={s['pricing-price']}><sup>R$</sup>397<span className={s['pricing-period']}>/mês</span></div>
               <div className={s['pricing-desc']}>Para redes de assistências com múltiplas unidades e equipes grandes.</div>
@@ -534,9 +550,9 @@ export default function LandingPage() {
                 ))}
               </div>
               <a href="mailto:contato@smartconserto.com.br" className={`${s['pricing-cta']} ${s.outline}`} style={{ display: 'block', textAlign: 'center', textDecoration: 'none' }}>Falar com vendas</a>
-            </div>
+            </MotionCard>
 
-          </div>
+          </Stagger>
           <p style={{ textAlign: 'center', marginTop: '24px', fontSize: '13px', color: 'var(--gray-400)' }}>
             Todos os planos incluem 14 dias de teste grátis · Sem cartão de crédito · Cancele quando quiser
           </p>
@@ -546,17 +562,17 @@ export default function LandingPage() {
       {/* ── TESTIMONIALS ── */}
       <section className={`${s.section} ${s.testimonials}`}>
         <div className={s['section-inner']}>
-          <div className={s['testimonials-header']}>
+          <Reveal className={s['testimonials-header']}>
             <div className={s['section-tag']}>Depoimentos</div>
             <h2 className={s['section-title']}>Quem usa, recomenda</h2>
-          </div>
-          <div className={s['testi-grid']}>
+          </Reveal>
+          <Stagger className={s['testi-grid']}>
             {[
               { quote: '"Antes eu usava caderno para controlar as OS. Com o SmartConserto, consigo ver tudo no celular, e meu cliente nem precisa ligar pra saber o andamento."', name: 'Ricardo Ferreira', role: 'Conserta Tudo — São Paulo, SP',   initials: 'RF', color: 'var(--primary)' },
               { quote: '"O bot do WhatsApp foi um divisor de águas. Reduzi em 80% as ligações de clientes perguntando sobre o conserto. Minha equipe ficou muito mais focada."', name: 'Patricia Oliveira',  role: 'iRepara — Belo Horizonte, MG',    initials: 'PO', color: '#128C7E'       },
               { quote: '"Finalmente consigo saber se minha assistência está dando lucro de verdade. O controle financeiro me mostrou onde estava perdendo dinheiro sem perceber."', name: 'Marcos Santos',    role: 'TechFix — Curitiba, PR',          initials: 'MS', color: '#7C3AED'       },
             ].map((t) => (
-              <div key={t.name} className={s['testi-card']}>
+              <MotionCard key={t.name} className={s['testi-card']}>
                 <div className={s['testi-stars']}>{'★★★★★'.split('').map((star, i) => <span key={i} className={s['testi-star']}>{star}</span>)}</div>
                 <p className={s['testi-quote']}>{t.quote}</p>
                 <div className={s['testi-author']}>
@@ -566,9 +582,9 @@ export default function LandingPage() {
                     <div className={s['testi-role']}>{t.role}</div>
                   </div>
                 </div>
-              </div>
+              </MotionCard>
             ))}
-          </div>
+          </Stagger>
         </div>
       </section>
 

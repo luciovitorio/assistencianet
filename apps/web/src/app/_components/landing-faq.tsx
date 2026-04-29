@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import s from '../landing.module.css'
 
 export type LandingFaqItem = {
@@ -14,6 +15,7 @@ type LandingFaqProps = {
 
 export function LandingFaq({ items }: LandingFaqProps) {
   const [openFaq, setOpenFaq] = useState<number | null>(0)
+  const reduceMotion = useReducedMotion()
 
   return (
     <section className={`${s.section} ${s.faq}`} id="duvidas" aria-labelledby="duvidas-title">
@@ -43,14 +45,21 @@ export function LandingFaq({ items }: LandingFaqProps) {
                       <polyline points="6 9 12 15 18 9" />
                     </svg>
                   </button>
-                  <div
-                    className={`${s['faq-answer']} ${isOpen ? s.open : ''}`}
-                    id={answerId}
-                    role="region"
-                    hidden={!isOpen}
-                  >
-                    {item.a}
-                  </div>
+                  <AnimatePresence initial={false}>
+                    {isOpen ? (
+                      <motion.div
+                        className={s['faq-answer']}
+                        id={answerId}
+                        role="region"
+                        initial={reduceMotion ? false : { height: 0, opacity: 0 }}
+                        animate={reduceMotion ? undefined : { height: 'auto', opacity: 1 }}
+                        exit={reduceMotion ? undefined : { height: 0, opacity: 0 }}
+                        transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                      >
+                        {item.a}
+                      </motion.div>
+                    ) : null}
+                  </AnimatePresence>
                 </div>
               )
             })}
