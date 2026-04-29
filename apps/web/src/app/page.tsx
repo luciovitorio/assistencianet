@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google'
 import { LandingFaq } from './_components/landing-faq'
+import { LandingFooter } from './_components/landing-footer'
 import {
   FloatingPanel,
   MotionBar,
@@ -15,7 +16,6 @@ import {
 } from './_components/landing-motion'
 import { LandingNav } from './_components/landing-nav'
 import s from './landing.module.css'
-import { BrandMark } from '@/components/brand-mark'
 import { siteConfig } from '@/lib/site'
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -423,7 +423,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── WHATSAPP SECTION ── */}
-      <section className={`${s.section} ${s.wapp}`}>
+      <section className={`${s.section} ${s.wapp}`} id="bot-whatsapp">
         <div className={s['section-inner']}>
           <div className={s['wapp-grid']}>
             <div>
@@ -603,54 +603,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── FOOTER ── */}
-      <footer className={s.footer}>
-        <div className={s['footer-inner']}>
-          <div className={s['footer-grid']}>
-            <div>
-              <div className={s['footer-logo']}>
-                <div className={s['footer-logo-mark']}>
-                  <BrandMark />
-                </div>
-                <span className={s['footer-logo-text']}>Smart<span>Conserto</span></span>
-              </div>
-              <p className={s['footer-tagline']}>O sistema de gestão para assistências técnicas mais completo do Brasil.</p>
-            </div>
-            <div>
-              <div className={s['footer-col-title']}>Produto</div>
-              <div className={s['footer-links']}>
-                {['Funcionalidades','Preços','Bot WhatsApp','Integrações','Novidades'].map(l => (
-                  <a key={l} href="#" className={s['footer-link']}>{l}</a>
-                ))}
-              </div>
-            </div>
-            <div>
-              <div className={s['footer-col-title']}>Empresa</div>
-              <div className={s['footer-links']}>
-                {['Sobre nós','Blog','Casos de sucesso','Parceiros','Trabalhe conosco'].map(l => (
-                  <a key={l} href="#" className={s['footer-link']}>{l}</a>
-                ))}
-              </div>
-            </div>
-            <div>
-              <div className={s['footer-col-title']}>Suporte</div>
-              <div className={s['footer-links']}>
-                {['Central de ajuda','Documentação','Status do sistema','Contato','Falar no WhatsApp'].map(l => (
-                  <a key={l} href="#" className={s['footer-link']}>{l}</a>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className={s['footer-bottom']}>
-            <span className={s['footer-bottom-text']}>© 2026 SmartConserto. Todos os direitos reservados.</span>
-            <div className={s['footer-bottom-links']}>
-              {['Privacidade','Termos de uso','Cookies'].map(l => (
-                <a key={l} href="#" className={s['footer-bottom-link']}>{l}</a>
-              ))}
-            </div>
-          </div>
-        </div>
-      </footer>
+      <LandingFooter />
 
     </div>
   )

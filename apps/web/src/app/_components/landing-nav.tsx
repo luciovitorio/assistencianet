@@ -26,24 +26,24 @@ export function LandingNav() {
       transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
     >
       <div className={s['nav-inner']}>
-        <a href="#inicio" className={s['nav-logo']} aria-label="Ir para o início">
+        <Link href="/" className={s['nav-logo']} aria-label="Ir para o início">
           <div className={s['nav-logo-mark']} aria-hidden="true">
             <BrandMark />
           </div>
           <span className={s['nav-logo-text']}>
             Smart<span>Conserto</span>
           </span>
-        </a>
+        </Link>
         <div className={s['nav-links']}>
-          <a href="#funcionalidades" className={s['nav-link']}>
+          <Link href="/funcionalidades" className={s['nav-link']}>
             Funcionalidades
-          </a>
-          <a href="#como-funciona" className={s['nav-link']}>
+          </Link>
+          <Link href="/#como-funciona" className={s['nav-link']}>
             Como funciona
-          </a>
-          <a href="#precos" className={s['nav-link']}>
+          </Link>
+          <Link href="/#precos" className={s['nav-link']}>
             Preços
-          </a>
+          </Link>
         </div>
         <div className={s['nav-ctas']}>
           <Link href="/login" className={s['btn-ghost']}>
