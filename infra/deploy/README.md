@@ -18,7 +18,7 @@ docker system prune -af
 
 ```bash
 cd ~
-git clone https://github.com/luciovitorio/assistencianet.git assistencia_saas
+git clone https://github.com/luciovitorio/smartconserto.git assistencia_saas
 cd assistencia_saas/infra/deploy
 ```
 

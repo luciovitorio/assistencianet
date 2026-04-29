@@ -1,9 +1,9 @@
-name: assistencianet
+name: smartconserto
 
 services:
   evolution-api:
     image: evoapicloud/evolution-api:v2.3.7
-    container_name: assistencianet_evolution_api
+    container_name: smartconserto_evolution_api
     restart: unless-stopped
     depends_on:
       evolution-postgres:
@@ -17,7 +17,7 @@ services:
     volumes:
       - evolution_instances:/evolution/instances
     networks:
-      - assistencianet
+      - smartconserto
     healthcheck:
       test:
         [
@@ -31,7 +31,7 @@ services:
 
   evolution-postgres:
     image: postgres:15-alpine
-    container_name: assistencianet_evolution_postgres
+    container_name: smartconserto_evolution_postgres
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DATABASE}
@@ -46,7 +46,7 @@ services:
     volumes:
       - evolution_postgres:/var/lib/postgresql/data
     networks:
-      - assistencianet
+      - smartconserto
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
@@ -55,13 +55,13 @@ services:
 
   evolution-redis:
     image: redis:7-alpine
-    container_name: assistencianet_evolution_redis
+    container_name: smartconserto_evolution_redis
     restart: unless-stopped
     command: redis-server --port 6379 --appendonly yes
     volumes:
       - evolution_redis:/data
     networks:
-      - assistencianet
+      - smartconserto
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -74,5 +74,5 @@ volumes:
   evolution_redis:
 
 networks:
-  assistencianet:
+  smartconserto:
     driver: bridge

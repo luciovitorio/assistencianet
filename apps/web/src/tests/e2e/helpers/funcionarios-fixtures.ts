@@ -74,7 +74,7 @@ function adminClient() {
 export async function cleanupEmployeeE2EArtifacts() {
   await withDb(async (client) => {
     const users = await client.query<{ email: string }>('SELECT email FROM auth.users WHERE email LIKE $1', [
-      `${EMPLOYEE_EMAIL_PREFIX}%@assistencianet.test`,
+      `${EMPLOYEE_EMAIL_PREFIX}%@smartconserto.test`,
     ])
 
     for (const user of users.rows) {

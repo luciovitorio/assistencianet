@@ -63,12 +63,12 @@ let branchB1: string
 // ─── Setup / Teardown ────────────────────────────────────────────────────────
 
 beforeAll(async () => {
-  ownerIdA = await createTestAuthUser('cli-owner-a@assistencianet.test')
+  ownerIdA = await createTestAuthUser('cli-owner-a@smartconserto.test')
   companyA = await createTestCompany(ownerIdA, 'Empresa A — Clientes Test')
   branchA1 = await criarFilial(companyA.id, 'Filial A1')
   branchA2 = await criarFilial(companyA.id, 'Filial A2')
 
-  ownerIdB = await createTestAuthUser('cli-owner-b@assistencianet.test')
+  ownerIdB = await createTestAuthUser('cli-owner-b@smartconserto.test')
   companyB = await createTestCompany(ownerIdB, 'Empresa B — Isolamento Clientes')
   branchB1 = await criarFilial(companyB.id, 'Filial B1')
 })
@@ -225,7 +225,7 @@ async function registrarAudit(
 
 describe('Módulo de Clientes: Listagem', () => {
   it('TC-CLI-005 — empresa recém-criada não retorna clientes', async () => {
-    const ownerX = await createTestAuthUser('cli-owner-vazio@assistencianet.test')
+    const ownerX = await createTestAuthUser('cli-owner-vazio@smartconserto.test')
     const companyX = await createTestCompany(ownerX, 'Empresa Vazia')
 
     const lista = await listarClientes(companyX.id)

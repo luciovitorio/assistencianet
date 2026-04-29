@@ -1,7 +1,7 @@
 # Agent Instructions
 
 ## Product
-- AssistenciaNet is a SaaS for assistencias tecnicas with multi-branch operation.
+- SmartConserto is a SaaS for assistencias tecnicas with multi-branch operation.
 - Current pilot customer is Orquidia Assistencia Tecnica; treat its workflow as the default domain baseline until product decisions say otherwise.
 - Prioritize operational simplicity, auditability, branch visibility, and PT-BR UX.
 
@@ -13,14 +13,14 @@
 
 ## Package Manager
 - Use **npm workspaces**: `npm install`, `npm run dev`, `npm run build`, `npm run lint`
-- Web app workspace: `npm run dev --workspace @assistencianet/web`
+- Web app workspace: `npm run dev --workspace @smartconserto/web`
 
 ## File-Scoped Commands
 | Task | Command |
 |------|---------|
 | Lint one file | `npx eslint apps/web/src/path/to/file.tsx` |
 | Typecheck web app | `npx tsc --noEmit -p apps/web/tsconfig.json` |
-| Run web app | `npm run dev --workspace @assistencianet/web` |
+| Run web app | `npm run dev --workspace @smartconserto/web` |
 
 ## Key Conventions
 - UI copy is PT-BR only unless a task explicitly requires another language.

@@ -32,7 +32,7 @@ let partId: string
 
 beforeAll(async () => {
   // 1. Criar usuário auth + profile como dono da empresa
-  ownerId = await createTestAuthUser('estoque-test@assistencianet.test')
+  ownerId = await createTestAuthUser('estoque-test@smartconserto.test')
   company = await createTestCompany(ownerId, 'Empresa Estoque Test')
   branch = await createTestBranch(company.id, 'Filial A')
 

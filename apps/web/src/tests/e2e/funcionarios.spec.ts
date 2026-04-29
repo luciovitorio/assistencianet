@@ -92,14 +92,14 @@ async function seedEmployeeSet(companyId: string, branches: EmployeeBranchSet) {
   const access = await createEmployeeWithAccess(companyId, {
     name: `${E2E_EMPLOYEE_PREFIX} Acesso Ativo`,
     role: 'admin',
-    email: `${EMPLOYEE_EMAIL_PREFIX}acesso@assistencianet.test`,
+    email: `${EMPLOYEE_EMAIL_PREFIX}acesso@smartconserto.test`,
     branchId: branches.primary.id,
     createdAt: '2026-03-01T10:00:00Z',
   })
   const attendant = await createEmployeeRecord(companyId, {
     name: `${E2E_EMPLOYEE_PREFIX} Atendente Busca`,
     role: 'atendente',
-    email: `${EMPLOYEE_EMAIL_PREFIX}atendente@assistencianet.test`,
+    email: `${EMPLOYEE_EMAIL_PREFIX}atendente@smartconserto.test`,
     phone: '(11) 91111-1111',
     cpf: '111.222.333-44',
     branchId: branches.primary.id,
@@ -108,7 +108,7 @@ async function seedEmployeeSet(companyId: string, branches: EmployeeBranchSet) {
   const technician = await createEmployeeRecord(companyId, {
     name: `${E2E_EMPLOYEE_PREFIX} Técnico Labor`,
     role: 'tecnico',
-    email: `${EMPLOYEE_EMAIL_PREFIX}tecnico@assistencianet.test`,
+    email: `${EMPLOYEE_EMAIL_PREFIX}tecnico@smartconserto.test`,
     phone: '(19) 92222-2222',
     cpf: '222.333.444-55',
     branchId: branches.secondary.id,
@@ -124,7 +124,7 @@ async function seedEmployeeSet(companyId: string, branches: EmployeeBranchSet) {
   const inactive = await createEmployeeRecord(companyId, {
     name: `${E2E_EMPLOYEE_PREFIX} Inativo`,
     role: 'tecnico',
-    email: `${EMPLOYEE_EMAIL_PREFIX}inativo@assistencianet.test`,
+    email: `${EMPLOYEE_EMAIL_PREFIX}inativo@smartconserto.test`,
     branchId: branches.primary.id,
     active: false,
     createdAt: '2026-03-05T10:00:00Z',
@@ -132,7 +132,7 @@ async function seedEmployeeSet(companyId: string, branches: EmployeeBranchSet) {
   const deleted = await createEmployeeRecord(companyId, {
     name: `${E2E_EMPLOYEE_PREFIX} Excluído`,
     role: 'atendente',
-    email: `${EMPLOYEE_EMAIL_PREFIX}excluido@assistencianet.test`,
+    email: `${EMPLOYEE_EMAIL_PREFIX}excluido@smartconserto.test`,
     branchId: branches.primary.id,
     createdAt: '2026-03-06T10:00:00Z',
   })
@@ -181,19 +181,19 @@ test.describe('Funcionários — cobertura do caderno manual', () => {
       const atendente = await createEmployeeWithAccess(companyId, {
         name: `${E2E_EMPLOYEE_PREFIX} RBAC Atendente`,
         role: 'atendente',
-        email: `${EMPLOYEE_EMAIL_PREFIX}rbac-atendente@assistencianet.test`,
+        email: `${EMPLOYEE_EMAIL_PREFIX}rbac-atendente@smartconserto.test`,
         branchId: branches.primary.id,
       })
       const tecnico = await createEmployeeWithAccess(companyId, {
         name: `${E2E_EMPLOYEE_PREFIX} RBAC Técnico`,
         role: 'tecnico',
-        email: `${EMPLOYEE_EMAIL_PREFIX}rbac-tecnico@assistencianet.test`,
+        email: `${EMPLOYEE_EMAIL_PREFIX}rbac-tecnico@smartconserto.test`,
         branchId: branches.primary.id,
       })
       const admin = await createEmployeeWithAccess(companyId, {
         name: `${E2E_EMPLOYEE_PREFIX} RBAC Admin`,
         role: 'admin',
-        email: `${EMPLOYEE_EMAIL_PREFIX}rbac-admin@assistencianet.test`,
+        email: `${EMPLOYEE_EMAIL_PREFIX}rbac-admin@smartconserto.test`,
         branchId: branches.primary.id,
       })
 
@@ -228,7 +228,7 @@ test.describe('Funcionários — cobertura do caderno manual', () => {
     })
 
     test('TC-FUNC-005 — empresa sem funcionários mostra vazio e bloqueia busca/filtros', async ({ page }) => {
-      const email = `${EMPLOYEE_EMAIL_PREFIX}empresa-vazia@assistencianet.test`
+      const email = `${EMPLOYEE_EMAIL_PREFIX}empresa-vazia@smartconserto.test`
       const { user, company } = await createCompanyWithOwner(email, 'Empresa E2E Funcionários Vazia')
 
       await loginAsEmployee(page, user.email, 'E2eFiliais@2026!')
@@ -359,7 +359,7 @@ test.describe('Funcionários — cobertura do caderno manual', () => {
         await createEmployeeRecord(companyId, {
           name: `${E2E_EMPLOYEE_PREFIX} Página ${String(i).padStart(2, '0')}`,
           role: i % 2 === 0 ? 'tecnico' : 'atendente',
-          email: `${EMPLOYEE_EMAIL_PREFIX}pagina-${i}@assistencianet.test`,
+          email: `${EMPLOYEE_EMAIL_PREFIX}pagina-${i}@smartconserto.test`,
           branchId: branches.primary.id,
         })
       }
@@ -466,7 +466,7 @@ test.describe('Funcionários — cobertura do caderno manual', () => {
         name: fullName,
         role: 'Técnico',
         branchName: branches.secondary.name,
-        email: `${EMPLOYEE_EMAIL_PREFIX}completo@assistencianet.test`,
+        email: `${EMPLOYEE_EMAIL_PREFIX}completo@smartconserto.test`,
         phone: '11999998888',
         cpf: '98765432100',
         laborRate: '49.90',
@@ -500,8 +500,8 @@ test.describe('Funcionários — cobertura do caderno manual', () => {
 
     test('TC-FUNC-048 a TC-FUNC-052 — unicidade, auth existente, normalização e edição de e-mail', async ({ page }) => {
       const { companyId, branches } = await resetEmployeeE2EData()
-      const emailA = `${EMPLOYEE_EMAIL_PREFIX}duplicado-a@assistencianet.test`
-      const emailB = `${EMPLOYEE_EMAIL_PREFIX}duplicado-b@assistencianet.test`
+      const emailA = `${EMPLOYEE_EMAIL_PREFIX}duplicado-a@smartconserto.test`
+      const emailB = `${EMPLOYEE_EMAIL_PREFIX}duplicado-b@smartconserto.test`
       const empA = await createEmployeeRecord(companyId, {
         name: `${E2E_EMPLOYEE_PREFIX} Email A`,
         email: emailA,
@@ -514,7 +514,7 @@ test.describe('Funcionários — cobertura do caderno manual', () => {
         role: 'atendente',
         branchId: branches.primary.id,
       })
-      await createAuthOnlyUser(`${EMPLOYEE_EMAIL_PREFIX}auth-only@assistencianet.test`)
+      await createAuthOnlyUser(`${EMPLOYEE_EMAIL_PREFIX}auth-only@smartconserto.test`)
 
       await openNewEmployeeDialog(page)
       await fillEmployeeForm(page, {
@@ -530,7 +530,7 @@ test.describe('Funcionários — cobertura do caderno manual', () => {
       await fillEmployeeForm(page, {
         name: uniqueEmployeeName('Auth Existente'),
         branchName: branches.primary.name,
-        email: `${EMPLOYEE_EMAIL_PREFIX}auth-only@assistencianet.test`,
+        email: `${EMPLOYEE_EMAIL_PREFIX}auth-only@smartconserto.test`,
       })
       await page.getByRole('button', { name: 'Salvar Funcionário' }).click()
       await expect(page.getByText('Este e-mail já está cadastrado no sistema.')).toBeVisible()
@@ -541,12 +541,12 @@ test.describe('Funcionários — cobertura do caderno manual', () => {
       await fillEmployeeForm(page, {
         name: normalizedName,
         branchName: branches.primary.name,
-        email: `  ${EMPLOYEE_EMAIL_PREFIX}NORMALIZADO@assistencianet.test  `,
+        email: `  ${EMPLOYEE_EMAIL_PREFIX}NORMALIZADO@smartconserto.test  `,
       })
       await page.getByRole('button', { name: 'Salvar Funcionário' }).click()
       await expectToast(page, 'Funcionário cadastrado com sucesso.')
       await expect.poll(async () => getEmployeeByName(companyId, normalizedName)).toMatchObject({
-        email: `${EMPLOYEE_EMAIL_PREFIX}normalizado@assistencianet.test`,
+        email: `${EMPLOYEE_EMAIL_PREFIX}normalizado@smartconserto.test`,
       })
 
       await page.getByRole('button', { name: `Editar funcionário ${empA.name}` }).click()
@@ -570,13 +570,13 @@ test.describe('Funcionários — cobertura do caderno manual', () => {
       const employee = await createEmployeeWithAccess(companyId, {
         name: `${E2E_EMPLOYEE_PREFIX} Editável`,
         role: 'atendente',
-        email: `${EMPLOYEE_EMAIL_PREFIX}editavel@assistencianet.test`,
+        email: `${EMPLOYEE_EMAIL_PREFIX}editavel@smartconserto.test`,
         branchId: branches.primary.id,
       })
       const inactive = await createEmployeeRecord(companyId, {
         name: `${E2E_EMPLOYEE_PREFIX} Reativar`,
         role: 'atendente',
-        email: `${EMPLOYEE_EMAIL_PREFIX}reativar@assistencianet.test`,
+        email: `${EMPLOYEE_EMAIL_PREFIX}reativar@smartconserto.test`,
         branchId: branches.primary.id,
         active: false,
       })
@@ -612,7 +612,7 @@ test.describe('Funcionários — cobertura do caderno manual', () => {
         user_id: null,
       })
 
-      const other = await createCompanyWithOwner(`${EMPLOYEE_EMAIL_PREFIX}tenant-owner@assistencianet.test`, 'Empresa B Funcionários')
+      const other = await createCompanyWithOwner(`${EMPLOYEE_EMAIL_PREFIX}tenant-owner@smartconserto.test`, 'Empresa B Funcionários')
       const otherEmployee = await createEmployeeRecord(other.company.id, {
         name: `${E2E_EMPLOYEE_PREFIX} Outro Tenant`,
         role: 'atendente',
@@ -627,7 +627,7 @@ test.describe('Funcionários — cobertura do caderno manual', () => {
       const invite = await createEmployeeRecord(companyId, {
         name: `${E2E_EMPLOYEE_PREFIX} Convite`,
         role: 'tecnico',
-        email: `${EMPLOYEE_EMAIL_PREFIX}convite@assistencianet.test`,
+        email: `${EMPLOYEE_EMAIL_PREFIX}convite@smartconserto.test`,
         branchId: branches.primary.id,
       })
       const noEmail = await createEmployeeRecord(companyId, {
@@ -638,14 +638,14 @@ test.describe('Funcionários — cobertura do caderno manual', () => {
       const access = await createEmployeeWithAccess(companyId, {
         name: `${E2E_EMPLOYEE_PREFIX} Convite Com Acesso`,
         role: 'admin',
-        email: `${EMPLOYEE_EMAIL_PREFIX}convite-acesso@assistencianet.test`,
+        email: `${EMPLOYEE_EMAIL_PREFIX}convite-acesso@smartconserto.test`,
         branchId: branches.primary.id,
       })
-      await createAuthOnlyUser(`${EMPLOYEE_EMAIL_PREFIX}convite-auth-existente@assistencianet.test`)
+      await createAuthOnlyUser(`${EMPLOYEE_EMAIL_PREFIX}convite-auth-existente@smartconserto.test`)
       const duplicateAuthEmployee = await createEmployeeRecord(companyId, {
         name: `${E2E_EMPLOYEE_PREFIX} Convite Auth Existente`,
         role: 'atendente',
-        email: `${EMPLOYEE_EMAIL_PREFIX}convite-auth-existente@assistencianet.test`,
+        email: `${EMPLOYEE_EMAIL_PREFIX}convite-auth-existente@smartconserto.test`,
         branchId: branches.primary.id,
       })
 
@@ -674,7 +674,7 @@ test.describe('Funcionários — cobertura do caderno manual', () => {
       const doubleInvite = await createEmployeeRecord(companyId, {
         name: `${E2E_EMPLOYEE_PREFIX} Convite Duplo`,
         role: 'atendente',
-        email: `${EMPLOYEE_EMAIL_PREFIX}convite-duplo@assistencianet.test`,
+        email: `${EMPLOYEE_EMAIL_PREFIX}convite-duplo@smartconserto.test`,
         branchId: branches.primary.id,
       })
       await page.reload()
@@ -690,7 +690,7 @@ test.describe('Funcionários — cobertura do caderno manual', () => {
       const withEmail = await createEmployeeRecord(companyId, {
         name: `${E2E_EMPLOYEE_PREFIX} Acesso Direto Email`,
         role: 'atendente',
-        email: `${EMPLOYEE_EMAIL_PREFIX}direto-email@assistencianet.test`,
+        email: `${EMPLOYEE_EMAIL_PREFIX}direto-email@smartconserto.test`,
         branchId: branches.primary.id,
       })
       const withoutEmail = await createEmployeeRecord(companyId, {
@@ -698,11 +698,11 @@ test.describe('Funcionários — cobertura do caderno manual', () => {
         role: 'tecnico',
         branchId: branches.primary.id,
       })
-      await createAuthOnlyUser(`${EMPLOYEE_EMAIL_PREFIX}direto-auth-existente@assistencianet.test`)
+      await createAuthOnlyUser(`${EMPLOYEE_EMAIL_PREFIX}direto-auth-existente@smartconserto.test`)
       await createEmployeeRecord(companyId, {
         name: `${E2E_EMPLOYEE_PREFIX} Acesso Email Conflito`,
         role: 'atendente',
-        email: `${EMPLOYEE_EMAIL_PREFIX}direto-conflito@assistencianet.test`,
+        email: `${EMPLOYEE_EMAIL_PREFIX}direto-conflito@smartconserto.test`,
         branchId: branches.primary.id,
       })
 
@@ -721,16 +721,16 @@ test.describe('Funcionários — cobertura do caderno manual', () => {
       await expect(dialog.getByRole('alert').filter({ hasText: 'E-mail inválido' })).toBeVisible()
       await expect(dialog.getByRole('alert').filter({ hasText: 'A senha deve ter pelo menos 8 caracteres' })).toBeVisible()
 
-      await dialog.getByLabel(/E-mail de acesso/).fill(`${EMPLOYEE_EMAIL_PREFIX}direto-auth-existente@assistencianet.test`)
+      await dialog.getByLabel(/E-mail de acesso/).fill(`${EMPLOYEE_EMAIL_PREFIX}direto-auth-existente@smartconserto.test`)
       await dialog.getByLabel(/Senha provisória/).fill('Senha@123')
       await page.getByRole('button', { name: 'Criar acesso' }).click()
       await expect(page.getByText('Este e-mail já está cadastrado no sistema.')).toBeVisible()
 
-      await dialog.getByLabel(/E-mail de acesso/).fill(`${EMPLOYEE_EMAIL_PREFIX}direto-conflito@assistencianet.test`)
+      await dialog.getByLabel(/E-mail de acesso/).fill(`${EMPLOYEE_EMAIL_PREFIX}direto-conflito@smartconserto.test`)
       await page.getByRole('button', { name: 'Criar acesso' }).click()
       await expect(page.getByText('Este e-mail já está cadastrado no sistema.')).toBeVisible()
 
-      const directEmail = `${EMPLOYEE_EMAIL_PREFIX}direto-sucesso@assistencianet.test`
+      const directEmail = `${EMPLOYEE_EMAIL_PREFIX}direto-sucesso@smartconserto.test`
       await dialog.getByLabel(/E-mail de acesso/).fill(directEmail)
       await dialog.getByLabel(/Senha provisória/).fill('Senha@123')
       await page.getByRole('button', { name: 'Criar acesso' }).click()
@@ -762,7 +762,7 @@ test.describe('Funcionários — cobertura do caderno manual', () => {
       const employee = await createEmployeeWithAccess(companyId, {
         name: `${E2E_EMPLOYEE_PREFIX} Revogar`,
         role: 'atendente',
-        email: `${EMPLOYEE_EMAIL_PREFIX}revogar@assistencianet.test`,
+        email: `${EMPLOYEE_EMAIL_PREFIX}revogar@smartconserto.test`,
         branchId: branches.primary.id,
       })
 
@@ -794,13 +794,13 @@ test.describe('Funcionários — cobertura do caderno manual', () => {
       const noAccess = await createEmployeeRecord(companyId, {
         name: `${E2E_EMPLOYEE_PREFIX} Excluir Sem Acesso`,
         role: 'atendente',
-        email: `${EMPLOYEE_EMAIL_PREFIX}excluir-sem-acesso@assistencianet.test`,
+        email: `${EMPLOYEE_EMAIL_PREFIX}excluir-sem-acesso@smartconserto.test`,
         branchId: branches.primary.id,
       })
       const withAccess = await createEmployeeWithAccess(companyId, {
         name: `${E2E_EMPLOYEE_PREFIX} Excluir Com Acesso`,
         role: 'tecnico',
-        email: `${EMPLOYEE_EMAIL_PREFIX}excluir-com-acesso@assistencianet.test`,
+        email: `${EMPLOYEE_EMAIL_PREFIX}excluir-com-acesso@smartconserto.test`,
         branchId: branches.secondary.id,
       })
 
@@ -849,7 +849,7 @@ test.describe('Funcionários — cobertura do caderno manual', () => {
       const employee = await createEmployeeRecord(companyId, {
         name: `${E2E_EMPLOYEE_PREFIX} Concorrente`,
         role: 'atendente',
-        email: `${EMPLOYEE_EMAIL_PREFIX}concorrente@assistencianet.test`,
+        email: `${EMPLOYEE_EMAIL_PREFIX}concorrente@smartconserto.test`,
         branchId: branches.primary.id,
       })
       const contextA = await browser.newContext({ storageState: '.auth/session.json' })

@@ -48,11 +48,11 @@ let companyB: SeedCompany
 
 beforeAll(async () => {
   // Empresa A — empresa principal dos testes
-  ownerIdA = await createTestAuthUser('filiais-owner-a@assistencianet.test')
+  ownerIdA = await createTestAuthUser('filiais-owner-a@smartconserto.test')
   companyA = await createTestCompany(ownerIdA, 'Empresa A — Filiais Test')
 
   // Empresa B — para testes de isolamento multi-tenant
-  ownerIdB = await createTestAuthUser('filiais-owner-b@assistencianet.test')
+  ownerIdB = await createTestAuthUser('filiais-owner-b@smartconserto.test')
   companyB = await createTestCompany(ownerIdB, 'Empresa B — Isolamento')
 })
 

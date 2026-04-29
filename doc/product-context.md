@@ -1,7 +1,7 @@
 # Contexto Do Produto
 
 ## Posicionamento
-- AssistenciaNet e um SaaS para assistencias tecnicas com foco inicial em operacoes multi-filial.
+- SmartConserto e um SaaS para assistencias tecnicas com foco inicial em operacoes multi-filial.
 - O cliente piloto Orquidia define o baseline do dominio enquanto o produto amadurece para escalar.
 
 ## Prioridades Atuais

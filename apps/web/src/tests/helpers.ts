@@ -41,7 +41,7 @@ export type SeedBranch = {
  * Necessário pois:
  *   companies.owner_id → profiles.id → auth.users.id
  */
-export async function createTestAuthUser(email = 'test@assistencianet.test'): Promise<string> {
+export async function createTestAuthUser(email = 'test@smartconserto.test'): Promise<string> {
   return withPg(async (pg) => {
     // Verifica se já existe (de run anterior)
     const existing = await pg.query<{ id: string }>(

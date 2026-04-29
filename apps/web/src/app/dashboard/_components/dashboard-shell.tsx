@@ -271,7 +271,7 @@ export function DashboardShell({
               isExpanded ? 'opacity-100 w-auto' : 'opacity-0 w-0'
             }`}
           >
-            <span className="font-bold text-lg leading-tight block">AssistênciaNet</span>
+            <span className="font-bold text-lg leading-tight block">SmartConserto</span>
             <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">
               Gestão
             </span>

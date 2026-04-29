@@ -153,13 +153,13 @@ test.describe('Cadastro de filiais — cobertura do caderno manual', () => {
       const companyId = await getE2ECompanyId()
       const branch = await createBranch(companyId, { name: uniqueBranchName('RBAC') })
       const atendente = await createEmployeeUser({
-        email: `${EXTRA_EMAIL_PREFIX}atendente@assistencianet.test`,
+        email: `${EXTRA_EMAIL_PREFIX}atendente@smartconserto.test`,
         companyId,
         branchId: branch.id,
         role: 'atendente',
       })
       const tecnico = await createEmployeeUser({
-        email: `${EXTRA_EMAIL_PREFIX}tecnico@assistencianet.test`,
+        email: `${EXTRA_EMAIL_PREFIX}tecnico@smartconserto.test`,
         companyId,
         branchId: branch.id,
         role: 'tecnico',
@@ -184,7 +184,7 @@ test.describe('Cadastro de filiais — cobertura do caderno manual', () => {
       const companyId = await getE2ECompanyId()
       const branch = await createBranch(companyId, { name: uniqueBranchName('Admin') })
       const admin = await createEmployeeUser({
-        email: `${EXTRA_EMAIL_PREFIX}admin@assistencianet.test`,
+        email: `${EXTRA_EMAIL_PREFIX}admin@smartconserto.test`,
         companyId,
         branchId: branch.id,
         role: 'admin',
@@ -205,7 +205,7 @@ test.describe('Cadastro de filiais — cobertura do caderno manual', () => {
     })
 
     test('TC-FIL-006 — empresa sem filiais exibe estado vazio', async ({ page }) => {
-      const email = `${EXTRA_EMAIL_PREFIX}empresa-vazia@assistencianet.test`
+      const email = `${EXTRA_EMAIL_PREFIX}empresa-vazia@smartconserto.test`
       const { user, company } = await createCompanyWithOwner(email, 'Empresa E2E Sem Filiais')
       await deleteAllBranches(company.id)
 
@@ -457,7 +457,7 @@ test.describe('Cadastro de filiais — cobertura do caderno manual', () => {
 
     test('TC-FIL-035 e TC-FIL-043 — guards bloqueiam outra empresa e filial já excluída', async () => {
       const companyAId = await getE2ECompanyId()
-      const otherEmail = `${EXTRA_EMAIL_PREFIX}empresa-b@assistencianet.test`
+      const otherEmail = `${EXTRA_EMAIL_PREFIX}empresa-b@smartconserto.test`
       const { company: companyB } = await createCompanyWithOwner(otherEmail, 'Empresa B E2E')
       const branchB = await createBranch(companyB.id, { name: uniqueBranchName('Empresa B') })
       await expectCurrentUserUpdateIsBlocked(branchB.id, companyAId)

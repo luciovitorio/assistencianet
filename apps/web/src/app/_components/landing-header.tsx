@@ -8,7 +8,7 @@ export function LandingHeader() {
   return (
     <header className="border-b">
       <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
-        <span className="text-lg font-bold">AssistênciaNet</span>
+        <span className="text-lg font-bold">SmartConserto</span>
         <div className="flex items-center gap-3">
           <Link href="/login" className={cn(buttonVariants({ variant: 'ghost' }))}>
             Entrar

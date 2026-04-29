@@ -7,7 +7,7 @@ import './globals.css'
 const geist = Geist({ subsets: ['latin'], variable: '--font-geist-sans' })
 
 export const metadata: Metadata = {
-  title: 'AssistênciaNet',
+  title: 'SmartConserto',
   description: 'Sistema de gestão para assistências técnicas',
 }
 

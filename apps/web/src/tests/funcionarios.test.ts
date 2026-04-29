@@ -62,14 +62,14 @@ let branchB1: string
 // ─── Setup / Teardown ────────────────────────────────────────────────────────
 
 beforeAll(async () => {
-  ownerIdA = await createTestAuthUser('func-owner-a@assistencianet.test')
+  ownerIdA = await createTestAuthUser('func-owner-a@smartconserto.test')
   companyA = await createTestCompany(ownerIdA, 'Empresa A — Funcionários Test')
 
   branchA1 = await criarFilial({ companyId: companyA.id, name: 'Filial A1 Ativa' })
   branchA2 = await criarFilial({ companyId: companyA.id, name: 'Filial A2 Ativa' })
   branchAInativa = await criarFilial({ companyId: companyA.id, name: 'Filial A3 Inativa', active: false })
 
-  ownerIdB = await createTestAuthUser('func-owner-b@assistencianet.test')
+  ownerIdB = await createTestAuthUser('func-owner-b@smartconserto.test')
   companyB = await createTestCompany(ownerIdB, 'Empresa B — Isolamento Func')
   branchB1 = await criarFilial({ companyId: companyB.id, name: 'Filial B1' })
 })
@@ -555,7 +555,7 @@ describe('Módulo de Funcionários: Edição', () => {
   })
 
   it('TC-FUNC-055 — desativar funcionário com acesso limpa user_id', async () => {
-    const fakeUserId = await createTestAuthUser('func-acesso-a@assistencianet.test')
+    const fakeUserId = await createTestAuthUser('func-acesso-a@smartconserto.test')
 
     const id = await criarFuncionario({
       companyId: companyA.id,
@@ -640,7 +640,7 @@ describe('Módulo de Funcionários: Edição', () => {
 
 describe('Módulo de Funcionários: Revogação de Acesso', () => {
   it('TC-FUNC-074 — revogação preserva cadastro e apenas zera user_id', async () => {
-    const fakeUserId = await createTestAuthUser('func-revogar-a@assistencianet.test')
+    const fakeUserId = await createTestAuthUser('func-revogar-a@smartconserto.test')
     const id = await criarFuncionario({
       companyId: companyA.id,
       branchId: branchA1,

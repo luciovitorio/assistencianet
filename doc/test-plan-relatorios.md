@@ -1,6 +1,6 @@
 # Plano de Testes Manual - Módulo: Relatórios
 
-Este documento detalha os cenários de testes manuais para garantir a integridade, o cálculo correto das métricas e a aplicação do controle de acesso para o módulo de Relatórios (Business Intelligence) do AssistenciaNet.
+Este documento detalha os cenários de testes manuais para garantir a integridade, o cálculo correto das métricas e a aplicação do controle de acesso para o módulo de Relatórios (Business Intelligence) do SmartConserto.
 
 ---
 

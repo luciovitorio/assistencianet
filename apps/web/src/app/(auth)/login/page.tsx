@@ -34,7 +34,7 @@ export default function LoginPage() {
     <div className="space-y-6">
       <div className="space-y-1 text-center">
         <h1 className="text-2xl font-bold">Entrar</h1>
-        <p className="text-muted-foreground text-sm">Acesse sua conta AssistênciaNet</p>
+        <p className="text-muted-foreground text-sm">Acesse sua conta SmartConserto</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

@@ -17,7 +17,7 @@ ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
 ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN npm run build --workspace @assistencianet/web
+RUN npm run build --workspace @smartconserto/web
 
 FROM node:20-alpine AS runner
 WORKDIR /app

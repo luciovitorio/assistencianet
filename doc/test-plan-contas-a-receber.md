@@ -2,7 +2,7 @@
 
 O objetivo deste documento é certificar que o painel de Contas a Receber apresente, de forma consistente, passiva e analítica, as Ordens de Serviço (OSs) atreladas à receita que está engatilhada ou em aberto no sistema financeiro.
 
-Importante frisar que no fluxo atual de produto d'AssistenciaNet, a injeção do "Contas a Receber" não é manual (ao contrário do Contas a Pagar). **A lista é orgânica e extrai 100% dos dados das Ordens de Serviço cujos orçamentos aprovados criaram lastro financeiro**.
+Importante frisar que no fluxo atual de produto d'SmartConserto, a injeção do "Contas a Receber" não é manual (ao contrário do Contas a Pagar). **A lista é orgânica e extrai 100% dos dados das Ordens de Serviço cujos orçamentos aprovados criaram lastro financeiro**.
 
 ---
 

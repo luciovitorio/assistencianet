@@ -3,9 +3,9 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
     <div className="min-h-screen bg-muted/30 flex flex-col">
       <header className="bg-background border-b px-6 py-4 flex items-center gap-2">
         <span className="size-7 rounded-md bg-primary flex items-center justify-center text-primary-foreground text-xs font-black">
-          A
+          S
         </span>
-        <span className="font-bold text-sm">AssistênciaNet</span>
+        <span className="font-bold text-sm">SmartConserto</span>
       </header>
 
       <main className="flex-1 flex items-center justify-center px-4 py-12">

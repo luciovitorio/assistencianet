@@ -1,6 +1,6 @@
 # Evolution API local
 
-Ambiente Docker local para testar a Evolution API com o AssistenciaNet.
+Ambiente Docker local para testar a Evolution API com o SmartConserto.
 
 ## Servicos
 
@@ -14,7 +14,7 @@ Ambiente Docker local para testar a Evolution API com o AssistenciaNet.
 cd C:\projetos\assistencia_saas\infra\evolution-api
 docker compose up -d
 docker compose ps
-docker logs --tail 80 assistencianet_evolution_api
+docker logs --tail 80 smartconserto_evolution_api
 docker compose down
 ```
 

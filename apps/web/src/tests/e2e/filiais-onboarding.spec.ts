@@ -10,7 +10,7 @@ import {
 } from './helpers/filiais-fixtures'
 
 async function createOnboardingSession(page: Page, suffix: string) {
-  const email = `${EXTRA_EMAIL_PREFIX}onboarding-${suffix}@assistencianet.test`
+  const email = `${EXTRA_EMAIL_PREFIX}onboarding-${suffix}@smartconserto.test`
   const context = await createCompanyWithOwner(email, `Empresa Onboarding ${suffix}`, {
     onboardingCompleted: false,
     onboardingStep: 2,

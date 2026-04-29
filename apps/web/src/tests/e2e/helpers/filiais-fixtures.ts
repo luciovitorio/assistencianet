@@ -3,7 +3,7 @@ import { Client } from 'pg'
 import type { Page } from '@playwright/test'
 
 export const PG_URL = process.env.SUPABASE_DB_URL ?? 'postgresql://postgres:postgres@127.0.0.1:54322/postgres'
-export const E2E_EMAIL = 'e2e-owner@assistencianet.test'
+export const E2E_EMAIL = 'e2e-owner@smartconserto.test'
 export const E2E_PASSWORD = 'E2eTest@2026!'
 export const E2E_BRANCH_PREFIX = 'E2E Filial'
 export const EXTRA_EMAIL_PREFIX = 'e2e-filiais-'
@@ -143,7 +143,7 @@ export async function cleanupUserByEmail(email: string) {
 export async function cleanupExtraE2EUsers() {
   await withDb(async (client) => {
     const users = await client.query<{ email: string }>('SELECT email FROM auth.users WHERE email LIKE $1', [
-      `${EXTRA_EMAIL_PREFIX}%@assistencianet.test`,
+      `${EXTRA_EMAIL_PREFIX}%@smartconserto.test`,
     ])
     for (const user of users.rows) {
       await cleanupUserByEmail(user.email)
@@ -303,7 +303,7 @@ export async function createEmployee(companyId: string, branchId: string, name =
       `INSERT INTO public.employees (company_id, branch_id, name, role, active, email)
        VALUES ($1, $2, $3, 'atendente', true, $4)
        RETURNING id`,
-      [companyId, branchId, name, `${name.toLowerCase().replace(/\s+/g, '.')}@assistencianet.test`],
+      [companyId, branchId, name, `${name.toLowerCase().replace(/\s+/g, '.')}@smartconserto.test`],
     )
 
     return result.rows[0].id

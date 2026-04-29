@@ -505,7 +505,7 @@ export async function createEvolutionApiInstance() {
       try {
         await client.setWebhook({
           url: `${appBaseUrl}/api/webhooks/evolution`,
-          headers: { 'x-assistencianet-webhook-secret': webhookSecret },
+          headers: { 'x-smartconserto-webhook-secret': webhookSecret },
         })
         webhookConfigured = true
       } catch {

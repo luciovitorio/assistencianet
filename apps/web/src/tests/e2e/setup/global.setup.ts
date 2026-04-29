@@ -17,7 +17,7 @@ import fs from 'fs'
 const AUTH_FILE = path.join(__dirname, '../../../../.auth/session.json')
 
 // Credenciais do usuário de teste E2E
-const E2E_EMAIL = 'e2e-owner@assistencianet.test'
+const E2E_EMAIL = 'e2e-owner@smartconserto.test'
 const E2E_PASSWORD = 'E2eTest@2026!'
 const E2E_COMPANY_NAME = 'Empresa E2E Tests'
 const E2E_CNPJ = '00.000.000/0001-99'

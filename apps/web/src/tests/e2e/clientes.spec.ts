@@ -103,7 +103,7 @@ async function seedClientSet(companyId: string, branches: ClientBranchSet) {
     name: `${E2E_CLIENT_PREFIX} Silva Centro`,
     document: uniqueDocument(),
     phone: '(11) 91111-1111',
-    email: 'silva-centro@assistencianet.test',
+    email: 'silva-centro@smartconserto.test',
     branchId: branches.primary.id,
     city: 'São Paulo',
     state: 'SP',
@@ -118,7 +118,7 @@ async function seedClientSet(companyId: string, branches: ClientBranchSet) {
     name: `${E2E_CLIENT_PREFIX} Souza Norte`,
     document: uniqueDocument(),
     phone: '(19) 92222-2222',
-    email: 'souza-norte@assistencianet.test',
+    email: 'souza-norte@smartconserto.test',
     branchId: branches.secondary.id,
     city: 'Campinas',
     state: 'SP',
@@ -189,19 +189,19 @@ test.describe('Clientes — cobertura do caderno manual', () => {
       const atendente = await createEmployeeWithAccess(companyId, {
         name: `${E2E_CLIENT_PREFIX} RBAC Atendente`,
         role: 'atendente',
-        email: `${EMPLOYEE_EMAIL_PREFIX}cli-atendente@assistencianet.test`,
+        email: `${EMPLOYEE_EMAIL_PREFIX}cli-atendente@smartconserto.test`,
         branchId: branches.primary.id,
       })
       const tecnico = await createEmployeeWithAccess(companyId, {
         name: `${E2E_CLIENT_PREFIX} RBAC Técnico`,
         role: 'tecnico',
-        email: `${EMPLOYEE_EMAIL_PREFIX}cli-tecnico@assistencianet.test`,
+        email: `${EMPLOYEE_EMAIL_PREFIX}cli-tecnico@smartconserto.test`,
         branchId: branches.primary.id,
       })
       const admin = await createEmployeeWithAccess(companyId, {
         name: `${E2E_CLIENT_PREFIX} RBAC Admin`,
         role: 'admin',
-        email: `${EMPLOYEE_EMAIL_PREFIX}cli-admin@assistencianet.test`,
+        email: `${EMPLOYEE_EMAIL_PREFIX}cli-admin@smartconserto.test`,
         branchId: branches.primary.id,
       })
 
@@ -235,7 +235,7 @@ test.describe('Clientes — cobertura do caderno manual', () => {
     })
 
     test('TC-CLI-005 — empresa sem clientes mostra vazio e desabilita busca/filtros', async ({ page }) => {
-      const email = `${EMPLOYEE_EMAIL_PREFIX}cli-empresa-vazia@assistencianet.test`
+      const email = `${EMPLOYEE_EMAIL_PREFIX}cli-empresa-vazia@smartconserto.test`
       const { user, company } = await createCompanyWithOwner(email, 'Empresa E2E Clientes Vazia')
 
       await loginAsEmployee(page, user.email, 'E2eFiliais@2026!')
@@ -491,7 +491,7 @@ test.describe('Clientes — cobertura do caderno manual', () => {
         name: fullName,
         document: uniqueDocument(),
         phone: '(11) 97777-6666',
-        email: `${EMPLOYEE_EMAIL_PREFIX}cli-completo@assistencianet.test`,
+        email: `${EMPLOYEE_EMAIL_PREFIX}cli-completo@smartconserto.test`,
         branchName: branches.secondary.name,
         street: 'Av das Flores',
         number: '500',
@@ -629,7 +629,7 @@ test.describe('Clientes — cobertura do caderno manual', () => {
       await page.getByRole('button', { name: 'Cancelar' }).click()
 
       const otherTenant = await createCompanyWithOwner(
-        `${EMPLOYEE_EMAIL_PREFIX}cli-tenant-owner@assistencianet.test`,
+        `${EMPLOYEE_EMAIL_PREFIX}cli-tenant-owner@smartconserto.test`,
         'Empresa B Clientes',
       )
       const outsider = await createClientRecord(otherTenant.company.id, {

@@ -1,4 +1,4 @@
-# Design — Biblioteca de Componentes UI (AssistênciaNet)
+# Design — Biblioteca de Componentes UI (SmartConserto)
 
 **Data:** 2026-04-01  
 **Status:** Validado — pronto para implementação
@@ -225,4 +225,4 @@ Layout separado para login/registro — sem sidebar.
 | 5 | CSS custom properties para tema | Tailwind config | shadcn nativo, troca de cores em um único arquivo |
 | 6 | Status de OS nos design tokens | Inline ou por módulo | Aparecem em badges, cards, timelines e relatórios — precisam ser consistentes |
 | 7 | Stitch para design de telas | Figma, direto no código | Permite validar layouts antes de implementar |
-| 8 | Nome/cores temporários (AssistênciaNet + slate-blue) | Aguardar identidade final | Não bloqueia desenvolvimento, fácil de trocar depois |
+| 8 | Nome/cores temporários (SmartConserto + slate-blue) | Aguardar identidade final | Não bloqueia desenvolvimento, fácil de trocar depois |

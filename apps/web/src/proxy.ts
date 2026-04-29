@@ -11,9 +11,22 @@ const PUBLIC_ROUTES = [
   '/recursos-dashboard-admin.html',
 ]
 
+const PUBLIC_FILE_ROUTES = [
+  '/robots.txt',
+  '/sitemap.xml',
+  '/opengraph-image',
+  '/twitter-image',
+  '/icon',
+  '/apple-icon',
+]
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   let response = NextResponse.next({ request })
+
+  if (PUBLIC_FILE_ROUTES.some((route) => pathname.startsWith(route))) {
+    return response
+  }
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -107,5 +120,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)'],
 }
