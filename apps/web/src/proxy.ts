@@ -10,6 +10,7 @@ const PUBLIC_ROUTES = [
   '/funcionalidades',
   '/sobre-nos',
   '/em-construcao',
+  '/contato',
   '/recursos-api-whatsapp.html',
   '/recursos-dashboard-admin.html',
 ]

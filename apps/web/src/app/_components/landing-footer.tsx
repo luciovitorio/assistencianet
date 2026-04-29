@@ -25,16 +25,23 @@ const supportLinks = [
   { label: 'Central de ajuda', href: underConstructionHref },
   { label: 'Documentação', href: underConstructionHref },
   { label: 'Status do sistema', href: underConstructionHref },
-  { label: 'Contato', href: `mailto:${siteConfig.contactEmail}` },
-  { label: 'Falar no WhatsApp', href: `mailto:${siteConfig.contactEmail}` },
+  { label: 'Contato', href: '/contato' },
+  { label: 'Falar no WhatsApp', href: siteConfig.whatsappUrl },
 ]
 
 const legalLinks = ['Privacidade', 'Termos de uso', 'Cookies']
 
 function FooterLink({ href, label }: { href: string; label: string }) {
-  if (href.startsWith('mailto:')) {
+  if (href.startsWith('mailto:') || href.startsWith('https://wa.me/')) {
+    const isExternal = href.startsWith('https://')
+
     return (
-      <a href={href} className={s['footer-link']}>
+      <a
+        href={href}
+        className={s['footer-link']}
+        target={isExternal ? '_blank' : undefined}
+        rel={isExternal ? 'noreferrer' : undefined}
+      >
         {label}
       </a>
     )
