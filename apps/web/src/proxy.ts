@@ -8,6 +8,8 @@ const PUBLIC_ROUTES = [
   '/verify-email',
   '/auth',
   '/funcionalidades',
+  '/sobre-nos',
+  '/em-construcao',
   '/recursos-api-whatsapp.html',
   '/recursos-dashboard-admin.html',
 ]

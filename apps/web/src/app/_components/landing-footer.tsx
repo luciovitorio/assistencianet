@@ -3,6 +3,8 @@ import { BrandMark } from '@/components/brand-mark'
 import { siteConfig } from '@/lib/site'
 import s from '../landing.module.css'
 
+const underConstructionHref = '/em-construcao'
+
 const productLinks = [
   { label: 'Funcionalidades', href: '/funcionalidades' },
   { label: 'Preços', href: '/#precos' },
@@ -12,17 +14,17 @@ const productLinks = [
 ]
 
 const companyLinks = [
-  { label: 'Sobre nós', href: `mailto:${siteConfig.contactEmail}` },
-  { label: 'Blog', href: '/' },
-  { label: 'Casos de sucesso', href: '/' },
-  { label: 'Parceiros', href: `mailto:${siteConfig.contactEmail}` },
-  { label: 'Trabalhe conosco', href: `mailto:${siteConfig.contactEmail}` },
+  { label: 'Sobre nós', href: '/sobre-nos' },
+  { label: 'Blog', href: underConstructionHref },
+  { label: 'Casos de sucesso', href: underConstructionHref },
+  { label: 'Parceiros', href: underConstructionHref },
+  { label: 'Trabalhe conosco', href: underConstructionHref },
 ]
 
 const supportLinks = [
-  { label: 'Central de ajuda', href: `mailto:${siteConfig.contactEmail}` },
-  { label: 'Documentação', href: '/funcionalidades' },
-  { label: 'Status do sistema', href: '/' },
+  { label: 'Central de ajuda', href: underConstructionHref },
+  { label: 'Documentação', href: underConstructionHref },
+  { label: 'Status do sistema', href: underConstructionHref },
   { label: 'Contato', href: `mailto:${siteConfig.contactEmail}` },
   { label: 'Falar no WhatsApp', href: `mailto:${siteConfig.contactEmail}` },
 ]
