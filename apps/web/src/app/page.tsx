@@ -4,6 +4,7 @@ import { Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google'
 import { LandingFaq } from './_components/landing-faq'
 import { LandingNav } from './_components/landing-nav'
 import s from './landing.module.css'
+import { BrandMark } from '@/components/brand-mark'
 import { siteConfig } from '@/lib/site'
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -593,7 +594,7 @@ export default function LandingPage() {
             <div>
               <div className={s['footer-logo']}>
                 <div className={s['footer-logo-mark']}>
-                  <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                  <BrandMark />
                 </div>
                 <span className={s['footer-logo-text']}>Smart<span>Conserto</span></span>
               </div>

@@ -7,8 +7,13 @@ import './globals.css'
 const geist = Geist({ subsets: ['latin'], variable: '--font-geist-sans' })
 
 export const metadata: Metadata = {
+  applicationName: 'SmartConserto',
   title: 'SmartConserto',
   description: 'Sistema de gestão para assistências técnicas',
+  icons: {
+    icon: [{ url: '/icon.svg', type: 'image/svg+xml' }],
+    shortcut: ['/icon.svg'],
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
