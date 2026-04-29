@@ -52,25 +52,6 @@ export const whatsappAutomationSettingsSchema = z.object({
     255,
     'O token de verificação do webhook deve ter no máximo 255 caracteres.',
   ),
-  evolution_base_url: z
-    .string()
-    .trim()
-    .min(1, 'Informe a URL da Evolution API.')
-    .max(255, 'A URL da Evolution API deve ter no máximo 255 caracteres.')
-    .refine((value) => /^https?:\/\/.+/.test(value), {
-      message: 'Informe a URL completa com http:// ou https://.',
-    }),
-  evolution_api_key: nullableTrimmedString(
-    255,
-    'A API key da Evolution deve ter no máximo 255 caracteres.',
-  ),
-  evolution_instance_name: nullableTrimmedString(
-    80,
-    'O nome da instância deve ter no máximo 80 caracteres.',
-  ).refine((value) => !value || /^[A-Za-z0-9_-]+$/.test(value), {
-    message: 'Use apenas letras, números, hífen ou underline no nome da instância.',
-  }),
-  evolution_webhook_url: nullableUrl('Informe uma URL de webhook válida.'),
   default_country_code: z
     .string()
     .trim()

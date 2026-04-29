@@ -188,24 +188,31 @@ const getSavedWhatsAppSettings = async (companyId: string) => {
   return settings
 }
 
+const getEvolutionEnvConfig = () => {
+  const baseUrl = process.env.EVOLUTION_BASE_URL
+  const apiKey = process.env.EVOLUTION_API_KEY
+  if (!baseUrl || !apiKey) {
+    throw new Error('Evolution API não configurada no servidor. Contate o suporte.')
+  }
+  return { baseUrl, apiKey }
+}
+
+const generateInstanceName = (companyId: string) =>
+  companyId.replace(/-/g, '').substring(0, 16)
+
 const getEvolutionClientFromSavedSettings = async (companyId: string) => {
   const settings = await getSavedWhatsAppSettings(companyId)
+  const { baseUrl, apiKey } = getEvolutionEnvConfig()
 
-  if (
-    !settings?.evolution_base_url ||
-    !settings.evolution_api_key ||
-    !settings.evolution_instance_name
-  ) {
-    throw new Error(
-      'Informe e salve a URL, a API key e o nome da instância da Evolution antes de continuar.',
-    )
+  if (!settings?.evolution_instance_name) {
+    throw new Error('Salve as configurações de WhatsApp antes de continuar.')
   }
 
   return {
     settings,
     client: createEvolutionApiClient({
-      baseUrl: settings.evolution_base_url,
-      apiKey: settings.evolution_api_key,
+      baseUrl,
+      apiKey,
       instanceName: settings.evolution_instance_name,
     }),
   }
@@ -240,10 +247,6 @@ export async function saveWhatsAppAutomationSettings(
     const nextWebhookVerifyToken = preservedSecret(
       parsed.data.webhook_verify_token,
       previousSettings?.webhook_verify_token,
-    )
-    const nextEvolutionApiKey = preservedSecret(
-      parsed.data.evolution_api_key,
-      previousSettings?.evolution_api_key,
     )
 
     const isMetaProvider = parsed.data.provider === 'whatsapp_cloud_api'
@@ -280,21 +283,9 @@ export async function saveWhatsAppAutomationSettings(
         nextWebhookVerifyToken,
         'Informe o token de verificação do webhook.',
       ) ??
-      requireWhenEnabled(
-        parsed.data.enabled && isEvolutionProvider,
-        parsed.data.evolution_base_url,
-        'Informe a URL da Evolution API.',
-      ) ??
-      requireWhenEnabled(
-        parsed.data.enabled && isEvolutionProvider,
-        nextEvolutionApiKey,
-        'Informe a API key da Evolution API.',
-      ) ??
-      requireWhenEnabled(
-        parsed.data.enabled && isEvolutionProvider,
-        parsed.data.evolution_instance_name,
-        'Informe o nome da instância da Evolution API.',
-      ) ??
+      (parsed.data.enabled && isEvolutionProvider && (!process.env.EVOLUTION_BASE_URL || !process.env.EVOLUTION_API_KEY)
+        ? 'Evolution API não configurada no servidor. Contate o suporte.'
+        : null) ??
       requireWhenEnabled(
         isEvolutionProvider && parsed.data.notify_inbound_message,
         parsed.data.message_inbound_auto_reply,
@@ -345,6 +336,9 @@ export async function saveWhatsAppAutomationSettings(
       return { error: requiredError }
     }
 
+    const existingInstanceName = previousSettings?.evolution_instance_name
+    const instanceName = existingInstanceName ?? generateInstanceName(companyId)
+
     const payload = {
       company_id: companyId,
       enabled: parsed.data.enabled,
@@ -357,10 +351,10 @@ export async function saveWhatsAppAutomationSettings(
       business_account_id: parsed.data.business_account_id,
       access_token: nextAccessToken,
       webhook_verify_token: nextWebhookVerifyToken,
-      evolution_base_url: parsed.data.evolution_base_url,
-      evolution_api_key: nextEvolutionApiKey,
-      evolution_instance_name: parsed.data.evolution_instance_name,
-      evolution_webhook_url: parsed.data.evolution_webhook_url,
+      evolution_base_url: process.env.EVOLUTION_BASE_URL ?? null,
+      evolution_api_key: process.env.EVOLUTION_API_KEY ?? null,
+      evolution_instance_name: instanceName,
+      evolution_webhook_url: null,
       default_country_code: parsed.data.default_country_code,
       templates_language: parsed.data.templates_language,
       notify_inbound_message: parsed.data.notify_inbound_message,
@@ -450,17 +444,12 @@ export async function validateEvolutionApiSettings() {
   try {
     const { companyId } = await getAdminContext('configuracoes')
     const settings = await getSavedWhatsAppSettings(companyId)
-
-    if (!settings?.evolution_base_url || !settings.evolution_api_key) {
-      return {
-        error: 'Informe e salve a URL e a API key da Evolution antes de validar.',
-      }
-    }
+    const { baseUrl, apiKey } = getEvolutionEnvConfig()
 
     const client = createEvolutionApiClient({
-      baseUrl: settings.evolution_base_url,
-      apiKey: settings.evolution_api_key,
-      instanceName: settings.evolution_instance_name,
+      baseUrl,
+      apiKey,
+      instanceName: settings?.evolution_instance_name ?? null,
     })
     const validation = await client.validate()
 
@@ -508,6 +497,22 @@ export async function createEvolutionApiInstance() {
     const { client, settings } = await getEvolutionClientFromSavedSettings(companyId)
     const result = await client.createInstance()
 
+    const appBaseUrl = process.env.APP_BASE_URL?.replace(/\/+$/, '')
+    const webhookSecret = process.env.EVOLUTION_WEBHOOK_SECRET
+    let webhookConfigured = false
+
+    if (appBaseUrl && webhookSecret) {
+      try {
+        await client.setWebhook({
+          url: `${appBaseUrl}/api/webhooks/evolution`,
+          headers: { 'x-assistencianet-webhook-secret': webhookSecret },
+        })
+        webhookConfigured = true
+      } catch {
+        // falha no webhook é não-fatal: instância e QR Code continuam funcionando
+      }
+    }
+
     if (!result.alreadyExists) {
       await createAuditLog({
         action: 'create',
@@ -526,6 +531,7 @@ export async function createEvolutionApiInstance() {
 
     return {
       success: true,
+      webhookConfigured,
       ...result,
     }
   } catch (error: unknown) {

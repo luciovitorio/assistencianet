@@ -180,7 +180,7 @@ export async function POST(request: NextRequest) {
 
   // 5. Valida segredo do webhook
   const secret = request.headers.get('x-assistencianet-webhook-secret')
-  if (secret !== settings.evolution_api_key) {
+  if (!secret || secret !== process.env.EVOLUTION_WEBHOOK_SECRET) {
     return new NextResponse('Segredo inválido.', { status: 403 })
   }
 

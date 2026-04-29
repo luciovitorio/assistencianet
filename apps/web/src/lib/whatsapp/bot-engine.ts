@@ -14,6 +14,7 @@ import {
   findClientByPhone,
   formatOsDate,
   formatOsStatus,
+  getBranchName,
   getBranches,
   getClientServiceOrders,
   getMenuItems,
@@ -39,22 +40,44 @@ export type BotEngineParams = {
   evolutionClient: EvolutionApiClient
 }
 
+// ── Resolução de variáveis ───────────────────────────────────
+
+type VarContext = {
+  clientName: string | null
+  companyName: string
+  branchName: string | null
+}
+
+const resolveVars = (text: string, ctx: VarContext): string =>
+  text
+    .replace(/\{\{cliente\.nome\}\}/g, ctx.clientName ?? 'Cliente')
+    .replace(/\{\{empresa\.nome\}\}/g, ctx.companyName)
+    .replace(/\{\{filial\.nome\}\}/g, ctx.branchName ?? ctx.companyName)
+
 // ── Helpers de formatação ────────────────────────────────────
 
 const buildMenuText = (
   menuItems: MenuItemRecord[],
   companyName: string,
   clientName: string | null,
-  authorizedBrands: string | null
+  authorizedBrands: string | null,
+  isSubmenu = false,
 ): string => {
+  const options = menuItems
+    .map((item) => `${item.emoji ?? `${item.position}.`} ${item.label}`)
+    .join('\n')
+
+  if (isSubmenu) {
+    return (
+      `Escolha uma opção:\n\n${options}\n0 - Menu principal\n\n` +
+      `Responda com o *número* da opção.`
+    )
+  }
+
   const greeting = clientName ? `Olá, *${clientName}*! 👋` : 'Olá! 👋'
   const brandsLine = authorizedBrands
     ? `\nSomos assistência autorizada das marcas: *${authorizedBrands}*.\n`
     : ''
-
-  const options = menuItems
-    .map((item) => `${item.emoji ?? `${item.position}.`} ${item.label}`)
-    .join('\n')
 
   return (
     `${greeting} Bem-vindo(a) à *${companyName}*!${brandsLine}\n` +
@@ -129,7 +152,7 @@ const sendAndSave = async (
 
 // ── Handlers de estado ───────────────────────────────────────
 
-/** Início de sessão: identifica o cliente e exibe o menu. */
+/** Início de sessão: identifica o cliente e exibe o menu raiz. */
 const handleNewSession = async (params: BotEngineParams) => {
   const { supabase, conversation, phoneNumber, companyName, authorizedBrands, evolutionClient } =
     params
@@ -137,10 +160,15 @@ const handleNewSession = async (params: BotEngineParams) => {
   // Tenta identificar o cliente pelo telefone
   const client = await findClientByPhone(supabase, conversation.company_id, phoneNumber)
 
+  // Limpa current_menu_parent_id para garantir que voltamos ao raiz
+  const { current_menu_parent_id: _dropped, ...restContext } = conversation.context as Record<string, unknown>
+  void _dropped
+
   const updates: Parameters<typeof updateConversation>[2] = {
     bot_state: 'awaiting_menu',
     attempts: 0,
     client_id: client?.id ?? conversation.client_id ?? null,
+    context: restContext,
   }
 
   // Se identificou e ainda não tem branch, busca pela última OS do cliente
@@ -163,7 +191,12 @@ const handleAwaitingMenu = async (params: BotEngineParams) => {
   const { supabase, conversation, messageText, evolutionClient } = params
 
   const choice = messageText.trim()
-  const menuItems = await getMenuItems(supabase, conversation.company_id)
+  const currentParentId =
+    typeof conversation.context.current_menu_parent_id === 'string'
+      ? conversation.context.current_menu_parent_id
+      : null
+
+  const menuItems = await getMenuItems(supabase, conversation.company_id, currentParentId)
   const selected = menuItems.find((item) => String(item.position) === choice)
 
   if (!selected) {
@@ -179,7 +212,29 @@ const handleAwaitingMenu = async (params: BotEngineParams) => {
       await handleHumanHandoff(params)
       break
     case 'info': {
-      const msg = String(selected.handler_config.message ?? '')
+      const raw = String(selected.handler_config.message ?? '')
+      const branchName = conversation.branch_id
+        ? await getBranchName(supabase, conversation.company_id, conversation.branch_id)
+        : null
+      const msg = resolveVars(raw, {
+        clientName: conversation.contact_name,
+        companyName: params.companyName,
+        branchName,
+      })
+      await sendAndSave(supabase, evolutionClient, conversation, msg)
+      await updateConversation(supabase, conversation.id, {
+        bot_state: 'awaiting_menu',
+        attempts: 0,
+      })
+      break
+    }
+    case 'submenu':
+      await handleSubmenu(params, selected)
+      break
+    case 'url': {
+      const url = String(selected.handler_config.url ?? '')
+      const label = String(selected.handler_config.label ?? selected.label)
+      const msg = url ? `${label}:\n${url}` : label
       await sendAndSave(supabase, evolutionClient, conversation, msg)
       await updateConversation(supabase, conversation.id, {
         bot_state: 'awaiting_menu',
@@ -190,6 +245,27 @@ const handleAwaitingMenu = async (params: BotEngineParams) => {
     default:
       await handleInvalidResponse(params, 'awaiting_menu')
   }
+}
+
+/** Handler submenu: mostra os filhos do item selecionado como novo menu. */
+const handleSubmenu = async (params: BotEngineParams, menuItem: MenuItemRecord) => {
+  const { supabase, conversation, evolutionClient } = params
+
+  const children = await getMenuItems(supabase, conversation.company_id, menuItem.id)
+
+  if (children.length === 0) {
+    // Sub-menu vazio: trata como info sem conteúdo → volta ao menu raiz
+    await handleNewSession(params)
+    return
+  }
+
+  const text = buildMenuText(children, params.companyName, conversation.contact_name, null, true)
+  await sendAndSave(supabase, evolutionClient, conversation, text)
+  await updateConversation(supabase, conversation.id, {
+    bot_state: 'awaiting_menu',
+    attempts: 0,
+    context: { ...conversation.context, current_menu_parent_id: menuItem.id },
+  })
 }
 
 /** Handler check_os: busca e exibe as últimas OS do cliente. */

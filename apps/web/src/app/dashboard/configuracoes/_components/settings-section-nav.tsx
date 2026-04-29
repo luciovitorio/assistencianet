@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Bot, Settings2 } from 'lucide-react'
+import { Bot, ListTree, Settings2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const ITEMS = [
@@ -17,6 +17,12 @@ const ITEMS = [
     label: 'Automação',
     description: 'Meta, Evolution e gatilhos',
     icon: Bot,
+  },
+  {
+    href: '/dashboard/configuracoes/bot',
+    label: 'Bot WhatsApp',
+    description: 'Menus e respostas automáticas',
+    icon: ListTree,
   },
 ] as const
 

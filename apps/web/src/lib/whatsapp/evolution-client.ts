@@ -29,6 +29,12 @@ export interface EvolutionApiSendTextInput {
   delay?: number
 }
 
+export interface EvolutionApiSetWebhookInput {
+  url: string
+  events?: string[]
+  headers?: Record<string, string>
+}
+
 type EvolutionInstance = {
   name?: string
   instanceName?: string
@@ -78,6 +84,16 @@ const getConnectedPhone = (instance: EvolutionInstance) =>
     instance.ownerJid ?? instance.number ?? instance.instance?.ownerJid ?? instance.instance?.number
   )
 
+const flattenEvolutionMessage = (value: unknown): string => {
+  if (typeof value === 'string') return value
+  if (Array.isArray(value)) return value.map(flattenEvolutionMessage).filter(Boolean).join(' ')
+  if (value && typeof value === 'object') {
+    const values = Object.values(value as Record<string, unknown>)
+    return values.map(flattenEvolutionMessage).filter(Boolean).join(' ')
+  }
+  return ''
+}
+
 const getEvolutionErrorMessage = async (response: Response) => {
   if (response.status === 401) {
     return 'Evolution API respondeu Unauthorized. Confira se a API key da Evolution foi salva corretamente.'
@@ -85,19 +101,14 @@ const getEvolutionErrorMessage = async (response: Response) => {
 
   try {
     const data = (await response.json()) as {
-      message?: string
-      error?: string
-      response?: { message?: string | string[] }
+      message?: unknown
+      error?: unknown
+      response?: { message?: unknown }
     }
-    const message = data.response?.message ?? data.message ?? data.error
+    const raw = data.response?.message ?? data.message ?? data.error
+    const message = flattenEvolutionMessage(raw).trim()
 
-    if (Array.isArray(message)) {
-      return message.join(' ')
-    }
-
-    if (typeof message === 'string' && message.trim()) {
-      return message
-    }
+    if (message) return message
   } catch {
     // Evolution may return an empty body for some 4xx/5xx responses.
   }
@@ -280,6 +291,28 @@ export class EvolutionApiClient {
     return {
       instanceName: this.instanceName,
     }
+  }
+
+  async setWebhook({ url, events, headers }: EvolutionApiSetWebhookInput) {
+    if (!this.instanceName) {
+      throw new Error('Informe o nome da instância da Evolution API.')
+    }
+
+    await this.request<unknown>(`/webhook/set/${encodeURIComponent(this.instanceName)}`, {
+      method: 'POST',
+      body: JSON.stringify({
+        webhook: {
+          enabled: true,
+          url,
+          webhook_by_events: false,
+          webhook_base64: false,
+          events: events ?? ['MESSAGES_UPSERT'],
+          ...(headers ? { headers } : {}),
+        },
+      }),
+    })
+
+    return { instanceName: this.instanceName, webhookUrl: url }
   }
 }
 

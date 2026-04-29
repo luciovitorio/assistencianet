@@ -475,24 +475,28 @@ function EvolutionConnectionPanel({
   connectedPhone,
   connectionState,
   instanceName,
+  instanceReady,
   isPending,
   operation,
   qrCodeCount,
   qrCodeImage,
-  onConnect,
+  onCreateInstance,
   onDelete,
+  onGenerateQrCode,
   onLogout,
   onRefreshStatus,
 }: {
   connectedPhone: string | null
   connectionState: string | null
   instanceName: string | null
+  instanceReady: boolean
   isPending: boolean
   operation: EvolutionOperation | null
   qrCodeCount: number | null
   qrCodeImage: string | null
-  onConnect: () => void
+  onCreateInstance: () => void
   onDelete: () => void
+  onGenerateQrCode: () => void
   onLogout: () => void
   onRefreshStatus: () => void
 }) {
@@ -504,13 +508,13 @@ function EvolutionConnectionPanel({
           Conexão Evolution
         </CardTitle>
         <CardDescription>
-          Crie a instância, gere o QR Code e controle a sessão sem abrir o Manager.
+          Passo 1: crie a instância. Passo 2: gere o QR Code e conecte o WhatsApp.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-            Instância salva
+            Instância salva no sistema
           </p>
           <p className="mt-2 break-all text-sm font-semibold text-slate-950">
             {instanceName || 'Salve o nome da instância'}
@@ -566,11 +570,58 @@ function EvolutionConnectionPanel({
           </div>
         ) : (
           <div className="rounded-xl border border-dashed border-slate-300 bg-white p-4 text-sm leading-6 text-slate-600">
-            Preencha URL, API key e nome da instância para gerar o QR Code.
+            {(() => {
+              const instanceExists = instanceReady || connectionState !== null
+              if (!instanceExists) {
+                return instanceName
+                  ? 'Clique em "Conectar instância na Evolution" para registrar na Evolution API.'
+                  : 'Salve as configurações para criar a instância.'
+              }
+              if (isEvolutionConnected(connectionState)) {
+                return 'WhatsApp conectado. Clique em "Gerar QR Code" para reconectar se necessário.'
+              }
+              return 'Clique em "Gerar QR Code" para conectar seu WhatsApp.'
+            })()}
           </div>
         )}
 
         <div className="grid gap-2">
+          {/* Ação principal: um botão verde por vez conforme o estado */}
+          {(() => {
+            const instanceExists = instanceReady || connectionState !== null
+            const connected = isEvolutionConnected(connectionState)
+            if (!instanceExists && instanceName) {
+              return (
+                <Button
+                  type="button"
+                  loading={isPending && operation === 'create'}
+                  disabled={isPending}
+                  onClick={onCreateInstance}
+                  className="w-full rounded-xl bg-emerald-700 hover:bg-emerald-800"
+                >
+                  <PlugZap className="size-4" />
+                  Conectar instância na Evolution
+                </Button>
+              )
+            }
+            if (instanceExists && !connected) {
+              return (
+                <Button
+                  type="button"
+                  loading={isPending && operation === 'connect'}
+                  disabled={isPending}
+                  onClick={onGenerateQrCode}
+                  className="w-full rounded-xl bg-emerald-700 hover:bg-emerald-800"
+                >
+                  <QrCode className="size-4" />
+                  Gerar QR Code
+                </Button>
+              )
+            }
+            return null
+          })()}
+
+          {/* Utilitários: sempre visíveis */}
           <Button
             type="button"
             variant="outline"
@@ -582,38 +633,47 @@ function EvolutionConnectionPanel({
             <RefreshCw className="size-4" />
             Consultar status
           </Button>
-          <Button
-            type="button"
-            loading={isPending && operation === 'connect'}
-            disabled={isPending}
-            onClick={onConnect}
-            className="w-full rounded-xl bg-emerald-700 hover:bg-emerald-800"
-          >
-            <QrCode className="size-4" />
-            Salvar, criar e gerar QR Code
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            loading={isPending && operation === 'logout'}
-            disabled={isPending}
-            onClick={onLogout}
-            className="w-full rounded-xl"
-          >
-            <Power className="size-4" />
-            Desconectar sessão
-          </Button>
-          <Button
-            type="button"
-            variant="destructive"
-            loading={isPending && operation === 'delete'}
-            disabled={isPending}
-            onClick={onDelete}
-            className="w-full rounded-xl"
-          >
-            <Trash2 className="size-4" />
-            Remover instância
-          </Button>
+          {instanceName && (
+            <Button
+              type="button"
+              variant="outline"
+              loading={isPending && operation === 'create'}
+              disabled={isPending}
+              onClick={onCreateInstance}
+              className="w-full rounded-xl text-slate-500"
+            >
+              <PlugZap className="size-4" />
+              Registrar webhook
+            </Button>
+          )}
+
+          {/* Gerenciamento: só quando instância existe */}
+          {(instanceReady || connectionState !== null) && (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                loading={isPending && operation === 'logout'}
+                disabled={isPending}
+                onClick={onLogout}
+                className="w-full rounded-xl"
+              >
+                <Power className="size-4" />
+                Desconectar sessão
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                loading={isPending && operation === 'delete'}
+                disabled={isPending}
+                onClick={onDelete}
+                className="w-full rounded-xl"
+              >
+                <Trash2 className="size-4" />
+                Remover instância
+              </Button>
+            </>
+          )}
         </div>
       </CardContent>
     </Card>
@@ -640,6 +700,8 @@ export function WhatsAppAutomationForm({
     React.useState<string | null>(null)
   const [evolutionQrCodeCount, setEvolutionQrCodeCount] =
     React.useState<number | null>(null)
+  const [evolutionInstanceReady, setEvolutionInstanceReady] =
+    React.useState(false)
   const hasNotifiedEvolutionConnectedRef = React.useRef(false)
   const {
     control,
@@ -662,10 +724,6 @@ export function WhatsAppAutomationForm({
       business_account_id: initialSettings.businessAccountId ?? '',
       access_token: '',
       webhook_verify_token: '',
-      evolution_base_url: initialSettings.evolutionBaseUrl,
-      evolution_api_key: '',
-      evolution_instance_name: initialSettings.evolutionInstanceName ?? '',
-      evolution_webhook_url: initialSettings.evolutionWebhookUrl ?? '',
       default_country_code: initialSettings.defaultCountryCode,
       templates_language: initialSettings.templatesLanguage,
       notify_inbound_message: initialSettings.notifyInboundMessage,
@@ -698,11 +756,7 @@ export function WhatsAppAutomationForm({
       control,
       name: 'provider',
     }) ?? initialSettings.provider
-  const evolutionInstanceName =
-    useWatch({
-      control,
-      name: 'evolution_instance_name',
-    }) ?? initialSettings.evolutionInstanceName
+  const evolutionInstanceName = initialSettings.evolutionInstanceName ?? null
 
   const onSubmit = (data: WhatsAppAutomationSettingsSchema) => {
     startTransition(async () => {
@@ -790,6 +844,7 @@ export function WhatsAppAutomationForm({
       setEvolutionConnectedPhone(
         isEvolutionConnected(result.state) ? (result.connectedPhone ?? null) : null,
       )
+      setEvolutionInstanceReady(true)
 
       if (showToast) {
         toast.success(`Status da Evolution: ${getEvolutionStateLabel(result.state)}.`)
@@ -811,27 +866,10 @@ export function WhatsAppAutomationForm({
     })
   }
 
-  const handleConnectEvolution = () => {
-    setEvolutionOperation('connect')
+  const handleCreateEvolutionInstance = () => {
+    setEvolutionOperation('create')
     startEvolutionOperationTransition(async () => {
       try {
-        const isValid = await trigger()
-
-        if (!isValid) {
-          toast.error('Revise os campos da Evolution antes de gerar o QR Code.')
-          return
-        }
-
-        const saveResult = await saveWhatsAppAutomationSettings({
-          ...getValues(),
-          provider: 'evolution_api',
-        })
-
-        if (hasActionError(saveResult)) {
-          toast.error(saveResult.error)
-          return
-        }
-
         const createResult = await createEvolutionApiInstance()
 
         if (hasActionError(createResult)) {
@@ -839,6 +877,28 @@ export function WhatsAppAutomationForm({
           return
         }
 
+        setEvolutionInstanceReady(true)
+        toast.success(
+          createResult.alreadyExists
+            ? 'Instância já existe na Evolution API.'
+            : 'Instância criada com sucesso.',
+        )
+        if (!createResult.webhookConfigured) {
+          toast.warning(
+            'Webhook não registrado automaticamente. Defina APP_BASE_URL no ambiente e tente novamente.',
+            { duration: 8000 },
+          )
+        }
+      } finally {
+        setEvolutionOperation(null)
+      }
+    })
+  }
+
+  const handleGenerateQrCode = () => {
+    setEvolutionOperation('connect')
+    startEvolutionOperationTransition(async () => {
+      try {
         const connectResult = await connectEvolutionApiInstance()
 
         if (hasActionError(connectResult)) {
@@ -851,11 +911,7 @@ export function WhatsAppAutomationForm({
         setEvolutionConnectedPhone(null)
         setEvolutionQrCodeImage(normalizeQrCodeImage(connectResult.base64))
         setEvolutionQrCodeCount(connectResult.count)
-        toast.success(
-          createResult.alreadyExists
-            ? 'Configuração salva e QR Code gerado para a instância existente.'
-            : 'Configuração salva, instância criada e QR Code gerado.',
-        )
+        toast.success('QR Code gerado. Escaneie com o WhatsApp.')
       } finally {
         setEvolutionOperation(null)
       }
@@ -900,6 +956,7 @@ export function WhatsAppAutomationForm({
         setEvolutionConnectedPhone(null)
         setEvolutionQrCodeImage(null)
         setEvolutionQrCodeCount(null)
+        setEvolutionInstanceReady(false)
         hasNotifiedEvolutionConnectedRef.current = false
         toast.success('Instância da Evolution removida.')
       } finally {
@@ -1000,7 +1057,7 @@ export function WhatsAppAutomationForm({
             </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 lg:min-w-[360px]">
+          <div className="grid gap-3 sm:grid-cols-2 lg:min-w-90">
             <div className="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
                 Status
@@ -1161,58 +1218,7 @@ export function WhatsAppAutomationForm({
                 />
               </CardContent>
             </Card>
-          ) : (
-            <Card
-              key="evolution-api-settings"
-              className="border border-slate-200 shadow-sm shadow-slate-950/5"
-            >
-              <CardHeader className="border-b border-slate-100">
-                <CardTitle className="flex items-center gap-2 text-slate-900">
-                  <KeyRound className="size-4 text-emerald-700" />
-                  Configurações da Evolution
-                </CardTitle>
-                <CardDescription>
-                  Informe os dados da Evolution API instalada no Docker ou publicada em um
-                  domínio. Nenhum valor sensível fica hardcoded.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-4 pt-4 md:grid-cols-2">
-                <InputField
-                  label="URL da Evolution API"
-                  helper="Ex: http://127.0.0.1:8080"
-                  className={cn(CONTROL, 'md:col-span-2')}
-                  error={errors.evolution_base_url?.message}
-                  {...register('evolution_base_url')}
-                />
-                <InputField
-                  label="API key da Evolution"
-                  type="password"
-                  helper={
-                    initialSettings.evolutionApiKeyConfigured
-                      ? 'Já existe uma API key salva. Preencha apenas para substituir.'
-                      : 'Use o valor AUTHENTICATION_API_KEY configurado na Evolution.'
-                  }
-                  className={cn(CONTROL, 'md:col-span-2')}
-                  error={errors.evolution_api_key?.message}
-                  {...register('evolution_api_key')}
-                />
-                <InputField
-                  label="Nome da instância"
-                  helper="Ex: orquidia_matriz. Use letras, números, hífen ou underline."
-                  className={CONTROL}
-                  error={errors.evolution_instance_name?.message}
-                  {...register('evolution_instance_name')}
-                />
-                <InputField
-                  label="Webhook da Evolution"
-                  helper="Opcional. Use quando a API estiver publicada e puder chamar o sistema."
-                  className={CONTROL}
-                  error={errors.evolution_webhook_url?.message}
-                  {...register('evolution_webhook_url')}
-                />
-              </CardContent>
-            </Card>
-          )}
+          ) : null}
 
           <TriggerFields control={control} errors={errors} register={register} />
         </div>
@@ -1222,17 +1228,15 @@ export function WhatsAppAutomationForm({
             <EvolutionConnectionPanel
               connectedPhone={evolutionConnectedPhone}
               connectionState={evolutionConnectionState}
-              instanceName={
-                typeof evolutionInstanceName === 'string'
-                  ? evolutionInstanceName.trim() || null
-                  : null
-              }
+              instanceName={evolutionInstanceName}
+              instanceReady={evolutionInstanceReady}
               isPending={isEvolutionOperationPending}
               operation={evolutionOperation}
               qrCodeCount={evolutionQrCodeCount}
               qrCodeImage={evolutionQrCodeImage}
-              onConnect={handleConnectEvolution}
+              onCreateInstance={handleCreateEvolutionInstance}
               onDelete={handleDeleteEvolution}
+              onGenerateQrCode={handleGenerateQrCode}
               onLogout={handleLogoutEvolution}
               onRefreshStatus={handleRefreshEvolutionStatus}
             />
@@ -1283,7 +1287,7 @@ export function WhatsAppAutomationForm({
               >
                 Salvar automação
               </Button>
-              {provider === 'whatsapp_cloud_api' ? (
+              {provider === 'whatsapp_cloud_api' && (
                 <Button
                   type="button"
                   variant="outline"
@@ -1293,17 +1297,6 @@ export function WhatsAppAutomationForm({
                   className="w-full rounded-xl"
                 >
                   Validar Meta Cloud API
-                </Button>
-              ) : (
-                <Button
-                  type="button"
-                  variant="outline"
-                  loading={isValidatingEvolution}
-                  disabled={isValidatingEvolution}
-                  onClick={handleValidateEvolution}
-                  className="w-full rounded-xl"
-                >
-                  Validar Evolution API
                 </Button>
               )}
             </CardContent>

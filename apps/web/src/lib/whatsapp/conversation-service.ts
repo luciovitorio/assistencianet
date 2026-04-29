@@ -52,6 +52,7 @@ export type BranchOption = {
 
 export type MenuItemRecord = {
   id: string
+  parent_id: string | null
   position: number
   label: string
   emoji: string | null
@@ -72,6 +73,7 @@ const truncate = (text: string, max: number) =>
 export const DEFAULT_MENU_ITEMS: MenuItemRecord[] = [
   {
     id: 'default-1',
+    parent_id: null,
     position: 1,
     label: 'Verificar status da minha OS',
     emoji: '1️⃣',
@@ -81,6 +83,7 @@ export const DEFAULT_MENU_ITEMS: MenuItemRecord[] = [
   },
   {
     id: 'default-2',
+    parent_id: null,
     position: 2,
     label: 'Falar com um atendente',
     emoji: '2️⃣',
@@ -365,20 +368,64 @@ export const getBranches = async (
 
 // ── Menu ─────────────────────────────────────────────────────
 
-/** Retorna os itens de menu da empresa ou o menu padrão. */
+/**
+ * Retorna os itens de menu habilitados para um nível da hierarquia.
+ * parentId = null → itens raiz; parentId = <uuid> → filhos do sub-menu.
+ * Quando não há itens raiz cadastrados retorna o menu padrão.
+ */
 export const getMenuItems = async (
   supabase: SupabaseClient,
   companyId: string,
+  parentId: string | null = null,
 ): Promise<MenuItemRecord[]> => {
-  const { data } = await supabase
+  const query = supabase
     .from('whatsapp_menu_items')
-    .select('id, position, label, emoji, handler_type, handler_config, enabled')
+    .select('id, parent_id, position, label, emoji, handler_type, handler_config, enabled')
     .eq('company_id', companyId)
     .eq('enabled', true)
     .order('position')
 
+  const { data } = parentId === null
+    ? await query.is('parent_id', null)
+    : await query.eq('parent_id', parentId)
+
   const items = (data ?? []) as MenuItemRecord[]
-  return items.length > 0 ? items : DEFAULT_MENU_ITEMS
+
+  // Menu padrão apenas no nível raiz
+  if (parentId === null && items.length === 0) return DEFAULT_MENU_ITEMS
+  return items
+}
+
+/** Retorna um item de menu pelo id (para navegação de sub-menus). */
+export const getMenuItemById = async (
+  supabase: SupabaseClient,
+  companyId: string,
+  itemId: string,
+): Promise<MenuItemRecord | null> => {
+  const { data } = await supabase
+    .from('whatsapp_menu_items')
+    .select('id, parent_id, position, label, emoji, handler_type, handler_config, enabled')
+    .eq('company_id', companyId)
+    .eq('id', itemId)
+    .maybeSingle<MenuItemRecord>()
+
+  return data ?? null
+}
+
+/** Retorna o nome de uma filial pelo id. */
+export const getBranchName = async (
+  supabase: SupabaseClient,
+  companyId: string,
+  branchId: string,
+): Promise<string | null> => {
+  const { data } = await supabase
+    .from('branches')
+    .select('name')
+    .eq('company_id', companyId)
+    .eq('id', branchId)
+    .maybeSingle<{ name: string }>()
+
+  return data?.name ?? null
 }
 
 // ── Notificação de handoff ────────────────────────────────────
