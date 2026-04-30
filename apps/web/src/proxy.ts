@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
+import { isSubscriptionActive } from '@/lib/stripe/plans'
 
 const PUBLIC_ROUTES = [
   '/login',
@@ -16,6 +17,7 @@ const PUBLIC_ROUTES = [
   '/cookies',
   '/recursos-api-whatsapp.html',
   '/recursos-dashboard-admin.html',
+  '/sem-plano',
 ]
 
 const PUBLIC_FILE_ROUTES = [
@@ -98,16 +100,16 @@ export async function proxy(request: NextRequest) {
     return response
   }
 
-  // Authenticated user accessing dashboard — check onboarding
+  // Authenticated user accessing dashboard — check onboarding + subscription
   if (pathname.startsWith('/dashboard')) {
-    // Funcionários (têm role em app_metadata) não passam por onboarding
+    // Funcionários (têm role em app_metadata) não passam por onboarding/billing
     if (user.app_metadata?.role) {
       return response
     }
 
     const { data: company } = await supabase
       .from('companies')
-      .select('onboarding_completed, onboarding_step')
+      .select('id, onboarding_completed, onboarding_step')
       .eq('owner_id', user.id)
       .single()
 
@@ -121,6 +123,28 @@ export async function proxy(request: NextRequest) {
         '/onboarding/conclusao',
       ]
       return NextResponse.redirect(new URL(routes[step], request.url))
+    }
+
+    // Página de assinatura é sempre acessível para owners (para que possam assinar)
+    if (pathname === '/dashboard/assinatura') {
+      return response
+    }
+
+    // Verifica se a assinatura está ativa
+    const { data: subscription } = await supabase
+      .from('subscriptions')
+      .select('status, trial_ends_at')
+      .eq('company_id', company.id)
+      .maybeSingle()
+
+    const subscriptionActive =
+      subscription && isSubscriptionActive(subscription.status) &&
+      (subscription.status !== 'trialing' ||
+        !subscription.trial_ends_at ||
+        new Date(subscription.trial_ends_at) > new Date())
+
+    if (!subscriptionActive) {
+      return NextResponse.redirect(new URL('/dashboard/assinatura', request.url))
     }
   }
 

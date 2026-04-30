@@ -509,7 +509,7 @@ export default function LandingPage() {
             {/* Básico */}
             <MotionCard className={s['pricing-card']}>
               <div className={s['pricing-plan']}>Básico</div>
-              <div className={s['pricing-price']}><sup>R$</sup>97<span className={s['pricing-period']}>/mês</span></div>
+              <div className={s['pricing-price']}><sup>R$</sup>49,90<span className={s['pricing-period']}>/mês</span></div>
               <div className={s['pricing-desc']}>Para assistências iniciantes que querem organizar as OS e clientes.</div>
               <div className={s['pricing-divider']}></div>
               <div className={s['pricing-features-list']}>
@@ -527,7 +527,7 @@ export default function LandingPage() {
             <MotionCard className={`${s['pricing-card']} ${s.popular}`}>
               <div className={s['pricing-popular-badge']}>Mais popular</div>
               <div className={s['pricing-plan']} style={{ color: 'var(--primary)' }}>Profissional</div>
-              <div className={s['pricing-price']}><sup>R$</sup>197<span className={s['pricing-period']}>/mês</span></div>
+              <div className={s['pricing-price']}><sup>R$</sup>99<span className={s['pricing-period']}>/mês</span></div>
               <div className={s['pricing-desc']}>Para assistências que querem crescer com automação e controle total.</div>
               <div className={s['pricing-divider']}></div>
               <div className={s['pricing-features-list']}>
@@ -541,7 +541,7 @@ export default function LandingPage() {
             {/* Empresarial */}
             <MotionCard className={s['pricing-card']}>
               <div className={s['pricing-plan']}>Empresarial</div>
-              <div className={s['pricing-price']}><sup>R$</sup>397<span className={s['pricing-period']}>/mês</span></div>
+              <div className={s['pricing-price']}><sup>R$</sup>199<span className={s['pricing-period']}>/mês</span></div>
               <div className={s['pricing-desc']}>Para redes de assistências com múltiplas unidades e equipes grandes.</div>
               <div className={s['pricing-divider']}></div>
               <div className={s['pricing-features-list']}>

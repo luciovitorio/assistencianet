@@ -2,8 +2,10 @@
 
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { createAuditLog } from '@/lib/audit/audit-log'
 import { empresaSchema, filiaisSchema } from '@/lib/validations/onboarding'
+import { TRIAL_DAYS } from '@/lib/stripe/plans'
 
 async function ensureOwnerEmployee(params: {
   companyId: string
@@ -168,6 +170,16 @@ export async function saveFiliais(_prev: unknown, formData: FormData) {
     .from('companies')
     .update({ onboarding_step: 3, onboarding_completed: true })
     .eq('id', company.id)
+
+  // Cria registro de trial — upsert para ser idempotente caso o onboarding seja repetido
+  const trialEndsAt = new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString()
+  const adminSupabase = createAdminClient()
+  await adminSupabase
+    .from('subscriptions')
+    .upsert(
+      { company_id: company.id, status: 'trialing', trial_ends_at: trialEndsAt },
+      { onConflict: 'company_id', ignoreDuplicates: true }
+    )
 
   await createAuditLog({
     action: 'update',
