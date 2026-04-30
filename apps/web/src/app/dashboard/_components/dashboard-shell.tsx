@@ -4,7 +4,6 @@ import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
-  Wrench,
   Home,
   ClipboardList,
   MessagesSquare,
@@ -263,8 +262,8 @@ export function DashboardShell({
         }`}
       >
         <div className="flex items-center mb-6 px-4">
-          <div className="w-10 h-10 min-w-10 bg-primary rounded-lg flex items-center justify-center text-primary-foreground shadow-sm">
-            <Wrench className="size-6" />
+          <div className="w-10 h-10 min-w-10 flex items-center justify-center">
+            <img src="/brand-icon.svg" alt="SmartConserto" width={40} height={40} className="rounded-lg" />
           </div>
           <div
             className={`overflow-hidden transition-all duration-300 ml-3 ${

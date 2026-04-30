@@ -2,9 +2,7 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
   return (
     <div className="min-h-screen bg-muted/30 flex flex-col">
       <header className="bg-background border-b px-6 py-4 flex items-center gap-2">
-        <span className="size-7 rounded-md bg-primary flex items-center justify-center text-primary-foreground text-xs font-black">
-          S
-        </span>
+        <img src="/brand-icon.svg" alt="SmartConserto" width={28} height={28} className="rounded-md" />
         <span className="font-bold text-sm">SmartConserto</span>
       </header>
 
