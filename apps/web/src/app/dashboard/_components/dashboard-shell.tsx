@@ -18,6 +18,7 @@ import {
   ChevronRight,
   Folder,
   BarChart3,
+  CreditCard,
 } from 'lucide-react'
 import { logout } from '@/app/actions/auth'
 import { RouteTransitionProvider } from '@/components/ui/route-transition-indicator'
@@ -33,6 +34,7 @@ interface DashboardShellProps {
   currentDate: string
   isAdmin: boolean
   initialIsExpanded: boolean
+  planLabel?: string
 }
 
 const SIDEBAR_EXPANDED_STORAGE_KEY = 'dashboard-sidebar-expanded'
@@ -104,29 +106,35 @@ function SidebarSubItem({
   label,
   active = false,
   isExpanded,
+  badge,
 }: {
   href: string
   label: string
   active?: boolean
   isExpanded: boolean
+  badge?: React.ReactNode
 }) {
-  const className = `block px-3 py-2 rounded-md transition-colors ${
+  const className = `flex items-center justify-between px-3 py-2 rounded-md transition-colors ${
     active
       ? 'bg-primary/10 text-primary font-medium'
       : 'text-muted-foreground hover:bg-muted hover:text-foreground'
   } ${!isExpanded ? 'text-xs text-center px-1' : 'text-sm'}`
 
+  const content = isExpanded
+    ? <><span>{label}</span>{badge}</>
+    : label.substring(0, 3)
+
   if (href === '#') {
     return (
       <button type="button" className={`${className} w-full cursor-default text-left`}>
-        {isExpanded ? label : label.substring(0, 3)}
+        {content}
       </button>
     )
   }
 
   return (
     <Link href={href} className={className}>
-      {isExpanded ? label : label.substring(0, 3)}
+      {content}
     </Link>
   )
 }
@@ -207,6 +215,14 @@ function SidebarMenu({
   )
 }
 
+const PLAN_BADGE_COLORS: Record<string, string> = {
+  Trial: 'bg-amber-100 text-amber-700',
+  Básico: 'bg-slate-100 text-slate-600',
+  Pro: 'bg-blue-100 text-blue-700',
+  Empresa: 'bg-purple-100 text-purple-700',
+  Vencido: 'bg-red-100 text-red-700',
+}
+
 export function DashboardShell({
   children,
   companyId,
@@ -215,6 +231,7 @@ export function DashboardShell({
   currentDate,
   isAdmin,
   initialIsExpanded,
+  planLabel,
 }: DashboardShellProps) {
   const [isExpanded, setIsExpanded] = useState(initialIsExpanded)
   const pathname = usePathname()
@@ -233,7 +250,9 @@ export function DashboardShell({
   const inFinanceiro = pathname.startsWith('/dashboard/financeiro')
   const inRelatorios = pathname.startsWith('/dashboard/relatorios')
   const inConfiguracoes =
-    pathname.startsWith('/dashboard/configuracoes') || pathname.startsWith('/dashboard/logs')
+    pathname.startsWith('/dashboard/configuracoes') ||
+    pathname.startsWith('/dashboard/logs') ||
+    pathname.startsWith('/dashboard/assinatura')
   const activeSidebarMenu: SidebarMenuId | null = inCadastros
     ? 'cadastros'
     : inFinanceiro
@@ -456,6 +475,17 @@ export function DashboardShell({
                 label="Automação"
                 active={pathname.startsWith('/dashboard/configuracoes/automacao')}
                 isExpanded={isExpanded}
+              />
+              <SidebarSubItem
+                href="/dashboard/assinatura"
+                label="Assinatura"
+                active={pathname.startsWith('/dashboard/assinatura')}
+                isExpanded={isExpanded}
+                badge={planLabel ? (
+                  <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full leading-none ${PLAN_BADGE_COLORS[planLabel] ?? 'bg-slate-100 text-slate-600'}`}>
+                    {planLabel}
+                  </span>
+                ) : undefined}
               />
               <SidebarSubItem
                 href="/dashboard/logs"

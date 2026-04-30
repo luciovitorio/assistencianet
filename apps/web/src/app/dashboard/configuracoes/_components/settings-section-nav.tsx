@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Bot, ListTree, Settings2 } from 'lucide-react'
+import { Bot, CreditCard, ListTree, Settings2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const ITEMS = [
@@ -23,6 +23,12 @@ const ITEMS = [
     label: 'Bot WhatsApp',
     description: 'Menus e respostas automáticas',
     icon: ListTree,
+  },
+  {
+    href: '/dashboard/assinatura',
+    label: 'Assinatura',
+    description: 'Plano, faturamento e portal Stripe',
+    icon: CreditCard,
   },
 ] as const
 
