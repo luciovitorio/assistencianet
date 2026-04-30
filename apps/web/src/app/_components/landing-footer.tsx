@@ -32,7 +32,7 @@ const supportLinks = [
 const legalLinks = [
   { label: 'Privacidade', href: '/privacidade' },
   { label: 'Termos de uso', href: '/termos-de-uso' },
-  { label: 'Cookies', href: underConstructionHref },
+  { label: 'Cookies', href: '/cookies' },
 ]
 
 function FooterLink({ href, label }: { href: string; label: string }) {
