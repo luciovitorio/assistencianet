@@ -493,6 +493,249 @@
   margin-top: 28px;
 }
 
+/* ── PRIVACY PAGE ── */
+.privacy-hero { padding-bottom: 96px; }
+.privacy-hero-inner { align-items: stretch; }
+.privacy-copy { align-self: center; }
+.privacy-meta-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--gray-200);
+  border-radius: 10px;
+  background: #fff;
+  padding: 10px 14px;
+  box-shadow: var(--shadow-sm);
+}
+.privacy-meta-row span {
+  color: var(--gray-400);
+  font-size: 12px;
+  font-weight: 700;
+}
+.privacy-meta-row strong {
+  color: var(--gray-900);
+  font-size: 13px;
+}
+.privacy-hero-card {
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: 14px;
+  box-shadow: var(--shadow-xl);
+  padding: 24px;
+  align-self: center;
+}
+.privacy-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+  color: var(--gray-500);
+  font-size: 13px;
+  font-weight: 700;
+}
+.privacy-card-header strong {
+  color: var(--primary);
+  background: var(--primary-light);
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+.privacy-card-focus {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: flex-start;
+  border: 1.5px solid var(--gray-200);
+  border-radius: 12px;
+  padding: 18px;
+  margin-bottom: 14px;
+}
+.privacy-card-focus > svg {
+  width: 42px;
+  height: 42px;
+  color: var(--green-dark);
+  background: var(--green-light);
+  border-radius: 10px;
+  padding: 9px;
+}
+.privacy-card-focus strong {
+  display: block;
+  color: var(--gray-900);
+  font-size: 17px;
+  margin-bottom: 6px;
+}
+.privacy-card-focus span {
+  display: block;
+  color: var(--gray-500);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.privacy-summary-list {
+  display: grid;
+  gap: 10px;
+}
+.privacy-summary-item {
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: 10px;
+  padding: 14px;
+}
+.privacy-summary-item span {
+  display: block;
+  color: var(--gray-400);
+  font-size: 11px;
+  margin-bottom: 5px;
+}
+.privacy-summary-item strong {
+  display: block;
+  color: var(--gray-900);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.privacy-highlight-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+}
+.privacy-highlight-card {
+  background: var(--gray-50);
+  border: 1.5px solid var(--gray-200);
+  border-radius: 12px;
+  padding: 22px;
+}
+.privacy-highlight-card > svg {
+  width: 34px;
+  height: 34px;
+  color: var(--primary);
+  background: var(--primary-light);
+  border-radius: 9px;
+  padding: 7px;
+  margin-bottom: 16px;
+}
+.privacy-highlight-card strong {
+  display: block;
+  color: var(--gray-900);
+  font-size: 15px;
+  margin-bottom: 8px;
+}
+.privacy-highlight-card span {
+  display: block;
+  color: var(--gray-500);
+  font-size: 13px;
+  line-height: 1.65;
+}
+.privacy-policy-section { background: var(--gray-50); }
+.privacy-policy-layout {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 40px;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 32px;
+  align-items: start;
+}
+.privacy-nav-card {
+  position: sticky;
+  top: 88px;
+  background: #fff;
+  border: 1.5px solid var(--gray-200);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+}
+.privacy-nav-title {
+  color: var(--gray-900);
+  font-size: 13px;
+  font-weight: 800;
+  margin-bottom: 14px;
+}
+.privacy-nav-links {
+  display: grid;
+  gap: 9px;
+}
+.privacy-nav-links a {
+  color: var(--gray-500);
+  font-size: 13px;
+  line-height: 1.35;
+  text-decoration: none;
+  transition: color 150ms;
+}
+.privacy-nav-links a:hover { color: var(--primary); }
+.privacy-content {
+  display: grid;
+  gap: 14px;
+}
+.privacy-content-card {
+  background: #fff;
+  border: 1.5px solid var(--gray-200);
+  border-radius: 12px;
+  padding: 28px;
+}
+.privacy-content-card h2 {
+  color: var(--gray-900);
+  font-size: 22px;
+  line-height: 1.25;
+  margin-bottom: 14px;
+}
+.privacy-content-card p {
+  color: var(--gray-600);
+  font-size: 15px;
+  line-height: 1.75;
+  margin-bottom: 12px;
+}
+.privacy-content-card p:last-child { margin-bottom: 0; }
+.privacy-security-band { background: #fff; }
+.privacy-security-grid {
+  display: grid;
+  grid-template-columns: 0.95fr 1.05fr;
+  gap: 64px;
+  align-items: center;
+}
+.privacy-security-panel {
+  background: #fff;
+  border: 1.5px solid var(--gray-200);
+  border-radius: 14px;
+  box-shadow: var(--shadow-lg);
+  padding: 10px;
+}
+.privacy-security-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  padding: 18px;
+  border-bottom: 1px solid var(--gray-100);
+}
+.privacy-security-row:last-child { border-bottom: none; }
+.privacy-security-row > svg {
+  width: 36px;
+  height: 36px;
+  color: var(--primary);
+  background: var(--primary-light);
+  border-radius: 9px;
+  padding: 8px;
+}
+.privacy-security-row strong {
+  display: block;
+  color: var(--gray-900);
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+.privacy-security-row span {
+  display: block;
+  color: var(--gray-500);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.privacy-cta-icon {
+  width: 42px;
+  height: 42px;
+  color: rgba(255,255,255,0.9);
+  background: rgba(255,255,255,0.1);
+  border-radius: 10px;
+  padding: 9px;
+  margin-bottom: 18px;
+}
+
 /* ── UNDER CONSTRUCTION PAGE ── */
 .construction-hero { min-height: 720px; display: flex; align-items: center; }
 .construction-hero-inner { align-items: stretch; }
@@ -1045,15 +1288,25 @@
   .hero-inner,
   .features-page-hero-inner,
   .about-hero-inner,
+  .privacy-hero-inner,
   .construction-hero-inner,
   .contact-hero-inner,
   .how-grid,
   .wapp-grid,
   .feature-detail-grid,
   .about-story-grid,
-  .about-ops-grid {
+  .about-ops-grid,
+  .privacy-security-grid {
     grid-template-columns: 1fr;
     gap: 48px;
+  }
+
+  .privacy-policy-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .privacy-nav-card {
+    position: static;
   }
 
   .features-grid,
@@ -1061,6 +1314,7 @@
   .testi-grid,
   .integration-grid,
   .about-values-grid,
+  .privacy-highlight-grid,
   .contact-card-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -1088,9 +1342,12 @@
   .testi-grid,
   .integration-grid,
   .about-values-grid,
+  .privacy-highlight-grid,
   .contact-card-grid {
     grid-template-columns: 1fr;
   }
+  .privacy-policy-layout { padding: 0 20px; }
+  .privacy-content-card { padding: 22px; }
   .features-page-metrics { grid-template-columns: 1fr; }
   .about-panel-grid { grid-template-columns: 1fr; }
   .construction-list { grid-template-columns: 1fr; }

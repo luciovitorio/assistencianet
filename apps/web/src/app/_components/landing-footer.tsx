@@ -29,7 +29,11 @@ const supportLinks = [
   { label: 'Falar no WhatsApp', href: siteConfig.whatsappUrl },
 ]
 
-const legalLinks = ['Privacidade', 'Termos de uso', 'Cookies']
+const legalLinks = [
+  { label: 'Privacidade', href: '/privacidade' },
+  { label: 'Termos de uso', href: '/termos-de-uso' },
+  { label: 'Cookies', href: underConstructionHref },
+]
 
 function FooterLink({ href, label }: { href: string; label: string }) {
   if (href.startsWith('mailto:') || href.startsWith('https://wa.me/')) {
@@ -100,9 +104,9 @@ export function LandingFooter() {
         <div className={s['footer-bottom']}>
           <span className={s['footer-bottom-text']}>© 2026 SmartConserto. Todos os direitos reservados.</span>
           <div className={s['footer-bottom-links']}>
-            {legalLinks.map((label) => (
-              <Link key={label} href="/" className={s['footer-bottom-link']}>
-                {label}
+            {legalLinks.map((link) => (
+              <Link key={link.label} href={link.href} className={s['footer-bottom-link']}>
+                {link.label}
               </Link>
             ))}
           </div>
