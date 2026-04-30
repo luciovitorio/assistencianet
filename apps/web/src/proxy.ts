@@ -22,6 +22,7 @@ const PUBLIC_FILE_ROUTES = [
   '/twitter-image',
   '/icon',
   '/apple-icon',
+  '/brand-icon',
 ]
 
 export async function proxy(request: NextRequest) {
