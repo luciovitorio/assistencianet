@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { cookies } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createAuditLog } from '@/lib/audit/audit-log'
@@ -133,6 +134,14 @@ export async function logout() {
     summary: 'Logout realizado no sistema.',
   })
   await supabase.auth.signOut()
+
+  // Limpa explicitamente os cookies de sessão do Supabase antes do redirect,
+  // pois o redirect() interrompe o fluxo antes do Supabase confirmar a limpeza.
+  const cookieStore = await cookies()
+  cookieStore.getAll().forEach(({ name }) => {
+    if (name.startsWith('sb-')) cookieStore.delete(name)
+  })
+
   revalidatePath('/', 'layout')
   redirect('/login')
 }
