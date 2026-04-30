@@ -126,6 +126,24 @@ export async function register(_prev: unknown, formData: FormData) {
   redirect('/verify-email')
 }
 
+export async function loginWithGoogle() {
+  const supabase = await createClient()
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3001'
+
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: `${siteUrl}/auth/callback`,
+    },
+  })
+
+  if (error || !data.url) {
+    return { error: 'Não foi possível iniciar o login com Google. Tente novamente.' }
+  }
+
+  redirect(data.url)
+}
+
 export async function logout() {
   const supabase = await createClient()
   await createAuditLog({
