@@ -831,6 +831,48 @@ export type Database = {
           },
         ]
       }
+      plans: {
+        Row: {
+          created_at: string
+          has_advanced_reports: boolean
+          has_multiple_branches: boolean
+          has_whatsapp_bot: boolean
+          id: string
+          max_os_per_month: number | null
+          max_users: number | null
+          name: string
+          price_brl: number
+          sort_order: number
+          stripe_price_id: string
+        }
+        Insert: {
+          created_at?: string
+          has_advanced_reports?: boolean
+          has_multiple_branches?: boolean
+          has_whatsapp_bot?: boolean
+          id: string
+          max_os_per_month?: number | null
+          max_users?: number | null
+          name: string
+          price_brl: number
+          sort_order?: number
+          stripe_price_id?: string
+        }
+        Update: {
+          created_at?: string
+          has_advanced_reports?: boolean
+          has_multiple_branches?: boolean
+          has_whatsapp_bot?: boolean
+          id?: string
+          max_os_per_month?: number | null
+          max_users?: number | null
+          name?: string
+          price_brl?: number
+          sort_order?: number
+          stripe_price_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null
@@ -1471,6 +1513,87 @@ export type Database = {
           },
         ]
       }
+      stripe_webhook_events: {
+        Row: {
+          id: string
+          processed_at: string
+          type: string
+        }
+        Insert: {
+          id: string
+          processed_at?: string
+          type: string
+        }
+        Update: {
+          id?: string
+          processed_at?: string
+          type?: string
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          cancel_at: string | null
+          cancel_at_period_end: boolean
+          company_id: string
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          plan_id: string | null
+          status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          trial_ends_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          cancel_at?: string | null
+          cancel_at_period_end?: boolean
+          company_id: string
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan_id?: string | null
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cancel_at?: string | null
+          cancel_at_period_end?: boolean
+          company_id?: string
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan_id?: string | null
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       suppliers: {
         Row: {
           active: boolean
@@ -2011,6 +2134,7 @@ export type Database = {
           handler_type: string
           id: string
           label: string
+          parent_id: string | null
           position: number
         }
         Insert: {
@@ -2022,6 +2146,7 @@ export type Database = {
           handler_type: string
           id?: string
           label: string
+          parent_id?: string | null
           position: number
         }
         Update: {
@@ -2033,6 +2158,7 @@ export type Database = {
           handler_type?: string
           id?: string
           label?: string
+          parent_id?: string | null
           position?: number
         }
         Relationships: [
@@ -2041,6 +2167,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_menu_items_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_menu_items"
             referencedColumns: ["id"]
           },
         ]
