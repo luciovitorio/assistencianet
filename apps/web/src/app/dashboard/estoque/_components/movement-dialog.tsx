@@ -4,7 +4,7 @@ import * as React from 'react'
 import { useForm, Controller, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
-import { ArrowDownToLine, SlidersHorizontal } from 'lucide-react'
+import { ArrowDownToLine, ArrowRight, SlidersHorizontal } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -27,6 +27,7 @@ import {
   type StockAjusteSchema,
 } from '@/lib/validations/stock'
 import { createStockEntrada, createStockAjuste } from '@/app/actions/stock'
+import { cn } from '@/lib/utils'
 import type { PartRow, BranchOption, SupplierOption } from './stock-list'
 
 const CONTROL =
@@ -59,6 +60,7 @@ interface EntradaFormProps {
 
 interface AjusteFormProps {
   part: PartRow
+  parts: PartRow[]
   initialBranchId: string
   branches: BranchOption[]
   stockByPartBranch: Record<string, number>
@@ -73,7 +75,18 @@ type StockEntradaFormValues = Omit<StockEntradaSchema, 'quantity' | 'unit_cost'>
 
 type StockAjusteFormValues = Omit<StockAjusteSchema, 'new_quantity'> & {
   new_quantity: string | number
+  reason: string
+  observacao: string
 }
+
+const MOTIVO_OPTIONS = [
+  'Contagem física',
+  'Quebra ou avaria',
+  'Perda ou furto',
+  'Vencimento',
+  'Correção de lançamento',
+  'Outros',
+]
 
 function getStockForBranch(stockByPartBranch: Record<string, number>, partId: string, branchId: string) {
   return stockByPartBranch[`${partId}:${branchId}`] ?? 0
@@ -393,6 +406,7 @@ function EntradaForm({
 
 function AjusteForm({
   part,
+  parts,
   initialBranchId,
   branches,
   stockByPartBranch,
@@ -417,7 +431,8 @@ function AjusteForm({
       branch_id: initialBranchId,
       current_stock: initialStock,
       new_quantity: initialStock,
-      notes: '',
+      reason: '',
+      observacao: '',
     },
   })
 
@@ -428,26 +443,30 @@ function AjusteForm({
       branch_id: initialBranchId,
       current_stock: stock,
       new_quantity: stock,
-      notes: '',
+      reason: '',
+      observacao: '',
     })
   }, [part.id, initialBranchId, stockByPartBranch, reset])
 
-  // Quando a filial muda, atualiza current_stock e reseta new_quantity para o saldo real daquela filial
+  const watchedPartId = watch('part_id')
   const watchedBranchId = watch('branch_id')
+
   React.useEffect(() => {
-    const stock = getStockForBranch(stockByPartBranch, part.id, watchedBranchId)
+    const stock = getStockForBranch(stockByPartBranch, watchedPartId, watchedBranchId)
     setValue('current_stock', stock)
     setValue('new_quantity', stock)
-  }, [watchedBranchId, part.id, stockByPartBranch, setValue])
+  }, [watchedPartId, watchedBranchId, stockByPartBranch, setValue])
 
   const currentStock = watch('current_stock')
   const newQty = watch('new_quantity')
   const delta = (Number(newQty) || 0) - (Number(currentStock) || 0)
+  const selectedPart = parts.find((p) => p.id === watchedPartId) ?? part
 
   const onSubmit = (data: StockAjusteFormValues) => {
     startTransition(async () => {
       try {
-        const result = await createStockAjuste(data)
+        const notes = [data.reason, data.observacao].filter(Boolean).join(' — ') || undefined
+        const result = await createStockAjuste({ ...data, notes })
         if (result?.error) throw new Error(result.error)
         toast.success('Estoque ajustado com sucesso.')
         onSuccess()
@@ -459,17 +478,46 @@ function AjusteForm({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-2" id="ajuste-form">
+      {/* Peça */}
+      <div>
+        <Label className="mb-1.5 block text-sm font-medium">Peça</Label>
+        <Controller
+          control={control}
+          name="part_id"
+          render={({ field }) => {
+            const selected = parts.find((p) => p.id === field.value)
+            return (
+              <Select value={field.value} onValueChange={(v) => field.onChange(v)}>
+                <SelectTrigger className={cn('w-full', errors.part_id ? 'border-destructive' : '')}>
+                  <span className={field.value ? 'text-foreground' : 'text-muted-foreground'}>
+                    {selected ? selected.name + (selected.sku ? ` — ${selected.sku}` : '') : 'Selecione a peça'}
+                  </span>
+                </SelectTrigger>
+                <SelectContent>
+                  {parts.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}{p.sku ? ` — ${p.sku}` : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )
+          }}
+        />
+        {errors.part_id && <p className="mt-1 text-xs text-destructive">{errors.part_id.message}</p>}
+      </div>
+
       {/* Filial */}
       <div>
-        <Label className="mb-1.5 block text-sm font-medium">Filial *</Label>
+        <Label className="mb-1.5 block text-sm font-medium">Filial</Label>
         <Controller
           control={control}
           name="branch_id"
           render={({ field }) => {
             const selected = branches.find((b) => b.id === field.value)
             return (
-              <Select value={field.value} onValueChange={(v) => field.onChange(v as string)}>
-                <SelectTrigger className={errors.branch_id ? 'border-destructive' : ''}>
+              <Select value={field.value} onValueChange={(v) => field.onChange(v)}>
+                <SelectTrigger className={cn('w-full', errors.branch_id ? 'border-destructive' : '')}>
                   <span className={field.value ? 'text-foreground' : 'text-muted-foreground'}>
                     {selected ? selected.name : 'Selecione a filial'}
                   </span>
@@ -483,53 +531,73 @@ function AjusteForm({
             )
           }}
         />
-        {errors.branch_id && (
-          <p className="text-destructive text-xs mt-1">{errors.branch_id.message}</p>
-        )}
+        {errors.branch_id && <p className="mt-1 text-xs text-destructive">{errors.branch_id.message}</p>}
       </div>
 
-      {/* Saldo atual (informativo, reativo à filial selecionada) */}
-      <div className="rounded-lg bg-muted/60 px-4 py-3 text-sm">
-        <span className="text-muted-foreground">Saldo atual nesta filial: </span>
-        <span className="font-semibold tabular-nums">{Number(currentStock)} {part.unit}</span>
-        {part.min_stock > 0 && (
-          <span className="text-muted-foreground ml-2">(mínimo: {part.min_stock})</span>
-        )}
-      </div>
-
-      {/* Nova quantidade */}
-      <Controller
-        control={control}
-        name="new_quantity"
-        render={({ field }) => (
-          <InputField
-            label="Nova quantidade real *"
-            type="number"
-            min={0}
-            step={1}
-            placeholder="0"
-            error={errors.new_quantity?.message}
-            helper={
-              delta !== 0
-                ? `Variação: ${delta > 0 ? '+' : ''}${delta} ${part.unit}`
-                : undefined
-            }
-            {...field}
-            value={String(field.value ?? '')}
-            onChange={(e) => field.onChange(e.target.value)}
-            onFocus={(e) => e.target.select()}
+      {/* ATUAL → NOVO */}
+      <div className="flex items-center gap-5 rounded-xl border border-border bg-muted/30 px-5 py-4">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Atual</span>
+          <span className="text-2xl font-bold tabular-nums text-foreground">{Number(currentStock)}</span>
+        </div>
+        <ArrowRight className="size-4 shrink-0 text-muted-foreground" />
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Novo</span>
+          <Controller
+            control={control}
+            name="new_quantity"
+            render={({ field }) => (
+              <input
+                type="number"
+                min={0}
+                step={1}
+                className="w-20 border-b-2 border-primary bg-transparent text-2xl font-bold tabular-nums text-primary outline-none"
+                value={String(field.value ?? '')}
+                onChange={(e) => field.onChange(e.target.value)}
+                onFocus={(e) => e.target.select()}
+              />
+            )}
           />
+        </div>
+        {delta !== 0 && (
+          <span className={cn('ml-auto text-sm font-semibold tabular-nums', delta > 0 ? 'text-emerald-600' : 'text-red-600')}>
+            {delta > 0 ? '+' : ''}{delta} {selectedPart.unit}
+          </span>
         )}
-      />
+      </div>
+      {errors.new_quantity && <p className="-mt-3 text-xs text-destructive">{errors.new_quantity.message}</p>}
 
-      {/* Observações */}
+      {/* Motivo do ajuste */}
+      <div>
+        <Label className="mb-1.5 block text-sm font-medium">Motivo do ajuste</Label>
+        <Controller
+          control={control}
+          name="reason"
+          render={({ field }) => (
+            <Select value={field.value} onValueChange={(v) => field.onChange(v)}>
+              <SelectTrigger className="w-full">
+                <span className={field.value ? 'text-foreground' : 'text-muted-foreground'}>
+                  {field.value || 'Selecione o motivo'}
+                </span>
+              </SelectTrigger>
+              <SelectContent>
+                {MOTIVO_OPTIONS.map((o) => (
+                  <SelectItem key={o} value={o}>{o}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        />
+      </div>
+
+      {/* Observação */}
       <Controller
         control={control}
-        name="notes"
+        name="observacao"
         render={({ field }) => (
           <InputField
-            label="Motivo do ajuste (opcional)"
-            placeholder="Ex: Contagem física realizada em 04/04/2026..."
+            label="Observação (opcional)"
+            placeholder="Detalhes do ajuste"
             error={errors.notes?.message}
             {...field}
             value={field.value ?? ''}
@@ -541,9 +609,8 @@ function AjusteForm({
         <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
           Cancelar
         </Button>
-        <Button type="submit" disabled={isPending || delta === 0} className="gap-2 cursor-pointer">
-          <SlidersHorizontal className="size-4" />
-          {isPending ? 'Salvando...' : 'Confirmar Ajuste'}
+        <Button type="submit" disabled={isPending || delta === 0} className="cursor-pointer">
+          {isPending ? 'Salvando...' : 'Salvar ajuste'}
         </Button>
       </DialogFooter>
     </form>
@@ -571,8 +638,8 @@ export function MovementDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
-        <DialogHeader>
+      <DialogContent className="gap-0 p-0 sm:max-w-md">
+        <DialogHeader className="border-b border-border px-6 py-4">
           <DialogTitle className="flex items-center gap-2">
             {isEntrada ? (
               <>
@@ -582,22 +649,18 @@ export function MovementDialog({
             ) : (
               <>
                 <SlidersHorizontal className="size-5 text-primary" />
-                Ajuste de Inventário
+                Ajustar estoque
               </>
             )}
           </DialogTitle>
-          <DialogDescription>
-            {selectedPart ? (
-              <>
-                <span className="font-medium text-foreground">{selectedPart.name}</span>
-                {selectedPart.sku && <span className="text-muted-foreground"> · SKU {selectedPart.sku}</span>}
-              </>
-            ) : (
-              'Selecione a peça, informe o fornecedor real da compra e registre as datas do recebimento.'
-            )}
-          </DialogDescription>
+          {isEntrada && (
+            <DialogDescription>
+              Selecione a peça, informe o fornecedor real da compra e registre as datas do recebimento.
+            </DialogDescription>
+          )}
         </DialogHeader>
 
+        <div className="px-6 pb-6">
         {isEntrada ? (
           <EntradaForm
             part={selectedPart}
@@ -612,6 +675,7 @@ export function MovementDialog({
         ) : (
           <AjusteForm
             part={selectedPart!}
+            parts={parts}
             initialBranchId={initialBranchId}
             branches={branches}
             stockByPartBranch={stockByPartBranch}
@@ -619,6 +683,7 @@ export function MovementDialog({
             onOpenChange={onOpenChange}
           />
         )}
+        </div>
       </DialogContent>
     </Dialog>
   )

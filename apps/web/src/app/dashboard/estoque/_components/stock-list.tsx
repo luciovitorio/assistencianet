@@ -3,15 +3,14 @@
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import {
-  AlertTriangle,
   ArrowDownToLine,
   ArrowRightLeft,
-  Boxes,
-  Building2,
-  CheckCircle2,
+  Download,
   History,
   MoreHorizontal,
   Package,
+  Pencil,
+  Plus,
   SlidersHorizontal,
   X,
 } from 'lucide-react'
@@ -21,19 +20,16 @@ import {
   DataTableCard,
   DataTableFilterPopover,
   DataTableSearch,
-  DataTableToolbar,
   DataTablePagination,
   type DataTableFilterOption,
 } from '@/components/ui/data-table'
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { CATEGORY_LABELS, type PartCategory } from '@/lib/validations/part'
 import { cn } from '@/lib/utils'
 import { MovementDialog } from './movement-dialog'
@@ -89,7 +85,7 @@ type DialogState =
   | { type: 'entrada'; part: PartRow | null; branchId: string }
   | { type: 'ajuste'; part: PartRow; branchId: string }
   | { type: 'transferencia'; part: PartRow; branchId: string }
-  | { type: 'history'; part: PartRow; branchId: string }
+  | { type: 'history'; part: PartRow | null; branchId: string }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -103,12 +99,6 @@ const STATUS_LABELS: Record<StockStatus, string> = {
   ok: 'Ok',
   baixo: 'Baixo',
   zerado: 'Zerado',
-}
-
-const STATUS_CLASSES: Record<StockStatus, string> = {
-  ok: 'bg-emerald-100 text-emerald-700',
-  baixo: 'bg-amber-100 text-amber-700',
-  zerado: 'bg-red-100 text-red-700',
 }
 
 function formatQuantity(n: number) {
@@ -214,17 +204,13 @@ export function StockList({
     [stockItems]
   )
 
-  const totalReservedStock = React.useMemo(
-    () => stockItems.reduce((sum, item) => sum + item.reservedStock, 0),
-    [stockItems]
-  )
-
-  const totalAvailableStock = React.useMemo(
-    () => stockItems.reduce((sum, item) => sum + item.availableStock, 0),
-    [stockItems]
-  )
-
   const criticalItems = summary.baixo + summary.zerado
+  const healthyPercent = summary.total > 0 ? Math.round((summary.ok / summary.total) * 100) : 0
+
+  const supplierMap = React.useMemo(
+    () => Object.fromEntries(suppliers.map((supplier) => [supplier.id, supplier.name])),
+    [suppliers],
+  )
 
   // Opções de filtro
   const categoryOptions = React.useMemo<DataTableFilterOption[]>(() =>
@@ -290,17 +276,6 @@ export function StockList({
     setFocusedPartId(null)
   }
 
-  const focusCriticalItems = () => {
-    setSearch('')
-    setCategoryFilter([])
-    setStatusFilter(['baixo', 'zerado'])
-    setCurrentPage(1)
-
-    requestAnimationFrame(() => {
-      stockTableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    })
-  }
-
   const toggleCategory = (v: string) =>
     setCategoryFilter((prev) => prev.includes(v) ? prev.filter((x) => x !== v) : [...prev, v])
 
@@ -320,196 +295,190 @@ export function StockList({
 
   const scopedBranchId = selectedBranch || userDefaultBranchId
 
+  const getBranchTags = React.useCallback((partId: string) => {
+    if (selectedBranch) {
+      const branchName = branches.find((branch) => branch.id === selectedBranch)?.name
+      return branchName ? [branchName] : []
+    }
+
+    return branches
+      .map((branch) => {
+        const physical = stockByPartBranch[`${partId}:${branch.id}`] ?? 0
+        const reserved = reservedByPartBranch[`${partId}:${branch.id}`] ?? 0
+        return {
+          name: branch.name,
+          available: physical - reserved,
+        }
+      })
+      .filter((branch) => branch.available > 0)
+      .sort((a, b) => b.available - a.available)
+      .slice(0, 3)
+      .map((branch) => branch.name)
+  }, [branches, reservedByPartBranch, selectedBranch, stockByPartBranch])
+
   return (
     <>
-      {branches.length > 1 && (
-        <section className="rounded-3xl border border-border bg-card/80 p-4 shadow-sm">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <p className="text-sm font-semibold text-foreground">Recorte por filial</p>
-              <p className="text-xs text-muted-foreground">
-                Defina primeiro o contexto para ler estoque, reservas e alertas no escopo certo.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {branchOptions.map((opt) => {
-                const isActive = selectedBranch === opt.value
-                return (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => setSelectedBranch(opt.value)}
-                    className={`rounded-2xl border px-4 py-2 text-sm font-medium transition-all cursor-pointer ${
-                      isActive
-                        ? 'border-primary bg-primary text-primary-foreground shadow-sm'
-                        : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground'
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        </section>
-      )}
-
-      <section className="relative overflow-hidden rounded-[28px] border border-slate-200 bg-[linear-gradient(135deg,#f8fafc_0%,#ffffff_58%,#eef6ff_100%)] shadow-sm">
-        <div className="absolute inset-y-0 right-0 w-72 bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.14),_transparent_62%)]" />
-        <div className="relative grid gap-5 px-6 py-5 lg:grid-cols-[minmax(0,1fr)_300px] lg:px-8">
-          <div className="min-w-0 space-y-3">
-            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-              <Boxes className="size-3.5 text-primary" />
-              Operação de estoque
-            </div>
-            <div className="space-y-1.5">
-              <h2 className="text-2xl font-bold tracking-tight text-slate-950">
-                Estoque com leitura clara para decidir rápido
-              </h2>
-              <p className="max-w-2xl text-sm leading-6 text-slate-600">
-                Saldo físico, reserva ativa e alertas de ruptura organizados em um painel operacional.
-              </p>
-            </div>
+      <section className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+        <div className="flex flex-col gap-3 border-b border-border bg-white px-5 py-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex min-w-0 flex-wrap items-center gap-3">
+            <h2 className="text-lg font-bold tracking-tight text-foreground">Estoque</h2>
+            {branches.length > 1 ? (
+              <select
+                value={selectedBranch}
+                onChange={(event) => setSelectedBranch(event.target.value)}
+                className="h-8 rounded-md border border-border bg-background px-3 text-xs font-semibold text-slate-700 outline-none transition-colors hover:bg-muted focus:border-primary"
+                aria-label="Filial"
+              >
+                {branchOptions.map((option) => (
+                  <option key={option.value || 'all'} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span className="rounded-md border border-border bg-background px-3 py-1.5 text-xs font-semibold text-slate-700">
+                {selectedBranchLabel}
+              </span>
+            )}
           </div>
 
-          <div className="min-h-[96px] rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 shadow-sm">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
-              Escopo atual
-            </p>
-            <div className="mt-2 flex items-start gap-2 text-sm font-semibold text-slate-900">
-              <Building2 className="mt-0.5 size-4 text-primary" />
-              <span className="leading-5">{selectedBranchLabel}</span>
-            </div>
-            <p className="mt-2 text-xs leading-5 text-slate-500">
-              Todo o painel abaixo respeita esse recorte de visualização.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <SummaryCard
-          label="Peças monitoradas"
-          value={summary.total}
-          icon={Boxes}
-          helper="Itens ativos com saldo consolidado"
-        />
-        <SummaryCard
-          label="Disponível agora"
-          value={totalAvailableStock}
-          icon={Package}
-          valueClass="text-slate-950"
-          helper="Saldo livre para uso imediato"
-        />
-        <SummaryCard
-          label="Reserva ativa"
-          value={totalReservedStock}
-          icon={Package}
-          valueClass="text-amber-700"
-          helper="Comprometido em ordens e orçamentos"
-          accentClass="from-amber-100 via-amber-50 to-white"
-        />
-        <SummaryCard
-          label="Itens em risco"
-          value={criticalItems}
-          icon={AlertTriangle}
-          valueClass={criticalItems > 0 ? 'text-destructive' : 'text-emerald-700'}
-          helper={
-            criticalItems > 0 ? 'Abaixo do mínimo ou zerados' : 'Nenhum item crítico no momento'
-          }
-          accentClass={
-            criticalItems > 0 ? 'from-red-100 via-red-50 to-white' : 'from-emerald-100 via-emerald-50 to-white'
-          }
-        />
-      </section>
-
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <SummaryCard
-          label="Saldo físico total"
-          value={totalPhysicalStock}
-          icon={Package}
-          helper="Quantidade registrada antes das reservas"
-        />
-        <SummaryCard
-          label="Peças em condição saudável"
-          value={summary.ok}
-          icon={CheckCircle2}
-          helper="Itens com cobertura adequada"
-          valueClass="text-emerald-700"
-          accentClass="from-emerald-100 via-emerald-50 to-white"
-        />
-        <SummaryCard
-          label="Atenção operacional"
-          value={summary.zerado}
-          icon={AlertTriangle}
-          helper="Itens zerados com prioridade imediata"
-          valueClass={summary.zerado > 0 ? 'text-destructive' : 'text-slate-900'}
-          accentClass={summary.zerado > 0 ? 'from-red-100 via-red-50 to-white' : 'from-slate-100 via-white to-white'}
-        />
-        <RiskRadarCard
-          criticalItems={criticalItems}
-          onViewList={focusCriticalItems}
-        />
-      </section>
-
-      <div ref={stockTableRef}>
-      <DataTableToolbar
-        filters={
-          <>
-            <DataTableSearch
-              value={search}
-              onChange={setSearch}
-              placeholder="Buscar por nome ou SKU..."
+          <div className="flex flex-wrap items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                className={cn(
+                  buttonVariants({ variant: 'outline', size: 'icon-sm' }),
+                  'h-9 w-11',
+                )}
+                title="Mais ações"
+              >
+                <MoreHorizontal className="size-4" />
+                <span className="sr-only">Mais ações</span>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-45">
+                <DropdownMenuItem
+                  onClick={(event) => {
+                    event.preventDefault()
+                    const firstPart = paginated[0] ?? filtered[0] ?? parts[0] ?? null
+                    if (firstPart) setDialog({ type: 'ajuste', part: firstPart, branchId: scopedBranchId })
+                  }}
+                  disabled={parts.length === 0 || !isAdmin}
+                >
+                  <SlidersHorizontal className="size-4" />
+                  Ajustar estoque
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={(event) => {
+                    event.preventDefault()
+                  }}
+                  disabled={parts.length === 0}
+                >
+                  <Download className="size-4" />
+                  Exportar CSV
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button
+              variant="outline"
+              onClick={() => setDialog({ type: 'history', part: null, branchId: selectedBranch })}
+              className="gap-2"
               disabled={parts.length === 0}
-            />
-
-            <DataTableFilterPopover
-              title="Categoria"
-              options={categoryOptions}
-              selectedValues={categoryFilter}
-              onToggle={toggleCategory}
-              onClear={() => setCategoryFilter([])}
-              disabled={parts.length === 0}
-            />
-
-            <DataTableFilterPopover
-              title="Status"
-              options={statusOptions}
-              selectedValues={statusFilter}
-              onToggle={toggleStatus}
-              onClear={() => setStatusFilter([])}
-              disabled={parts.length === 0}
-            />
-
-            {hasActiveFilters && (
-              <Button variant="outline" onClick={resetFilters} className="gap-2">
-                <X className="size-4" />
-                Limpar filtros
+            >
+              <History className="size-4" />
+              Histórico
+            </Button>
+            {isAdmin && branches.length > 1 && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  const firstPart = paginated[0] ?? filtered[0] ?? parts[0] ?? null
+                  if (firstPart) setDialog({ type: 'transferencia', part: firstPart, branchId: scopedBranchId })
+                }}
+                className="gap-2"
+                disabled={parts.length === 0 || branches.length < 2}
+              >
+                <ArrowRightLeft className="size-4" />
+                Transferir
               </Button>
             )}
-          </>
-        }
-        actions={
-          isAdmin ? (
-            <Button
-              onClick={() =>
-                setDialog({ type: 'entrada', part: null, branchId: userDefaultBranchId })
-              }
-              className="gap-2 cursor-pointer"
-              disabled={parts.length === 0 || branches.length === 0}
-            >
-              <ArrowDownToLine className="size-4" />
-              Registrar Entrada
-            </Button>
-          ) : null
-        }
-      />
+            {isAdmin && (
+              <Button
+                onClick={() => setDialog({ type: 'entrada', part: null, branchId: userDefaultBranchId })}
+                className="gap-2"
+                disabled={parts.length === 0 || branches.length === 0}
+              >
+                <ArrowDownToLine className="size-4" />
+                Registrar entrada
+              </Button>
+            )}
+          </div>
+        </div>
 
-      <DataTableCard>
+        <div className="grid border-b border-border bg-white sm:grid-cols-2 xl:grid-cols-4 xl:divide-x xl:divide-border">
+          <KpiItem label="Peças monitoradas" value={summary.total} />
+          <KpiItem
+            label="Estoque baixo"
+            value={criticalItems}
+            valueClass={criticalItems > 0 ? 'text-amber-700' : 'text-emerald-700'}
+            helper={criticalItems > 0 ? 'requer atenção' : 'sem ruptura'}
+          />
+          <KpiItem label="Unidades no estoque" value={totalPhysicalStock} />
+          <KpiItem
+            label="Em nível saudável"
+            value={summary.ok}
+            valueClass="text-emerald-700"
+            helper={`${healthyPercent}% das peças`}
+          />
+        </div>
+
+        <div ref={stockTableRef} className="border-b border-border bg-slate-50/70 px-5 py-3">
+          <div className="flex flex-col gap-3 2xl:flex-row 2xl:items-center 2xl:justify-between">
+            <div className="flex flex-1 flex-col gap-2 lg:flex-row lg:flex-wrap lg:items-center">
+              <DataTableSearch
+                value={search}
+                onChange={setSearch}
+                placeholder="Buscar peça ou SKU..."
+                disabled={parts.length === 0}
+                className="lg:max-w-xs"
+              />
+
+              <DataTableFilterPopover
+                title="Categoria"
+                options={categoryOptions}
+                selectedValues={categoryFilter}
+                onToggle={toggleCategory}
+                onClear={() => setCategoryFilter([])}
+                disabled={parts.length === 0}
+              />
+
+              <DataTableFilterPopover
+                title="Status"
+                options={statusOptions}
+                selectedValues={statusFilter}
+                onToggle={toggleStatus}
+                onClear={() => setStatusFilter([])}
+                disabled={parts.length === 0}
+              />
+
+              {hasActiveFilters && (
+                <Button variant="ghost" onClick={resetFilters} className="gap-2 text-primary hover:text-primary">
+                  <X className="size-4" />
+                  Limpar filtros
+                </Button>
+              )}
+            </div>
+
+            <div className="text-sm text-muted-foreground">
+              {filtered.length} {filtered.length === 1 ? 'item' : 'itens'}
+            </div>
+          </div>
+        </div>
+
+      <DataTableCard className="rounded-none border-0 shadow-none">
+        <TooltipProvider>
         {parts.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-16 text-center">
-            <div className="mb-4 rounded-2xl bg-slate-100 p-4 text-slate-500">
-              <Boxes className="size-8" />
+            <div className="mb-4 rounded-lg bg-slate-100 p-4 text-slate-500">
+              <Package className="size-8" />
             </div>
             <h3 className="text-lg font-medium mb-2">Nenhuma peça cadastrada</h3>
             <p className="text-muted-foreground text-sm max-w-sm">
@@ -536,182 +505,169 @@ export function StockList({
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border bg-slate-50/80">
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3">Peça</th>
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 hidden md:table-cell">Categoria</th>
-                  <th className="text-center font-medium text-muted-foreground px-4 py-3">Disponível</th>
-                  <th className="text-left font-medium text-muted-foreground px-4 py-3 hidden xl:table-cell">Cobertura</th>
-                  <th className="text-center font-medium text-muted-foreground px-4 py-3 hidden lg:table-cell">Mínimo</th>
-                  <th className="text-center font-medium text-muted-foreground px-4 py-3">Status</th>
+                <tr className="border-b border-border bg-white">
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Peça</th>
+                  <th className="hidden px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground md:table-cell">Categoria</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Estoque</th>
+                  <th className="hidden px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground xl:table-cell">Filial</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Status</th>
+                  <th className="hidden px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground lg:table-cell">Fornecedor</th>
                   {isAdmin && (
-                    <th className="text-right font-medium text-muted-foreground px-4 py-3">Ações</th>
+                    <th className="px-5 py-3 text-right text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Ações</th>
                   )}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
+              <tbody className="divide-y divide-slate-100">
                 {paginated.map((item) => (
-                  <tr key={item.id} className="hover:bg-slate-50/70 transition-colors">
-                    <td className="px-4 py-3">
-                      <div className="flex items-start gap-3">
-                        <div
-                          className={`mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-2xl border ${
-                            item.status === 'ok'
-                              ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                              : item.status === 'baixo'
-                                ? 'border-amber-200 bg-amber-50 text-amber-700'
-                                : 'border-red-200 bg-red-50 text-red-700'
-                          }`}
-                        >
-                          <Package className="size-4" />
-                        </div>
-                        <div className="min-w-0">
-                          <div className="font-semibold text-foreground">{item.name}</div>
-                          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                            <span>{item.unit.toUpperCase()}</span>
-                            {item.sku && <span>SKU: {item.sku}</span>}
-                            <span>
-                              Físico: <span className="font-medium tabular-nums">{formatQuantity(item.currentStock)}</span>
-                            </span>
-                            {item.reservedStock > 0 && (
-                              <span>
-                                Reservado:{' '}
-                                <span className="font-medium tabular-nums">
-                                  {formatQuantity(item.reservedStock)}
-                                </span>
-                              </span>
-                            )}
-                          </div>
+                  <tr key={item.id} className="group/stock-row transition-colors hover:bg-slate-50/80">
+                    <td className="px-5 py-3.5">
+                      <div className="min-w-0">
+                        <div className="font-semibold leading-5 text-foreground">{item.name}</div>
+                        <div className="mt-0.5 font-mono text-[11px] text-muted-foreground">
+                          {item.sku || 'Sem SKU'}
                         </div>
                       </div>
                     </td>
 
-                    <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">
-                      <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700">
+                    <td className="hidden px-4 py-3.5 md:table-cell">
+                      <span className="text-sm text-muted-foreground">
                         {CATEGORY_LABELS[item.category as PartCategory] ?? item.category}
                       </span>
                     </td>
 
-                    <td className="px-4 py-3 text-center">
-                      <span className={`text-lg font-bold tabular-nums ${item.availableStock <= 0 ? 'text-destructive' : item.status === 'baixo' ? 'text-amber-600' : 'text-foreground'}`}>
-                        {formatQuantity(item.availableStock)}
-                      </span>
-                      <span className="text-xs text-muted-foreground ml-1">{item.unit}</span>
-                      <div className="mt-1 text-[10px] text-muted-foreground tabular-nums">
-                        {item.reservedStock > 0
-                          ? `${formatQuantity(item.currentStock)} fís. · ${formatQuantity(item.reservedStock)} res.`
-                          : `${formatQuantity(item.currentStock)} em saldo físico`}
-                      </div>
-                    </td>
-
-                    <td className="hidden xl:table-cell px-4 py-3">
-                      <div className="min-w-44">
-                        <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
-                          <span>Disponível / mínimo</span>
-                          <span className="tabular-nums">
-                            {formatQuantity(item.availableStock)} / {formatQuantity(item.min_stock)}
+                    <td className="px-4 py-3.5">
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-baseline gap-1.5">
+                          <span className={cn(
+                            'text-base font-bold tabular-nums',
+                            item.availableStock <= 0
+                              ? 'text-destructive'
+                              : item.status === 'baixo'
+                                ? 'text-amber-700'
+                                : 'text-foreground',
+                          )}>
+                            {formatQuantity(item.availableStock)}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            / mín. {formatQuantity(item.min_stock)} {item.unit}
                           </span>
                         </div>
-                        <div className="mt-2 h-2 rounded-full bg-slate-100">
+                        <div className="h-1.5 w-32 overflow-hidden rounded-full bg-slate-100">
                           <div
-                            className={`h-2 rounded-full ${
+                            className={cn(
+                              'h-full rounded-full',
                               item.status === 'ok'
                                 ? 'bg-emerald-500'
                                 : item.status === 'baixo'
                                   ? 'bg-amber-500'
-                                  : 'bg-red-500'
-                            }`}
+                                  : 'bg-red-500',
+                            )}
                             style={{ width: `${getCoveragePercent(item.availableStock, item.min_stock)}%` }}
                           />
                         </div>
+                        <span className="text-[11px] text-muted-foreground">
+                          Físico {formatQuantity(item.currentStock)}
+                          {item.reservedStock > 0 ? ` · reservado ${formatQuantity(item.reservedStock)}` : ''}
+                        </span>
                       </div>
                     </td>
 
-                    <td className="px-4 py-3 text-center text-muted-foreground hidden lg:table-cell tabular-nums">
-                      {formatQuantity(item.min_stock)}
+                    <td className="hidden px-4 py-3.5 xl:table-cell">
+                      <div className="flex max-w-56 flex-wrap gap-1">
+                        {getBranchTags(item.id).length > 0 ? (
+                          getBranchTags(item.id).map((branch) => (
+                            <span
+                              key={branch}
+                              className="inline-flex rounded bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600"
+                            >
+                              {branch}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-sm text-muted-foreground">Sem saldo</span>
+                        )}
+                      </div>
                     </td>
 
-                    <td className="px-4 py-3 text-center">
-                      <span className={`inline-block text-[11px] uppercase tracking-wider font-bold px-2.5 py-1 rounded-full ${STATUS_CLASSES[item.status]}`}>
-                        {STATUS_LABELS[item.status]}
-                      </span>
+                    <td className="px-4 py-3.5">
+                      <StatusPill status={item.status} />
+                    </td>
+
+                    <td className="hidden px-4 py-3.5 text-sm text-muted-foreground lg:table-cell">
+                      {item.supplier_id ? supplierMap[item.supplier_id] ?? 'Fornecedor não encontrado' : '—'}
                     </td>
 
                     {isAdmin && (
-                      <td className="px-4 py-3">
-                        <div className="flex items-center justify-end">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger
-                              className={cn(
-                                buttonVariants({ variant: 'ghost', size: 'icon' }),
-                                'size-8 rounded-xl text-muted-foreground'
-                              )}
-                              type="button"
-                              title="Ações"
+                      <td className="px-5 py-3.5">
+                        <div className="pointer-events-none flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover/stock-row:pointer-events-auto group-hover/stock-row:opacity-100 has-focus-visible:pointer-events-auto has-focus-visible:opacity-100">
+                          <Tooltip>
+                            <TooltipTrigger
+                              render={
+                                <button
+                                  type="button"
+                                  className={cn(
+                                    buttonVariants({ variant: 'ghost', size: 'icon-sm' }),
+                                    'size-7 rounded-md text-slate-400 hover:bg-primary/5 hover:text-primary',
+                                  )}
+                                  onClick={() => setDialog({
+                                    type: 'entrada',
+                                    part: item,
+                                    branchId: userDefaultBranchId,
+                                  })}
+                                />
+                              }
                             >
-                              <MoreHorizontal className="size-4" />
-                              <span className="sr-only">Ações</span>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-48">
-                              <DropdownMenuGroup>
-                                <DropdownMenuLabel>Ações do estoque</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  onClick={(e) => {
-                                    e.preventDefault()
-                                    setDialog({
-                                      type: 'entrada',
-                                      part: item,
-                                      branchId: userDefaultBranchId,
-                                    })
-                                  }}
-                                >
-                                  <ArrowDownToLine className="size-4" />
-                                  Registrar entrada
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={(e) => {
-                                    e.preventDefault()
-                                    setDialog({
-                                      type: 'ajuste',
-                                      part: item,
-                                      branchId: scopedBranchId,
-                                    })
-                                  }}
-                                >
-                                  <SlidersHorizontal className="size-4" />
-                                  Ajustar estoque
-                                </DropdownMenuItem>
-                                {branches.length > 1 && (
-                                  <DropdownMenuItem
-                                    onClick={(e) => {
-                                      e.preventDefault()
-                                      setDialog({
-                                        type: 'transferencia',
-                                        part: item,
-                                        branchId: scopedBranchId,
-                                      })
-                                    }}
-                                  >
-                                    <ArrowRightLeft className="size-4" />
-                                    Transferir para filial
-                                  </DropdownMenuItem>
-                                )}
-                                <DropdownMenuItem
-                                  onClick={(e) => {
-                                    e.preventDefault()
-                                    setDialog({
-                                      type: 'history',
-                                      part: item,
-                                      branchId: selectedBranch,
-                                    })
-                                  }}
-                                >
-                                  <History className="size-4" />
-                                  Ver histórico
-                                </DropdownMenuItem>
-                              </DropdownMenuGroup>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                              <Plus className="size-3.5" />
+                              <span className="sr-only">Registrar entrada</span>
+                            </TooltipTrigger>
+                            <TooltipContent>Registrar entrada</TooltipContent>
+                          </Tooltip>
+
+                          <Tooltip>
+                            <TooltipTrigger
+                              render={
+                                <button
+                                  type="button"
+                                  className={cn(
+                                    buttonVariants({ variant: 'ghost', size: 'icon-sm' }),
+                                    'size-7 rounded-md text-slate-400 hover:bg-primary/5 hover:text-primary',
+                                  )}
+                                  onClick={() => setDialog({
+                                    type: 'ajuste',
+                                    part: item,
+                                    branchId: scopedBranchId,
+                                  })}
+                                />
+                              }
+                            >
+                              <Pencil className="size-3.5" />
+                              <span className="sr-only">Ajustar estoque</span>
+                            </TooltipTrigger>
+                            <TooltipContent>Ajustar estoque</TooltipContent>
+                          </Tooltip>
+
+                          <Tooltip>
+                            <TooltipTrigger
+                              render={
+                                <button
+                                  type="button"
+                                  className={cn(
+                                    buttonVariants({ variant: 'ghost', size: 'icon-sm' }),
+                                    'size-7 rounded-md text-slate-400 hover:bg-primary/5 hover:text-primary',
+                                  )}
+                                  onClick={() => setDialog({
+                                    type: 'history',
+                                    part: item,
+                                    branchId: selectedBranch,
+                                  })}
+                                />
+                              }
+                            >
+                              <History className="size-3.5" />
+                              <span className="sr-only">Ver histórico</span>
+                            </TooltipTrigger>
+                            <TooltipContent>Ver histórico</TooltipContent>
+                          </Tooltip>
                         </div>
                       </td>
                     )}
@@ -721,6 +677,7 @@ export function StockList({
             </table>
           </div>
         )}
+        </TooltipProvider>
 
         {filtered.length > 0 && (
           <DataTablePagination
@@ -735,7 +692,7 @@ export function StockList({
           />
         )}
       </DataTableCard>
-      </div>
+      </section>
 
       {/* Dialogs */}
       <MovementDialog
@@ -779,83 +736,46 @@ export function StockList({
   )
 }
 
-function SummaryCard({
+function KpiItem({
   label,
   value,
-  icon: Icon,
   helper,
-  valueClass = '',
-  accentClass = 'from-slate-100 via-white to-white',
+  valueClass,
 }: {
   label: string
   value: number
-  icon: React.ElementType
-  helper: string
+  helper?: string
   valueClass?: string
-  accentClass?: string
 }) {
   return (
-    <div className={`rounded-[24px] border border-slate-200 bg-gradient-to-br ${accentClass} p-4 shadow-sm`}>
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-medium text-slate-600">{label}</p>
-          <p className={`mt-2 text-3xl font-bold tracking-tight tabular-nums ${valueClass}`}>{formatQuantity(value)}</p>
-        </div>
-        <div className="rounded-2xl border border-white/70 bg-white/80 p-2.5 text-slate-700 shadow-sm">
-          <Icon className="size-5" />
-        </div>
-      </div>
-      <p className="mt-3 text-xs leading-5 text-slate-500">{helper}</p>
+    <div className="min-h-21 px-5 py-3">
+      <p className={cn('text-2xl font-extrabold leading-none tracking-tight tabular-nums text-foreground', valueClass)}>
+        {formatQuantity(value)}
+      </p>
+      <p className="mt-1.5 text-[11px] font-medium text-muted-foreground">{label}</p>
+      {helper && (
+        <p className="mt-0.5 text-[11px] font-medium text-muted-foreground">{helper}</p>
+      )}
     </div>
   )
 }
 
-function RiskRadarCard({
-  criticalItems,
-  onViewList,
-}: {
-  criticalItems: number
-  onViewList: () => void
-}) {
-  const hasCriticalItems = criticalItems > 0
+function StatusPill({ status }: { status: StockStatus }) {
+  const className = {
+    ok: 'bg-emerald-50 text-emerald-700',
+    baixo: 'bg-amber-50 text-amber-700',
+    zerado: 'bg-red-50 text-red-700',
+  }[status]
+  const dotClassName = {
+    ok: 'bg-emerald-600',
+    baixo: 'bg-amber-600',
+    zerado: 'bg-red-600',
+  }[status]
 
   return (
-    <div className="rounded-[24px] border border-slate-200 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 p-4 shadow-sm">
-      <div className="flex h-full flex-col justify-between gap-4">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-sm font-medium text-slate-300">Radar de risco</p>
-            <p className="mt-2 text-3xl font-bold tracking-tight text-white tabular-nums">
-              {formatQuantity(criticalItems)}
-            </p>
-          </div>
-          <span
-            className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.18em] ${
-              hasCriticalItems
-                ? 'bg-amber-400/15 text-amber-200'
-                : 'bg-emerald-400/15 text-emerald-200'
-            }`}
-          >
-            {criticalItems} peça{criticalItems === 1 ? '' : 's'}
-          </span>
-        </div>
-
-        <div className="space-y-3">
-          <p className="text-xs leading-5 text-slate-300">
-            {hasCriticalItems
-              ? 'Abra a lista filtrada para revisar itens abaixo do mínimo ou já zerados.'
-              : 'Nenhum item crítico no momento. Você pode abrir a lista para conferir mesmo assim.'}
-          </p>
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={onViewList}
-            className="w-full justify-center rounded-2xl border border-white/10 bg-white/10 text-white hover:bg-white/15 hover:text-white"
-          >
-            Ver lista das peças
-          </Button>
-        </div>
-      </div>
-    </div>
+    <span className={cn('inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold', className)}>
+      <span className={cn('size-1.5 rounded-full', dotClassName)} />
+      {STATUS_LABELS[status]}
+    </span>
   )
 }

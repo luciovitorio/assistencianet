@@ -389,19 +389,22 @@ export type PartMovement = {
   branch_id: string
   profiles: { name: string } | null
   suppliers: { name: string } | null
+  parts?: { name: string; unit: string } | null
 }
 
 type RelationValue<T> = T | T[] | null
 
-type PartMovementQueryRow = Omit<PartMovement, 'profiles' | 'suppliers'> & {
+type PartMovementQueryRow = Omit<PartMovement, 'profiles' | 'suppliers' | 'parts'> & {
   profiles: RelationValue<{ name: string }>
   suppliers: RelationValue<{ name: string }>
+  parts?: RelationValue<{ name: string; unit: string }>
 }
 
 const normalizePartMovement = (row: PartMovementQueryRow): PartMovement => ({
   ...row,
   profiles: firstRelation(row.profiles),
   suppliers: firstRelation(row.suppliers),
+  parts: row.parts != null ? firstRelation(row.parts) : undefined,
 })
 
 export async function getPartMovements(
@@ -419,6 +422,42 @@ export async function getPartMovements(
       .eq('part_id', partId)
       .order('created_at', { ascending: false })
       .limit(200)
+
+    if (branchId) {
+      query = query.eq('branch_id', branchId)
+    }
+
+    const { data, error } = await query
+
+    if (error) throw error
+
+    return { data: ((data ?? []) as PartMovementQueryRow[]).map(normalizePartMovement) }
+  } catch (error: unknown) {
+    return { error: getActionErrorMessage(error, 'Erro ao buscar histórico de movimentos.'), data: null }
+  }
+}
+
+// ── getRecentMovements ─────────────────────────────────────────────────────────
+// Retorna todas as movimentações recentes da empresa (sem filtro de peça).
+
+export async function getRecentMovements(
+  branchId?: string,
+  days = 30,
+): Promise<{ data: PartMovement[] | null; error?: string }> {
+  try {
+    const { companyId } = await getCompanyContext()
+    const supabase = await createClient()
+
+    const since = new Date()
+    since.setDate(since.getDate() - days)
+
+    let query = supabase
+      .from('stock_movements')
+      .select('id, movement_type, quantity, unit_cost, supplier_id, invoice_date, entry_date, notes, reference_type, created_at, branch_id, parts(name, unit), profiles!created_by(name), suppliers(name)')
+      .eq('company_id', companyId)
+      .gte('created_at', since.toISOString())
+      .order('created_at', { ascending: false })
+      .limit(500)
 
     if (branchId) {
       query = query.eq('branch_id', branchId)
