@@ -18,6 +18,8 @@ import {
   Wrench,
   X,
 } from 'lucide-react'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -74,6 +76,13 @@ export interface EquipmentOption {
   manufacturer: string
   model: string
   voltage: string | null
+}
+
+export interface ServiceOrderUsage {
+  used: number
+  limit: number | null
+  reached: boolean
+  planName: string | null
 }
 
 const mergeClientsById = (...groups: ClientOption[][]) =>
@@ -295,6 +304,7 @@ interface ServiceOrderFormProps {
   nextNumber?: number
   initialData?: ServiceOrderInitialData
   isAdmin?: boolean
+  serviceOrderUsage?: ServiceOrderUsage
 }
 
 export function ServiceOrderForm({
@@ -307,6 +317,7 @@ export function ServiceOrderForm({
   nextNumber,
   initialData,
   isAdmin = true,
+  serviceOrderUsage,
 }: ServiceOrderFormProps) {
   const router = useRouter()
   const { navigate } = useRouteTransition()
@@ -331,6 +342,7 @@ export function ServiceOrderForm({
   const technicians = employees.filter((employee) => employee.role === 'tecnico' || employee.is_owner)
   const num = isEdit && initialData ? initialData.number : (nextNumber || 0)
   const osDisplayNumber = `${String(num).slice(0, 4)}-${String(num).slice(4).padStart(4, '0')}`
+  const showUpgradeNotice = !isEdit && Boolean(serviceOrderUsage?.reached)
 
   const {
     control,
@@ -436,6 +448,11 @@ export function ServiceOrderForm({
 
   const onSubmit = (data: ServiceOrderSchema) => {
     if (isPending || isNavigatingAway || pendingPrint) return
+    if (showUpgradeNotice) {
+      toast.error('Faça upgrade para o plano Profissional para abrir novas OS neste mês.')
+      return
+    }
+
     startTransition(async () => {
       try {
         if (isEdit && initialData) {
@@ -523,6 +540,27 @@ export function ServiceOrderForm({
           </div>
         </div>
       </div>
+
+      {showUpgradeNotice && serviceOrderUsage && (
+        <Alert className="border-amber-200 bg-amber-50 text-amber-900">
+          <ShieldAlert className="size-4" />
+          <AlertTitle className="flex flex-wrap items-center gap-2">
+            Limite mensal de OS atingido
+            <Badge variant="outline" className="border-amber-300 bg-white text-amber-800">
+              Upgrade para Profissional
+            </Badge>
+          </AlertTitle>
+          <AlertDescription className="text-amber-800">
+            O plano {serviceOrderUsage.planName ?? 'atual'} permite {serviceOrderUsage.limit} OS por mês
+            e já existem {serviceOrderUsage.used} neste mês. Para abrir novas ordens de serviço,
+            acesse{' '}
+            <Link href="/dashboard/assinatura" className="font-medium underline underline-offset-4">
+              Assinatura
+            </Link>
+            {' '}e altere para o plano Profissional.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {!isEdit && (linkedParent || activeWarranties.length > 0) && (
         <div className="mb-6">
@@ -888,7 +926,7 @@ export function ServiceOrderForm({
               </div>
               <div className="flex items-center gap-3">
                 <Link href={isEdit && initialData ? `/dashboard/ordens-de-servico/${initialData.id}` : "/dashboard/ordens-de-servico"} className={cn(buttonVariants({ variant: 'outline' }), 'rounded-xl')}>Cancelar</Link>
-                <Button type="submit" disabled={isBusy} loading={isBusy} className="rounded-xl bg-slate-950 px-5 hover:bg-slate-800">
+                <Button type="submit" disabled={isBusy || showUpgradeNotice} loading={isBusy} className="rounded-xl bg-slate-950 px-5 hover:bg-slate-800">
                   {isEdit ? 'Salvar Alterações' : 'Abrir OS'}
                 </Button>
               </div>

@@ -173,6 +173,19 @@ export async function assertCanCreateServiceOrder(
   const access = await assertSubscriptionAccess(supabase, companyId)
   if (access.maxOsPerMonth === null) return
 
+  const used = await getCurrentMonthServiceOrderCount(supabase, companyId)
+
+  if (used >= access.maxOsPerMonth) {
+    throw new Error(
+      `Seu plano permite até ${access.maxOsPerMonth} OS por mês. Você já atingiu esse limite neste mês.`,
+    )
+  }
+}
+
+async function getCurrentMonthServiceOrderCount(
+  supabase: SupabaseServerClient,
+  companyId: string,
+) {
   const { start, end } = getMonthBounds()
   const { count, error } = await supabase
     .from('service_orders')
@@ -183,10 +196,21 @@ export async function assertCanCreateServiceOrder(
     .lt('created_at', end)
 
   if (error) throw error
-  if ((count ?? 0) >= access.maxOsPerMonth) {
-    throw new Error(
-      `Seu plano permite até ${access.maxOsPerMonth} OS por mês. Você já atingiu esse limite neste mês.`,
-    )
+  return count ?? 0
+}
+
+export async function getBillingServiceOrderUsage(
+  supabase: SupabaseServerClient,
+  companyId: string,
+) {
+  const access = await getCompanySubscriptionAccess(supabase, companyId)
+  const used = await getCurrentMonthServiceOrderCount(supabase, companyId)
+
+  return {
+    used,
+    limit: access.maxOsPerMonth,
+    reached: access.maxOsPerMonth !== null && used >= access.maxOsPerMonth,
+    planName: access.planName,
   }
 }
 

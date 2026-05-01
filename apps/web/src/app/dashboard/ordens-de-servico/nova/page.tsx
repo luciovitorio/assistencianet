@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getCompanyContext } from '@/lib/auth/company-context'
+import { getBillingServiceOrderUsage } from '@/lib/billing/entitlements'
 import { ServiceOrderForm } from '../_components/service-order-form'
 
 export default async function NovaOrdemDeServicoPage() {
@@ -30,6 +31,7 @@ export default async function NovaOrdemDeServicoPage() {
     { data: branches },
     { data: employees },
     { data: lastOrder },
+    serviceOrderUsage,
   ] = await Promise.all([
     supabase
       .from('branches')
@@ -54,6 +56,7 @@ export default async function NovaOrdemDeServicoPage() {
       .order('number', { ascending: false })
       .limit(1)
       .maybeSingle(),
+    getBillingServiceOrderUsage(supabase, companyId),
   ])
 
   const nextNumber = lastOrder ? lastOrder.number + 1 : currentYear * 10000 + 1
@@ -87,6 +90,7 @@ export default async function NovaOrdemDeServicoPage() {
       defaultBranchName={defaultBranchName}
       nextNumber={nextNumber}
       isAdmin={isAdmin}
+      serviceOrderUsage={serviceOrderUsage}
     />
   )
 }
