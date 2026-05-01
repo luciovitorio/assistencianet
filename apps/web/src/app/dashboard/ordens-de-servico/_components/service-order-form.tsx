@@ -7,25 +7,23 @@ import { Controller, useForm, useWatch, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
 import {
-  ArrowLeft,
   Building2,
-  CalendarClock,
-  ClipboardList,
+  ChevronRight,
   Cpu,
+  Info,
+  MessageSquare,
+  Shield,
   ShieldAlert,
   ShieldCheck,
-  User,
-  Wrench,
+  Smartphone,
   X,
 } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { buttonVariants } from '@/components/ui/button-variants'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { DatePickerField } from '@/components/ui/date-picker-field'
 import { InputField } from '@/components/ui/input-field'
-import { Label } from '@/components/ui/label'
 import { useRouteTransition } from '@/components/ui/route-transition-indicator'
 import { SearchAutocomplete } from '@/components/ui/search-autocomplete'
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
@@ -41,6 +39,7 @@ import {
 import { ClientDialog } from '@/app/dashboard/clientes/_components/client-dialog'
 import { EquipmentDialog } from '@/app/dashboard/equipamentos/_components/equipment-dialog'
 import { PrintServiceOrderDialog } from './print-service-order-dialog'
+import { useHeaderSlot } from '@/app/dashboard/_components/header-slot'
 import {
   serviceOrderSchema,
   editServiceOrderSchema,
@@ -48,8 +47,8 @@ import {
 } from '@/lib/validations/service-order'
 import { cn } from '@/lib/utils'
 
-const CONTROL = 'h-11 rounded-xl border-foreground/10 bg-background shadow-sm shadow-slate-950/5 placeholder:text-muted-foreground/70'
-const AREA = 'rounded-xl border-foreground/10 bg-background shadow-sm shadow-slate-950/5 placeholder:text-muted-foreground/70'
+const CONTROL = 'h-9 rounded-md border-slate-200 bg-white placeholder:text-slate-400/70 shadow-none'
+const AREA = 'rounded-md border-slate-200 bg-white placeholder:text-slate-400/70 shadow-none'
 
 export interface ClientOption {
   id: string
@@ -94,7 +93,7 @@ const formatOsNumber = (num: number) =>
 const normalizeAutocompleteSearch = (value: string) =>
   value
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[̀-ͯ]/g, '')
     .toLowerCase()
 
 interface ClientSearchInputProps {
@@ -344,6 +343,15 @@ export function ServiceOrderForm({
   const osDisplayNumber = `${String(num).slice(0, 4)}-${String(num).slice(4).padStart(4, '0')}`
   const showUpgradeNotice = !isEdit && Boolean(serviceOrderUsage?.reached)
 
+  const headerConfig = React.useMemo(() => ({
+    backHref: '/dashboard/ordens-de-servico',
+    backLabel: 'Ordens de Serviço',
+    title: isEdit ? 'Editar OS' : 'Nova OS',
+    badge: isEdit ? 'Em edição' : 'Em abertura',
+    osNumber: osDisplayNumber,
+  }), [isEdit, osDisplayNumber])
+  useHeaderSlot(headerConfig)
+
   const {
     control,
     handleSubmit,
@@ -489,7 +497,7 @@ export function ServiceOrderForm({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {pendingPrint && (
         <PrintServiceOrderDialog
           open
@@ -499,48 +507,39 @@ export function ServiceOrderForm({
           clientName={pendingPrint.clientName}
         />
       )}
-      <div className="rounded-2xl border border-slate-200 bg-[linear-gradient(135deg,rgba(15,23,42,0.04),rgba(15,118,110,0.06),rgba(255,255,255,1))] p-5 shadow-sm shadow-slate-950/5">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="flex items-start gap-4">
-            <Link
-              href="/dashboard/ordens-de-servico"
-              className={cn(buttonVariants({ variant: 'outline', size: 'icon' }), 'mt-0.5 shrink-0 bg-background')}
-            >
-              <ArrowLeft className="size-4" />
-              <span className="sr-only">Voltar</span>
-            </Link>
-            <div className="space-y-3">
-              <div className="space-y-1">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{isEdit ? 'Edição de ordem de serviço' : 'Abertura de ordem de serviço'}</p>
-                <div className="flex flex-wrap items-center gap-3">
-                  <h2 className="text-2xl font-bold tracking-tight text-slate-950">{isEdit ? 'Editar Ordem de Serviço' : 'Nova Ordem de Serviço'}</h2>
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">
-                    <ShieldCheck className="size-3.5" />
-                    {isEdit ? 'Em edição' : 'Em abertura'}
-                  </span>
-                </div>
-                <p className="max-w-2xl text-sm leading-6 text-slate-600">
-                  {isEdit ? 'Edite as informações da ordem de serviço. Lembre-se que certas alterações podem não estar disponíveis dependendo do status atual da OS.' : 'Registre o atendimento, identifique o equipamento e descreva o problema inicial com clareza. A OS aberta aqui sera a base para diagnostico, orcamento e execucao.'}
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-3 text-sm text-slate-600">
-                <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1.5"><Building2 className="size-4 text-teal-700" />Atendimento e origem</div>
-                <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1.5"><Cpu className="size-4 text-teal-700" />Identificacao do equipamento</div>
-                <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1.5"><Wrench className="size-4 text-teal-700" />Descricao tecnica inicial</div>
-              </div>
-            </div>
+
+      {/* ── Page header ── */}
+      <div className="pb-5 mb-5 border-b border-slate-200">
+        {/* Large OS number + info badges + flow indicator */}
+        <div className="flex items-center gap-4 flex-wrap">
+          <span className="font-mono text-[22px] font-extrabold tracking-tight text-slate-900">
+            #{osDisplayNumber}
+          </span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500">
+              <Building2 className="size-3 text-slate-400" />
+              Atendimento e origem
+            </span>
+            <span className="text-[11px] text-slate-300">·</span>
+            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500">
+              <Cpu className="size-3 text-slate-400" />
+              Identificação do equipamento
+            </span>
+            <span className="text-[11px] text-slate-300">·</span>
+            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500">
+              <MessageSquare className="size-3 text-slate-400" />
+              Descrição técnica inicial
+            </span>
           </div>
-          <div className="min-w-72 rounded-2xl border border-slate-200 bg-slate-950 px-5 py-4 text-slate-50 shadow-lg shadow-slate-950/10">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">Numero da OS</p>
-            <p className="mt-2 font-mono text-3xl font-bold tracking-tight text-cyan-300">#{osDisplayNumber}</p>
-            <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-              <div className="rounded-xl border border-white/10 bg-white/5 p-3"><p className="text-xs uppercase tracking-wider text-slate-400">Fluxo</p><p className="mt-1 font-medium text-white">Abertura inicial</p></div>
-              <div className="rounded-xl border border-white/10 bg-white/5 p-3"><p className="text-xs uppercase tracking-wider text-slate-400">Destino</p><p className="mt-1 font-medium text-white">OS detalhada</p></div>
-            </div>
+          <div className="ml-auto hidden xl:flex items-center gap-1.5 text-[11px] text-slate-400">
+            <span className="font-semibold text-primary">Abertura inicial</span>
+            <ChevronRight className="size-3 text-slate-300" />
+            <span>OS detalhada</span>
           </div>
         </div>
       </div>
 
+      {/* ── Upgrade notice ── */}
       {showUpgradeNotice && serviceOrderUsage && (
         <Alert className="border-amber-200 bg-amber-50 text-amber-900">
           <ShieldAlert className="size-4" />
@@ -562,174 +561,113 @@ export function ServiceOrderForm({
         </Alert>
       )}
 
-      {!isEdit && (linkedParent || activeWarranties.length > 0) && (
-        <div className="mb-6">
-          {linkedParent ? (
-            <div className="flex items-start gap-3 rounded-xl border border-emerald-300 bg-emerald-50 p-4">
-              <ShieldCheck className="mt-0.5 size-5 shrink-0 text-emerald-600" />
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-emerald-900">
-                  Retrabalho em garantia vinculado à OS #{formatOsNumber(linkedParent.number)}
-                </p>
-                <p className="mt-0.5 text-sm text-emerald-800">
-                  {[linkedParent.device_type, linkedParent.device_brand, linkedParent.device_model]
-                    .filter(Boolean)
-                    .join(' ')}
-                  {' · Garantia até '}
-                  {new Date(linkedParent.warranty_expires_at + 'T12:00:00').toLocaleDateString(
-                    'pt-BR',
-                  )}
-                </p>
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={unlinkWarrantyRework}
-                className="text-emerald-700 hover:bg-emerald-100 hover:text-emerald-900"
-              >
-                <X className="size-4" />
-                Desvincular
-              </Button>
-            </div>
-          ) : (
-            <div className="flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4">
-              <ShieldAlert className="mt-0.5 size-5 shrink-0 text-amber-600" />
-              <div className="flex-1 min-w-0 space-y-2">
-                <p className="font-semibold text-amber-900">
-                  Este cliente tem {activeWarranties.length}{' '}
-                  {activeWarranties.length === 1 ? 'OS' : 'OSs'} em garantia ativa
-                </p>
-                <p className="text-sm text-amber-800">
-                  Se for retrabalho, vincule à OS original para não gerar nova cobrança.
-                </p>
-                <ul className="space-y-1.5 pt-1">
-                  {activeWarranties.map((os) => (
-                    <li
-                      key={os.id}
-                      className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm"
-                    >
-                      <div className="min-w-0">
-                        <span className="font-mono font-semibold text-amber-900">
-                          #{formatOsNumber(os.number)}
-                        </span>
-                        <span className="ml-2 text-foreground">
-                          {[os.device_type, os.device_brand, os.device_model]
-                            .filter(Boolean)
-                            .join(' ')}
-                        </span>
-                        {os.device_internal_code && (
-                          <span className="ml-2 text-xs text-muted-foreground">
-                            cód. {os.device_internal_code}
-                          </span>
-                        )}
-                        <span className="ml-2 text-xs text-muted-foreground">
-                          até{' '}
-                          {new Date(os.warranty_expires_at + 'T12:00:00').toLocaleDateString(
-                            'pt-BR',
-                          )}
-                        </span>
-                      </div>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={() => linkAsWarrantyRework(os)}
-                        className="border-amber-400 text-amber-900 hover:bg-amber-100"
-                      >
-                        Vincular como retrabalho
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+      {/* ── Form card ── */}
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="flex flex-col xl:flex-row border border-slate-200 rounded-xl bg-white shadow-sm shadow-slate-950/5 overflow-hidden"
+      >
 
-      <form onSubmit={handleSubmit(onSubmit)} className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
-        <div className="space-y-6 xl:sticky xl:top-6 xl:self-start">
-          <Card className="border border-slate-200 shadow-sm shadow-slate-950/5">
-            <CardHeader className="border-b border-slate-100">
-              <CardTitle className="flex items-center gap-2 text-slate-900"><Building2 className="size-4 text-teal-700" />Atendimento</CardTitle>
-              <CardDescription>Defina a origem do atendimento e vincule o cliente correto.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4 pt-4">
-              <div>
-                <Label className="mb-1.5 block text-sm font-semibold text-slate-800">Filial *</Label>
-                <Controller
-                  control={control}
-                  name="branch_id"
-                  render={({ field }) => {
-                    const selected = branches.find((branch) => branch.id === field.value)
-                    if (!isAdmin) {
-                      return (
-                        <div className="flex h-11 items-center rounded-xl border border-input bg-muted/50 px-3 text-sm text-foreground/70 cursor-not-allowed">
-                          {selected?.name ?? defaultBranchName ?? '—'}
-                        </div>
-                      )
-                    }
+        {/* ──────────── LEFT SIDEBAR ──────────── */}
+        <div className="xl:w-64 xl:shrink-0 xl:border-r border-b xl:border-b-0 border-slate-200">
+
+          {/* Atendimento section */}
+          <div className="px-5 pt-5 pb-5">
+            <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400 mb-3.5">
+              Atendimento
+            </p>
+
+            {/* Filial */}
+            <div className="mb-3.5">
+              <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                Filial <span className="text-primary">*</span>
+              </label>
+              <Controller
+                control={control}
+                name="branch_id"
+                render={({ field }) => {
+                  const selected = branches.find((branch) => branch.id === field.value)
+                  if (!isAdmin) {
                     return (
-                      <Select value={field.value || ''} onValueChange={field.onChange}>
-                        <SelectTrigger className={cn(CONTROL, errors.branch_id && 'border-destructive')}>
-                          <span className={field.value ? 'text-foreground' : 'text-muted-foreground'}>
-                            {selected ? selected.name : 'Selecione a filial'}
-                          </span>
-                        </SelectTrigger>
-                        <SelectContent>
-                          {branches.map((branch) => (
-                            <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )
-                  }}
-                />
-                {errors.branch_id && <p className="mt-1 text-xs text-destructive">{errors.branch_id.message}</p>}
-              </div>
-
-              <div>
-                <Label className="mb-1.5 block text-sm font-semibold text-slate-800">Cliente *</Label>
-                <Controller
-                  control={control}
-                  name="client_id"
-                  render={({ field }) => (
-                    isEdit ? (
-                      <div className="flex h-11 items-center rounded-xl border border-input bg-muted/50 px-3 text-sm text-foreground/70 opacity-80 cursor-not-allowed">
-                        {allClients.find((c) => c.id === field.value)?.name || 'Cliente'}
+                      <div className="flex h-9 items-center rounded-md border border-slate-200 bg-muted/50 px-3 text-[13px] text-slate-500 cursor-not-allowed">
+                        {selected?.name ?? defaultBranchName ?? '—'}
                       </div>
-                    ) : (
-                      <ClientSearchInput
-                        clients={allClients}
-                        value={field.value || ''}
-                        onChange={field.onChange}
-                        onClientCreated={(client) =>
-                          setExtraClients((prev) => mergeClientsById(prev, [client]))
-                        }
-                        error={errors.client_id?.message}
-                        branches={branches}
-                        defaultBranchId={defaultBranchId}
-                      />
                     )
-                  )}
-                />
-              </div>
-            </CardContent>
-          </Card>
+                  }
+                  return (
+                    <Select value={field.value || ''} onValueChange={field.onChange}>
+                      <SelectTrigger className={cn(CONTROL, errors.branch_id && 'border-destructive')}>
+                        <span className={cn('text-[13px]', field.value ? 'text-slate-800' : 'text-slate-400')}>
+                          {selected ? selected.name : 'Selecione a filial'}
+                        </span>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {branches.map((branch) => (
+                          <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )
+                }}
+              />
+              {errors.branch_id && (
+                <p className="mt-1 text-xs text-destructive">{errors.branch_id.message}</p>
+              )}
+            </div>
 
-          <Card className="border border-slate-200 shadow-sm shadow-slate-950/5">
-            <CardHeader className="border-b border-slate-100">
-              <CardTitle className="flex items-center gap-2 text-slate-900"><CalendarClock className="size-4 text-teal-700" />Operacao</CardTitle>
-              <CardDescription>Organize previsao e tecnico responsavel pela entrada.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4 pt-4">
+            {/* Cliente */}
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                Cliente <span className="text-primary">*</span>
+              </label>
+              <Controller
+                control={control}
+                name="client_id"
+                render={({ field }) => (
+                  isEdit ? (
+                    <div className="flex h-9 items-center rounded-md border border-slate-200 bg-muted/50 px-3 text-[13px] text-slate-500 cursor-not-allowed">
+                      {allClients.find((c) => c.id === field.value)?.name || 'Cliente'}
+                    </div>
+                  ) : (
+                    <ClientSearchInput
+                      clients={allClients}
+                      value={field.value || ''}
+                      onChange={field.onChange}
+                      onClientCreated={(client) =>
+                        setExtraClients((prev) => mergeClientsById(prev, [client]))
+                      }
+                      error={errors.client_id?.message}
+                      branches={branches}
+                      defaultBranchId={defaultBranchId}
+                    />
+                  )
+                )}
+              />
+              {!isEdit && (
+                <p className="mt-1.5 text-[11px] text-slate-400">
+                  Digite nome, telefone ou CPF para buscar
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="h-px bg-slate-100" />
+
+          {/* Operação section */}
+          <div className="px-5 pt-5 pb-5">
+            <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400 mb-3.5">
+              Operação
+            </p>
+
+            {/* Previsão de entrega */}
+            <div className="mb-3.5">
+              <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                Previsão de entrega
+              </label>
               <Controller
                 control={control}
                 name="estimated_delivery"
                 render={({ field }) => (
                   <DatePickerField
-                    label="Previsão de entrega"
                     placeholder="Selecione a data prevista"
                     error={errors.estimated_delivery?.message}
                     className={CONTROL}
@@ -738,127 +676,233 @@ export function ServiceOrderForm({
                   />
                 )}
               />
-              <div>
-                <Label className="mb-1.5 block text-sm font-semibold text-slate-800">Técnico responsável</Label>
-                <Controller
-                  control={control}
-                  name="technician_id"
-                  render={({ field }) => {
-                    const selected = technicians.find((technician) => technician.id === field.value)
-                    return (
-                      <Select value={field.value || ''} onValueChange={(selectedValue) => field.onChange(selectedValue === '__none' ? '' : selectedValue)}>
-                        <SelectTrigger className={cn(CONTROL, errors.technician_id && 'border-destructive')}>
-                          <span className={field.value ? 'text-foreground' : 'text-muted-foreground'}>
-                            {selected ? selected.name : 'Sem técnico atribuído'}
-                          </span>
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="__none">Sem técnico atribuído</SelectItem>
-                          {technicians.map((technician) => (
-                            <SelectItem key={technician.id} value={technician.id}>{technician.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )
-                  }}
-                />
-              </div>
-            </CardContent>
-          </Card>
+            </div>
 
-          <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4">
-            <div className="flex items-start gap-3">
-              <ClipboardList className="mt-0.5 size-4 text-slate-500" />
-              <div className="space-y-1">
-                <p className="text-sm font-semibold text-slate-800">{isEdit ? 'Salvando alterações' : 'Antes de abrir a OS'}</p>
-                <p className="text-sm leading-6 text-slate-600">{isEdit ? 'As alterações ficarão registradas no histórico da OS e estarão visíveis na linha do tempo.' : 'Confirme cliente, filial e identificacao do equipamento. Quanto melhor a entrada, mais confiavel sera o historico tecnico e comercial.'}</p>
+            {/* Técnico responsável */}
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                Técnico responsável
+              </label>
+              <Controller
+                control={control}
+                name="technician_id"
+                render={({ field }) => {
+                  const selected = technicians.find((technician) => technician.id === field.value)
+                  return (
+                    <Select
+                      value={field.value || ''}
+                      onValueChange={(selectedValue) =>
+                        field.onChange(selectedValue === '__none' ? '' : selectedValue)
+                      }
+                    >
+                      <SelectTrigger className={cn(CONTROL, errors.technician_id && 'border-destructive')}>
+                        <span className={cn('text-[13px]', field.value ? 'text-slate-800' : 'text-slate-400')}>
+                          {selected ? selected.name : 'Sem técnico designado'}
+                        </span>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none">Sem técnico designado</SelectItem>
+                        {technicians.map((technician) => (
+                          <SelectItem key={technician.id} value={technician.id}>
+                            {technician.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="h-px bg-slate-100" />
+
+          {/* Tip box */}
+          <div className="p-4">
+            <div className="bg-slate-50 border border-slate-100 rounded-lg p-3">
+              <div className="flex items-center gap-1.5 mb-1">
+                <Info className="size-3 text-slate-400" />
+                <p className="text-[11px] font-bold text-slate-600">
+                  {isEdit ? 'Salvando alterações' : 'Abertura inicial'}
+                </p>
               </div>
+              <p className="text-[11px] text-slate-500 leading-relaxed">
+                {isEdit
+                  ? 'As alterações ficarão registradas no histórico da OS e estarão visíveis na linha do tempo.'
+                  : 'Preencha o mínimo para registrar a entrada. Diagnóstico, orçamento e peças são adicionados depois na OS completa.'}
+              </p>
             </div>
           </div>
         </div>
 
-        <div className="space-y-6">
-          <Card className="border border-slate-200 shadow-sm shadow-slate-950/5">
-            <CardHeader className="border-b border-slate-100">
-              <CardTitle className="flex items-center gap-2 text-slate-900"><Cpu className="size-4 text-teal-700" />Detalhes do equipamento</CardTitle>
-              <CardDescription>Selecione o equipamento cadastrado e complete os dados de identificação da unidade.</CardDescription>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <div className="sm:col-span-2 xl:col-span-4">
-                  <Label className="mb-1.5 block text-sm font-semibold text-slate-800">Equipamento cadastrado *</Label>
-                  <Controller
-                    control={control}
-                    name="equipment_model_id"
-                    render={({ field }) => {
-                      if (linkedParent) {
-                        const eq = allEquipments.find((e) => e.id === field.value)
-                        return (
-                          <div className={cn(CONTROL, 'flex items-center bg-muted/50 px-3 text-sm text-foreground/70 cursor-not-allowed')}>
-                            {eq
-                              ? `${eq.type} · ${eq.manufacturer} ${eq.model}${eq.voltage ? ` · ${eq.voltage}` : ''}`
-                              : selectedEquipment
-                                ? `${selectedEquipment.type} · ${selectedEquipment.manufacturer} ${selectedEquipment.model}`
-                                : '—'}
-                          </div>
-                        )
-                      }
-                      return (
-                        <EquipmentSearchInput
-                          equipments={allEquipments}
-                          value={field.value || ''}
-                          onChange={field.onChange}
-                          onEquipmentCreated={(created) =>
-                            setExtraEquipments((prev) =>
-                              Array.from(
-                                new Map([...prev, created].map((equipment) => [equipment.id, equipment])).values(),
-                              ),
-                            )
-                          }
-                          error={errors.equipment_model_id?.message}
-                        />
-                      )
-                    }}
-                  />
-                </div>
+        {/* ──────────── RIGHT: MAIN CONTENT + FOOTER ──────────── */}
+        <div className="flex-1 flex flex-col min-w-0">
+          <div className="flex-1 p-6 space-y-8">
 
-                <div>
-                  <Label className="mb-1.5 block text-sm font-semibold text-slate-800">Tipo</Label>
-                  <div className={cn(CONTROL, 'flex items-center px-3 text-sm text-slate-700')}>
-                    {selectedEquipment?.type || initialData?.device_type || '—'}
+            {/* Warranty / rework alerts */}
+            {!isEdit && (linkedParent || activeWarranties.length > 0) && (
+              <div>
+                {linkedParent ? (
+                  <div className="flex items-start gap-2.5 rounded-lg border border-emerald-200 bg-emerald-50 p-3.5">
+                    <ShieldCheck className="mt-0.5 size-3.75 shrink-0 text-emerald-600" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-emerald-900">
+                        Retrabalho em garantia vinculado à OS #{formatOsNumber(linkedParent.number)}
+                      </p>
+                      <p className="text-xs text-emerald-800 mt-0.5">
+                        {[linkedParent.device_type, linkedParent.device_brand, linkedParent.device_model]
+                          .filter(Boolean)
+                          .join(' ')}
+                        {' · Garantia até '}
+                        {new Date(linkedParent.warranty_expires_at + 'T12:00:00').toLocaleDateString('pt-BR')}
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={unlinkWarrantyRework}
+                      className="text-emerald-700 hover:bg-emerald-100 hover:text-emerald-900 -my-0.5 h-7"
+                    >
+                      <X className="size-3.5" />
+                      Desvincular
+                    </Button>
                   </div>
-                </div>
-                <div>
-                  <Label className="mb-1.5 block text-sm font-semibold text-slate-800">Fabricante</Label>
-                  <div className={cn(CONTROL, 'flex items-center px-3 text-sm text-slate-700')}>
-                    {selectedEquipment?.manufacturer || initialData?.device_brand || '—'}
+                ) : (
+                  <div className="flex items-start gap-2.5 rounded-lg border border-amber-200 bg-amber-50 p-3.5">
+                    <ShieldAlert className="mt-0.5 size-3.75 shrink-0 text-amber-600" />
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <p className="text-xs font-bold text-amber-900">
+                        Este cliente tem {activeWarranties.length}{' '}
+                        {activeWarranties.length === 1 ? 'OS' : 'OSs'} em garantia ativa
+                      </p>
+                      <p className="text-xs text-amber-800">
+                        Se for retrabalho, vincule à OS original para não gerar nova cobrança.
+                      </p>
+                      <ul className="space-y-1.5 pt-0.5">
+                        {activeWarranties.map((os) => (
+                          <li
+                            key={os.id}
+                            className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-amber-200 bg-white px-3 py-2 text-xs"
+                          >
+                            <div className="min-w-0">
+                              <span className="font-mono font-semibold text-amber-900">
+                                #{formatOsNumber(os.number)}
+                              </span>
+                              <span className="ml-2 text-foreground">
+                                {[os.device_type, os.device_brand, os.device_model]
+                                  .filter(Boolean)
+                                  .join(' ')}
+                              </span>
+                              {os.device_internal_code && (
+                                <span className="ml-2 text-muted-foreground">
+                                  cód. {os.device_internal_code}
+                                </span>
+                              )}
+                              <span className="ml-2 text-muted-foreground">
+                                até{' '}
+                                {new Date(os.warranty_expires_at + 'T12:00:00').toLocaleDateString('pt-BR')}
+                              </span>
+                            </div>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => linkAsWarrantyRework(os)}
+                              className="border-amber-400 text-amber-900 hover:bg-amber-100 text-xs h-7"
+                            >
+                              Vincular como retrabalho
+                            </Button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <Label className="mb-1.5 block text-sm font-semibold text-slate-800">Modelo</Label>
-                  <div className={cn(CONTROL, 'flex items-center px-3 text-sm text-slate-700')}>
-                    {selectedEquipment?.model || initialData?.device_model || '—'}
+                )}
+              </div>
+            )}
+
+            {/* ── Detalhes do equipamento ── */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <Smartphone className="size-3.5 text-slate-400" strokeWidth={2} />
+                <h3 className="text-[13px] font-bold text-slate-800">Detalhes do equipamento</h3>
+              </div>
+              <div className="h-px bg-slate-100 mb-4" />
+
+              {/* Equipment search */}
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                  Equipamento <span className="text-primary">*</span>
+                </label>
+                <Controller
+                  control={control}
+                  name="equipment_model_id"
+                  render={({ field }) => {
+                    if (linkedParent) {
+                      const eq = allEquipments.find((e) => e.id === field.value)
+                      return (
+                        <div className={cn(CONTROL, 'flex items-center bg-muted/50 px-3 text-[13px] text-slate-500 cursor-not-allowed')}>
+                          {eq
+                            ? `${eq.type} · ${eq.manufacturer} ${eq.model}${eq.voltage ? ` · ${eq.voltage}` : ''}`
+                            : selectedEquipment
+                              ? `${selectedEquipment.type} · ${selectedEquipment.manufacturer} ${selectedEquipment.model}`
+                              : '—'}
+                        </div>
+                      )
+                    }
+                    return (
+                      <EquipmentSearchInput
+                        equipments={allEquipments}
+                        value={field.value || ''}
+                        onChange={field.onChange}
+                        onEquipmentCreated={(created) =>
+                          setExtraEquipments((prev) =>
+                            Array.from(
+                              new Map([...prev, created].map((equipment) => [equipment.id, equipment])).values(),
+                            ),
+                          )
+                        }
+                        error={errors.equipment_model_id?.message}
+                      />
+                    )
+                  }}
+                />
+              </div>
+
+              {/* 4-col read-only display grid */}
+              <div className="grid grid-cols-4 divide-x divide-slate-200 border border-slate-200 rounded-lg overflow-hidden my-3.5">
+                {[
+                  { label: 'Tipo', value: selectedEquipment?.type || initialData?.device_type },
+                  { label: 'Fabricante', value: selectedEquipment?.manufacturer || initialData?.device_brand },
+                  { label: 'Modelo', value: selectedEquipment?.model || initialData?.device_model },
+                  { label: 'Voltagem', value: selectedEquipment?.voltage },
+                ].map((field) => (
+                  <div key={field.label} className="px-3.5 py-2.5 min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-slate-400 mb-0.5 truncate">
+                      {field.label}
+                    </p>
+                    <p className={cn(
+                      'text-[13px] font-medium truncate',
+                      field.value ? 'text-slate-700' : 'text-slate-300 italic font-normal',
+                    )}>
+                      {field.value || '—'}
+                    </p>
                   </div>
-                </div>
+                ))}
+              </div>
+
+              {/* 3-col: Cor / N° série / Código */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                 <div>
-                  <Label className="mb-1.5 block text-sm font-semibold text-slate-800">Voltagem</Label>
-                  <div className={cn(CONTROL, 'flex items-center px-3 text-sm text-slate-700')}>
-                    {selectedEquipment?.voltage || '—'}
-                  </div>
-                </div>
-                <Controller control={control} name="device_color" render={({ field }) => <InputField label="Cor" placeholder="Ex: Preto, branco, cromado" error={errors.device_color?.message} className={CONTROL} {...field} value={field.value || ''} disabled={!!linkedParent} />} />
-                <Controller control={control} name="device_serial" render={({ field }) => <InputField label="Número de série original" placeholder="Se estiver legível" error={errors.device_serial?.message} className={CONTROL} {...field} value={field.value || ''} disabled={!!linkedParent} />} />
-                <Controller control={control} name="device_internal_code" render={({ field }) => <InputField label="Código interno / etiqueta" placeholder="Ex: ORQ-000123" error={errors.device_internal_code?.message} className={CONTROL} {...field} value={field.value || ''} disabled={!!linkedParent} />} />
-                <div className="sm:col-span-2 xl:col-span-4">
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">Cor</label>
                   <Controller
                     control={control}
-                    name="device_condition"
+                    name="device_color"
                     render={({ field }) => (
                       <InputField
-                        label="Condição de entrada"
-                        helper="Registre avarias visiveis, acessorios ausentes e observacoes relevantes."
-                        placeholder="Ex: Cabo ressecado, resistencia queimada, sem suporte"
-                        error={errors.device_condition?.message}
+                        placeholder="Ex: Space Black"
+                        error={errors.device_color?.message}
                         className={CONTROL}
                         {...field}
                         value={field.value || ''}
@@ -867,18 +911,81 @@ export function ServiceOrderForm({
                     )}
                   />
                 </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                    Número de série
+                  </label>
+                  <Controller
+                    control={control}
+                    name="device_serial"
+                    render={({ field }) => (
+                      <InputField
+                        placeholder="S/N ou IMEI"
+                        error={errors.device_serial?.message}
+                        className={cn(CONTROL, 'font-mono text-[12px]')}
+                        {...field}
+                        value={field.value || ''}
+                        disabled={!!linkedParent}
+                      />
+                    )}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                    Código / etiqueta
+                  </label>
+                  <Controller
+                    control={control}
+                    name="device_internal_code"
+                    render={({ field }) => (
+                      <InputField
+                        placeholder="Código interno"
+                        error={errors.device_internal_code?.message}
+                        className={cn(CONTROL, 'font-mono text-[12px]')}
+                        {...field}
+                        value={field.value || ''}
+                        disabled={!!linkedParent}
+                      />
+                    )}
+                  />
+                </div>
               </div>
-            </CardContent>
-          </Card>
 
-          <Card className="border border-slate-200 shadow-sm shadow-slate-950/5">
-            <CardHeader className="border-b border-slate-100">
-              <CardTitle className="flex items-center gap-2 text-slate-900"><Wrench className="size-4 text-teal-700" />Descrição do serviço</CardTitle>
-              <CardDescription>Registre o relato do cliente e as observacoes iniciais para a equipe tecnica.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-5 pt-4">
-              <div className="space-y-1.5">
-                <Label className="text-sm font-semibold text-slate-800">Problema relatado pelo cliente *</Label>
+              {/* Condição de entrada */}
+              <div className="mt-3.5">
+                <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                  Condição de entrada
+                </label>
+                <Controller
+                  control={control}
+                  name="device_condition"
+                  render={({ field }) => (
+                    <InputField
+                      placeholder="Ex: Tela trincada, sem bateria, carcaça com arranhões…"
+                      error={errors.device_condition?.message}
+                      className={CONTROL}
+                      {...field}
+                      value={field.value || ''}
+                      disabled={!!linkedParent}
+                    />
+                  )}
+                />
+              </div>
+            </div>
+
+            {/* ── Descrição do serviço ── */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <MessageSquare className="size-3.5 text-slate-400" strokeWidth={2} />
+                <h3 className="text-[13px] font-bold text-slate-800">Descrição do serviço</h3>
+              </div>
+              <div className="h-px bg-slate-100 mb-4" />
+
+              {/* Problema relatado */}
+              <div className="mb-4">
+                <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                  Problema relatado pelo cliente <span className="text-primary">*</span>
+                </label>
                 <Controller
                   control={control}
                   name="reported_issue"
@@ -886,50 +993,75 @@ export function ServiceOrderForm({
                     <>
                       <Textarea
                         placeholder="Descreva o defeito informado pelo cliente, o comportamento do equipamento e qualquer sintoma relevante."
-                        className={cn(AREA, 'min-h-36', errors.reported_issue && 'border-destructive')}
-                        rows={5}
+                        className={cn(AREA, 'min-h-22', errors.reported_issue && 'border-destructive')}
+                        rows={4}
                         {...field}
                         value={field.value || ''}
                       />
-                      {errors.reported_issue && <p className="text-xs text-destructive">{errors.reported_issue.message}</p>}
+                      {errors.reported_issue && (
+                        <p className="mt-1 text-xs text-destructive">{errors.reported_issue.message}</p>
+                      )}
                     </>
                   )}
                 />
+                <p className="mt-1.5 text-[11px] text-slate-400">
+                  Será visível no laudo e no histórico da OS
+                </p>
               </div>
-              <div className="space-y-1.5">
-                <Label className="flex items-center gap-2 text-sm font-semibold text-slate-800"><User className="size-4 text-slate-500" />Observações internas</Label>
+
+              {/* Observações internas */}
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                  Observações internas
+                </label>
                 <Controller
                   control={control}
                   name="notes"
                   render={({ field }) => (
                     <>
                       <Textarea
-                        placeholder="Inclua observacoes tecnicas, contexto de atendimento ou restricoes combinadas com o cliente."
-                        className={cn(AREA, 'min-h-28', errors.notes && 'border-destructive')}
-                        rows={4}
+                        placeholder="Notas internas da equipe — não aparecem para o cliente…"
+                        className={cn(AREA, 'min-h-18', errors.notes && 'border-destructive')}
+                        rows={3}
                         {...field}
                         value={field.value || ''}
                       />
-                      {errors.notes && <p className="text-xs text-destructive">{errors.notes.message}</p>}
+                      {errors.notes && (
+                        <p className="mt-1 text-xs text-destructive">{errors.notes.message}</p>
+                      )}
                     </>
                   )}
                 />
               </div>
-            </CardContent>
-          </Card>
+            </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-950/5">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div className="space-y-1">
-                <p className="text-sm font-semibold text-slate-900">{isEdit ? 'Pronto para salvar' : 'Pronto para abrir a OS'}</p>
-                <p className="text-sm text-slate-600">{isEdit ? 'Verifique as alterações antes de salvar.' : 'A ordem sera criada e voce sera levado direto para a visao detalhada da OS.'}</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <Link href={isEdit && initialData ? `/dashboard/ordens-de-servico/${initialData.id}` : "/dashboard/ordens-de-servico"} className={cn(buttonVariants({ variant: 'outline' }), 'rounded-xl')}>Cancelar</Link>
-                <Button type="submit" disabled={isBusy || showUpgradeNotice} loading={isBusy} className="rounded-xl bg-slate-950 px-5 hover:bg-slate-800">
-                  {isEdit ? 'Salvar Alterações' : 'Abrir OS'}
-                </Button>
-              </div>
+          </div>
+
+          {/* ── Footer ── */}
+          <div className="border-t border-slate-200 px-6 py-3.5 flex items-center justify-between bg-white">
+            <div className="flex items-center gap-1.5 text-xs text-slate-400">
+              <Shield className="size-3 text-slate-300" />
+              Rascunho salvo automaticamente
+            </div>
+            <div className="flex items-center gap-2">
+              <Link
+                href={
+                  isEdit && initialData
+                    ? `/dashboard/ordens-de-servico/${initialData.id}`
+                    : '/dashboard/ordens-de-servico'
+                }
+                className={cn(buttonVariants({ variant: 'outline' }), 'h-9 rounded-md text-[13px]')}
+              >
+                Cancelar
+              </Link>
+              <Button
+                type="submit"
+                disabled={isBusy || showUpgradeNotice}
+                loading={isBusy}
+                className="h-9 rounded-md bg-primary hover:bg-primary/90 px-4 text-[13px]"
+              >
+                {isEdit ? 'Salvar Alterações' : 'Abrir OS'}
+              </Button>
             </div>
           </div>
         </div>

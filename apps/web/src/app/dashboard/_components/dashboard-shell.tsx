@@ -19,12 +19,14 @@ import {
   Folder,
   BarChart3,
   LockKeyhole,
+  ArrowLeft,
 } from 'lucide-react'
 import { logout } from '@/app/actions/auth'
 import { RouteTransitionProvider } from '@/components/ui/route-transition-indicator'
 import { NotificationBell } from './notification-bell'
 import { AtendimentoWaitingBadge } from './atendimento-waiting-badge'
 import { LogoutButton } from './logout-button'
+import { HeaderSlotProvider, useHeaderSlotConfig, type HeaderConfig } from './header-slot'
 
 interface DashboardShellProps {
   children: React.ReactNode
@@ -223,6 +225,80 @@ function SidebarMenu({
   )
 }
 
+function BreadcrumbHeader({ config }: { config: HeaderConfig }) {
+  return (
+    <div className="flex items-center gap-3">
+      <Link
+        href={config.backHref}
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <ArrowLeft className="size-3.5" />
+        {config.backLabel}
+      </Link>
+      <div className="h-4.5 w-px bg-border" />
+      <span className="text-sm font-semibold text-foreground">{config.title}</span>
+      {config.badge && (
+        <div className="inline-flex items-center gap-1.5 rounded-full bg-muted border border-border px-2.5 py-0.5">
+          <span className="size-1.25 rounded-full bg-muted-foreground/50 inline-block shrink-0" />
+          <span className="text-[11px] font-semibold text-muted-foreground">{config.badge}</span>
+        </div>
+      )}
+      {config.osNumber && (
+        <>
+          <div className="h-4.5 w-px bg-border" />
+          <span className="font-mono text-sm font-medium text-primary">#{config.osNumber}</span>
+        </>
+      )}
+    </div>
+  )
+}
+
+function DashboardTopbar({
+  isAdmin,
+  currentDate,
+  isExpanded,
+}: {
+  isAdmin: boolean
+  currentDate: string
+  isExpanded: boolean
+}) {
+  const config = useHeaderSlotConfig()
+
+  return (
+    <header
+      className={`fixed top-0 right-0 h-16 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md flex justify-between items-center px-8 z-40 border-b border-border transition-all duration-300 ${
+        isExpanded ? 'w-[calc(100%-16rem)]' : 'w-[calc(100%-5rem)]'
+      }`}
+    >
+      <div className="flex items-center gap-4">
+        {config ? (
+          <BreadcrumbHeader config={config} />
+        ) : (
+          <>
+            <h1 className="text-foreground font-semibold text-lg">
+              {isAdmin ? 'Dashboard Geral' : 'Meu Painel'}
+            </h1>
+            <span className="text-muted-foreground text-sm font-medium tracking-tight bg-muted px-3 py-1 rounded-full border border-border hidden sm:block">
+              {currentDate}
+            </span>
+          </>
+        )}
+      </div>
+
+      <div className="flex items-center space-x-4">
+        <button className="p-2 text-muted-foreground hover:text-primary transition-colors cursor-pointer">
+          <Search className="size-5" />
+        </button>
+        <NotificationBell />
+        <div className="h-6 w-px bg-border"></div>
+        <form action={logout}>
+          <LogoutButton />
+        </form>
+      </div>
+    </header>
+  )
+}
+
 export function DashboardShell({
   children,
   companyId,
@@ -290,6 +366,7 @@ export function DashboardShell({
 
   return (
     <RouteTransitionProvider>
+      <HeaderSlotProvider>
       <div className="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased min-h-screen">
       {/* SIDEBAR */}
       <aside
@@ -553,33 +630,7 @@ export function DashboardShell({
       <div
         className={`transition-all duration-300 min-h-screen ${isExpanded ? 'ml-64' : 'ml-20'}`}
       >
-        {/* TOP NAVBAR */}
-        <header
-          className={`fixed top-0 right-0 h-16 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md flex justify-between items-center px-8 z-40 border-b border-border transition-all duration-300 ${
-            isExpanded ? 'w-[calc(100%-16rem)]' : 'w-[calc(100%-5rem)]'
-          }`}
-        >
-          <div className="flex items-center gap-4">
-            <h1 className="text-foreground font-semibold text-lg">
-              {isAdmin ? 'Dashboard Geral' : 'Meu Painel'}
-            </h1>
-            <span className="text-muted-foreground text-sm font-medium tracking-tight bg-muted px-3 py-1 rounded-full border border-border hidden sm:block">
-              {currentDate}
-            </span>
-          </div>
-
-          <div className="flex items-center space-x-4">
-            <button className="p-2 text-muted-foreground hover:text-primary transition-colors cursor-pointer">
-              <Search className="size-5" />
-            </button>
-            <NotificationBell />
-            <div className="h-6 w-px bg-border"></div>
-
-            <form action={logout}>
-              <LogoutButton />
-            </form>
-          </div>
-        </header>
+        <DashboardTopbar isAdmin={isAdmin} currentDate={currentDate} isExpanded={isExpanded} />
 
         {/* PAGE CONTENT */}
         <main className="pt-24 pb-12 px-8 w-full max-w-none space-y-10">
@@ -587,6 +638,7 @@ export function DashboardShell({
         </main>
       </div>
       </div>
+      </HeaderSlotProvider>
     </RouteTransitionProvider>
   )
 }
