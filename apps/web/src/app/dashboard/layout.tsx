@@ -44,7 +44,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
     weekday: 'long',
     day: '2-digit',
     month: 'long',
-    year: 'numeric'
+    year: 'numeric',
+    timeZone: 'America/Sao_Paulo',
   })
   const currentDate = formatter.format(new Date()).replace(/^\w/, (c) => c.toUpperCase())
 

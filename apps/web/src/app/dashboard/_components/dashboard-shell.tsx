@@ -232,7 +232,11 @@ function SidebarMenu({
   )
 }
 
-function BreadcrumbHeader({ config }: { config: HeaderConfig }) {
+function BreadcrumbHeader({
+  config,
+}: {
+  config: HeaderConfig
+}) {
   return (
     <div className="flex items-center gap-3">
       <Link
@@ -260,16 +264,84 @@ function BreadcrumbHeader({ config }: { config: HeaderConfig }) {
   )
 }
 
+type RouteHeaderDefinition = {
+  prefix: string
+  title: string
+  exact?: boolean
+  backHref?: string
+  backLabel?: string
+  badge?: string
+}
+
+const ROUTE_HEADERS: RouteHeaderDefinition[] = [
+  { prefix: '/dashboard/ordens-de-servico', title: 'Ordens de Serviço', exact: true },
+  {
+    prefix: '/dashboard/ordens-de-servico/nova',
+    backHref: '/dashboard/ordens-de-servico',
+    backLabel: 'Ordens de Serviço',
+    title: 'Nova OS',
+    badge: 'Em abertura',
+  },
+  { prefix: '/dashboard/atendimento', title: 'Atendimento' },
+  { prefix: '/dashboard/estoque', title: 'Estoque' },
+  { prefix: '/dashboard/financeiro/contas-a-pagar', title: 'Contas a Pagar' },
+  { prefix: '/dashboard/financeiro/contas-a-receber', title: 'Contas a Receber' },
+  { prefix: '/dashboard/financeiro/producao-tecnicos/fechamentos', title: 'Fechamentos' },
+  { prefix: '/dashboard/financeiro/producao-tecnicos', title: 'Produção de Técnicos' },
+  { prefix: '/dashboard/relatorios', title: 'Relatórios' },
+  { prefix: '/dashboard/configuracoes/sistema', title: 'Sistema' },
+  { prefix: '/dashboard/configuracoes/automacao', title: 'Automação' },
+  { prefix: '/dashboard/assinatura', title: 'Assinatura' },
+  { prefix: '/dashboard/logs', title: 'Logs do Sistema' },
+  { prefix: '/dashboard/filiais', title: 'Filiais' },
+  { prefix: '/dashboard/funcionarios', title: 'Funcionários' },
+  { prefix: '/dashboard/clientes', title: 'Clientes' },
+  { prefix: '/dashboard/fornecedores', title: 'Fornecedores' },
+  { prefix: '/dashboard/terceiros', title: 'Terceirizadas' },
+  { prefix: '/dashboard/equipamentos', title: 'Equipamentos' },
+  { prefix: '/dashboard/pecas', title: 'Peças' },
+  { prefix: '/dashboard/servicos', title: 'Serviços' },
+]
+
+function acceptsHeaderSlot(pathname: string) {
+  return (
+    pathname === '/dashboard/ordens-de-servico/nova' ||
+    /^\/dashboard\/ordens-de-servico\/[^/]+\/editar$/.test(pathname)
+  )
+}
+
+function getRouteHeaderConfig(pathname: string): HeaderConfig | null {
+  const routeHeader = ROUTE_HEADERS.find((route) =>
+    route.exact ? pathname === route.prefix : pathname.startsWith(route.prefix),
+  )
+
+  if (routeHeader) {
+    return {
+      backHref: routeHeader.backHref ?? '/dashboard',
+      backLabel: routeHeader.backLabel ?? 'Início',
+      title: routeHeader.title,
+      badge: routeHeader.badge,
+    }
+  }
+
+  return null
+}
+
 function DashboardTopbar({
   isAdmin,
   currentDate,
   isExpanded,
+  pathname,
 }: {
   isAdmin: boolean
   currentDate: string
   isExpanded: boolean
+  pathname: string
 }) {
   const config = useHeaderSlotConfig()
+  const routeConfig = getRouteHeaderConfig(pathname)
+  const slotConfig = acceptsHeaderSlot(pathname) ? config : null
+  const effectiveConfig = slotConfig ?? routeConfig
 
   return (
     <header
@@ -278,21 +350,19 @@ function DashboardTopbar({
       }`}
     >
       <div className="flex items-center gap-4">
-        {config ? (
-          <BreadcrumbHeader config={config} />
+        {effectiveConfig ? (
+          <BreadcrumbHeader config={effectiveConfig} />
         ) : (
-          <>
-            <h1 className="text-foreground font-semibold text-lg">
-              {isAdmin ? 'Dashboard Geral' : 'Meu Painel'}
-            </h1>
-            <span className="text-muted-foreground text-sm font-medium tracking-tight bg-muted px-3 py-1 rounded-full border border-border hidden sm:block">
-              {currentDate}
-            </span>
-          </>
+          <h1 className="text-foreground font-semibold text-lg">
+            {isAdmin ? 'Dashboard Geral' : 'Meu Painel'}
+          </h1>
         )}
       </div>
 
       <div className="flex items-center space-x-4">
+        <span className="text-muted-foreground text-sm font-medium tracking-tight hidden lg:block">
+          {currentDate}
+        </span>
         <button className="p-2 text-muted-foreground hover:text-primary transition-colors cursor-pointer">
           <Search className="size-5" />
         </button>
@@ -639,7 +709,12 @@ export function DashboardShell({
       <div
         className={`transition-all duration-300 min-h-screen ${isExpanded ? 'ml-64' : 'ml-20'}`}
       >
-        <DashboardTopbar isAdmin={isAdmin} currentDate={currentDate} isExpanded={isExpanded} />
+        <DashboardTopbar
+          isAdmin={isAdmin}
+          currentDate={currentDate}
+          isExpanded={isExpanded}
+          pathname={pathname}
+        />
 
         {/* PAGE CONTENT */}
         <main className="pt-24 pb-12 px-8 w-full max-w-none space-y-10">
