@@ -60,7 +60,7 @@ export function AtendimentoWaitingBadge({ companyId, isExpanded }: Props) {
 
   if (!isExpanded) {
     return (
-      <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 bg-destructive rounded-full text-[9px] text-white font-bold flex items-center justify-center px-1 leading-none">
+      <span className="flex min-w-4 h-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold leading-none text-white shadow-sm">
         {label}
       </span>
     )

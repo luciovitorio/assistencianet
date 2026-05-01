@@ -46,6 +46,15 @@ const SIDEBAR_EXPANDED_COOKIE_KEY = 'dashboard_sidebar_expanded'
 
 type SidebarMenuId = 'cadastros' | 'financeiro' | 'configuracoes'
 
+function CollapsedSidebarBadge({ children }: { children: React.ReactNode }) {
+  if (!children) return null
+  return (
+    <span className="pointer-events-none absolute bottom-1 right-1 flex items-center justify-center">
+      {children}
+    </span>
+  )
+}
+
 function SidebarLink({
   href,
   icon: Icon,
@@ -65,21 +74,21 @@ function SidebarLink({
     <>
       <div className="flex items-center justify-center min-w-6 relative">
         <Icon className="size-5" />
-        {!isExpanded && badge}
       </div>
 
       <div
-        className={`whitespace-nowrap text-sm font-medium transition-all duration-300 ${isExpanded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4 pointer-events-none absolute left-14'}`}
+        className={`whitespace-nowrap text-xs font-medium transition-all duration-300 ${isExpanded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4 pointer-events-none absolute left-14'}`}
       >
         {label}
       </div>
 
       {isExpanded && badge}
+      {!isExpanded && <CollapsedSidebarBadge>{badge}</CollapsedSidebarBadge>}
     </>
   )
 
   const className = `flex items-center gap-4 p-3 mx-2 rounded-lg transition-colors group relative overflow-hidden ${
-    active ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted'
+    active ? 'bg-white/[0.12] text-white' : 'text-slate-300 hover:bg-white/[0.08] hover:text-white'
   }`
 
   if (href === '#') {
@@ -120,9 +129,9 @@ function SidebarSubItem({
 }) {
   const className = `flex items-center justify-between px-3 py-2 rounded-md transition-colors ${
     active
-      ? 'bg-primary/10 text-primary font-medium'
-      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-  } ${!isExpanded ? 'text-xs text-center px-1' : 'text-sm'}`
+      ? 'bg-white/[0.12] text-white font-medium'
+      : 'text-slate-300 hover:bg-white/[0.08] hover:text-white'
+  } ${!isExpanded ? 'text-[11px] text-center px-1' : 'text-xs'}`
 
   const content = isExpanded
     ? <><span>{label}</span>{badge}</>
@@ -183,25 +192,23 @@ function SidebarMenu({
         onClick={handleToggle}
         title={!isExpanded ? label : undefined}
         className={`flex items-center justify-between p-3 mx-2 rounded-lg transition-colors cursor-pointer group relative overflow-hidden ${
-          active ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted'
+          active ? 'bg-white/[0.12] text-white' : 'text-slate-300 hover:bg-white/[0.08] hover:text-white'
         }`}
       >
         <div className="flex items-center gap-4">
           <div className="flex items-center justify-center min-w-6 relative">
             <Icon className="size-5" />
-            {!isExpanded && badge ? (
-              <span className="absolute -right-2 -top-2">{badge}</span>
-            ) : null}
           </div>
           <div
-            className={`flex items-center gap-2 whitespace-nowrap text-sm font-medium transition-all duration-300 ${isExpanded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4 pointer-events-none absolute left-14'}`}
+            className={`flex items-center gap-2 whitespace-nowrap text-xs font-medium transition-all duration-300 ${isExpanded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4 pointer-events-none absolute left-14'}`}
           >
             <span>{label}</span>
             {isExpanded && badge}
           </div>
         </div>
+        {!isExpanded && <CollapsedSidebarBadge>{badge}</CollapsedSidebarBadge>}
         {isExpanded && (
-          <div className="text-muted-foreground whitespace-nowrap opacity-100 transition-opacity">
+          <div className="text-slate-300 whitespace-nowrap opacity-100 transition-opacity">
             {isOpen ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
           </div>
         )}
@@ -350,9 +357,11 @@ export function DashboardShell({
   }, [activeSidebarMenu])
 
   const upgradeToProBadge = (
-    <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-blue-700">
+    <span className={`inline-flex items-center justify-center rounded-full bg-blue-100 font-semibold leading-none text-blue-700 ${
+      isExpanded ? 'gap-1 px-1.5 py-0.5 text-[10px]' : 'size-4 shadow-sm'
+    }`}>
       <LockKeyhole className="size-3" />
-      Pro
+      {isExpanded && 'Pro'}
     </span>
   )
   const lockedFinancialBadge = canAccessFinancial ? undefined : upgradeToProBadge
@@ -370,7 +379,7 @@ export function DashboardShell({
       <div className="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased min-h-screen">
       {/* SIDEBAR */}
       <aside
-        className={`fixed left-0 top-0 h-screen bg-white dark:bg-slate-900 border-r border-border py-4 flex flex-col space-y-4 z-50 transition-all duration-300 ease-in-out ${
+        className={`fixed left-0 top-0 h-screen bg-[#0F1B3D] border-r border-white/10 py-4 flex flex-col space-y-4 z-50 transition-all duration-300 ease-in-out ${
           isExpanded ? 'w-64' : 'w-20'
         }`}
       >
@@ -383,15 +392,15 @@ export function DashboardShell({
               isExpanded ? 'opacity-100 w-auto' : 'opacity-0 w-0'
             }`}
           >
-            <span className="font-bold text-lg leading-tight block">SmartConserto</span>
-            <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">
+            <span className="font-bold text-base leading-tight block text-white">SmartConserto</span>
+            <span className="text-[9px] text-slate-300 uppercase tracking-widest font-semibold">
               Gestão
             </span>
           </div>
 
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="ml-auto text-muted-foreground hover:text-primary transition-colors p-1"
+            className="ml-auto text-slate-300 hover:text-white transition-colors p-1"
           >
             {isExpanded ? (
               <PanelLeftClose className="size-5" />
@@ -603,7 +612,7 @@ export function DashboardShell({
             >
               <Plus className="size-6 min-w-6" />
               <span
-                className={`font-semibold ml-2 transition-all duration-300 whitespace-nowrap overflow-hidden ${isExpanded ? 'w-auto opacity-100' : 'w-0 opacity-0 hidden'}`}
+                className={`ml-2 text-xs font-semibold transition-all duration-300 whitespace-nowrap overflow-hidden ${isExpanded ? 'w-auto opacity-100' : 'w-0 opacity-0 hidden'}`}
               >
                 Nova OS
               </span>
@@ -611,13 +620,13 @@ export function DashboardShell({
           </div>
 
           <div className="px-4 flex items-center gap-3 overflow-hidden">
-            <div className="w-10 h-10 min-w-10 rounded-full bg-slate-200 overflow-hidden border-2 border-background flex items-center justify-center text-xs font-bold text-slate-500">
+            <div className="w-10 h-10 min-w-10 rounded-full bg-white/10 overflow-hidden border-2 border-white/10 flex items-center justify-center text-xs font-bold text-white">
               {userEmail.charAt(0).toUpperCase()}
             </div>
             {isExpanded && (
               <div className="flex-col whitespace-nowrap opacity-100 transition-opacity duration-300">
-                <p className="text-sm font-semibold text-foreground leading-none">{companyName}</p>
-                <p className="text-[10px] text-muted-foreground font-medium truncate max-w-30">
+                <p className="text-xs font-semibold text-white leading-none">{companyName}</p>
+                <p className="text-[9px] text-slate-300 font-medium truncate max-w-30">
                   {userEmail}
                 </p>
               </div>

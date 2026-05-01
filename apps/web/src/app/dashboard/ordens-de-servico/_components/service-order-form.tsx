@@ -497,7 +497,7 @@ export function ServiceOrderForm({
   }
 
   return (
-    <div className="space-y-5">
+    <div className="flex min-h-0 flex-col overflow-hidden xl:-mx-8 xl:-mt-8 xl:-mb-12 xl:h-[calc(100vh-4rem)]">
       {pendingPrint && (
         <PrintServiceOrderDialog
           open
@@ -509,13 +509,12 @@ export function ServiceOrderForm({
       )}
 
       {/* ── Page header ── */}
-      <div className="pb-5 mb-5 border-b border-slate-200">
-        {/* Large OS number + info badges + flow indicator */}
-        <div className="flex items-center gap-4 flex-wrap">
+      <div className="flex shrink-0 flex-col gap-3 border-b border-slate-200 bg-white px-6 py-4 xl:flex-row xl:items-center xl:justify-between">
+        <div className="flex min-w-0 flex-wrap items-center gap-4">
           <span className="font-mono text-[22px] font-extrabold tracking-tight text-slate-900">
             #{osDisplayNumber}
           </span>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500">
               <Building2 className="size-3 text-slate-400" />
               Atendimento e origem
@@ -531,17 +530,17 @@ export function ServiceOrderForm({
               Descrição técnica inicial
             </span>
           </div>
-          <div className="ml-auto hidden xl:flex items-center gap-1.5 text-[11px] text-slate-400">
-            <span className="font-semibold text-primary">Abertura inicial</span>
-            <ChevronRight className="size-3 text-slate-300" />
-            <span>OS detalhada</span>
-          </div>
+        </div>
+        <div className="hidden shrink-0 items-center gap-1.5 text-[11px] text-slate-400 xl:flex">
+          <span className="font-semibold text-primary">Abertura inicial</span>
+          <ChevronRight className="size-3 text-slate-300" />
+          <span>OS detalhada</span>
         </div>
       </div>
 
       {/* ── Upgrade notice ── */}
       {showUpgradeNotice && serviceOrderUsage && (
-        <Alert className="border-amber-200 bg-amber-50 text-amber-900">
+        <Alert className="mb-5 shrink-0 border-amber-200 bg-amber-50 text-amber-900 xl:mx-8">
           <ShieldAlert className="size-4" />
           <AlertTitle className="flex flex-wrap items-center gap-2">
             Limite mensal de OS atingido
@@ -561,14 +560,14 @@ export function ServiceOrderForm({
         </Alert>
       )}
 
-      {/* ── Form card ── */}
+      {/* ── Form workspace ── */}
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="flex flex-col xl:flex-row border border-slate-200 rounded-xl bg-white shadow-sm shadow-slate-950/5 overflow-hidden"
+        className="flex min-h-0 flex-1 flex-col overflow-hidden bg-white xl:flex-row"
       >
 
         {/* ──────────── LEFT SIDEBAR ──────────── */}
-        <div className="xl:w-64 xl:shrink-0 xl:border-r border-b xl:border-b-0 border-slate-200">
+        <div className="shrink-0 border-b border-slate-200 xl:w-64 xl:border-b-0 xl:border-r">
 
           {/* Atendimento section */}
           <div className="px-5 pt-5 pb-5">
@@ -736,8 +735,8 @@ export function ServiceOrderForm({
         </div>
 
         {/* ──────────── RIGHT: MAIN CONTENT + FOOTER ──────────── */}
-        <div className="flex-1 flex flex-col min-w-0">
-          <div className="flex-1 p-6 space-y-8">
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div className="min-h-0 flex-1 space-y-8 overflow-y-auto overscroll-contain bg-[#F8F9FC] p-6">
 
             {/* Warranty / rework alerts */}
             {!isEdit && (linkedParent || activeWarranties.length > 0) && (
@@ -1038,7 +1037,7 @@ export function ServiceOrderForm({
           </div>
 
           {/* ── Footer ── */}
-          <div className="border-t border-slate-200 px-6 py-3.5 flex items-center justify-between bg-white">
+          <div className="flex shrink-0 items-center justify-between border-t border-slate-200 bg-white px-6 py-3.5">
             <div className="flex items-center gap-1.5 text-xs text-slate-400">
               <Shield className="size-3 text-slate-300" />
               Rascunho salvo automaticamente
