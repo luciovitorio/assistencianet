@@ -713,6 +713,7 @@ export function StockList({
 
       <TransferenciaDialog
         part={dialog.type === 'transferencia' ? dialog.part : null}
+        parts={parts}
         branches={branches}
         initialFromBranchId={dialog.type === 'transferencia' ? dialog.branchId : ''}
         stockByPartBranch={stockByPartBranch}

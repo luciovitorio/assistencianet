@@ -8,15 +8,15 @@ import { ArrowRightLeft } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { InputField } from '@/components/ui/input-field'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
+import { StepperInput } from '@/components/ui/stepper-input'
+import { cn } from '@/lib/utils'
 import {
   stockTransferenciaSchema,
   type StockTransferenciaSchema,
@@ -30,6 +30,7 @@ type TransferenciaFormValues = Omit<StockTransferenciaSchema, 'quantity'> & {
 
 interface TransferenciaDialogProps {
   part: PartRow | null
+  parts: PartRow[]
   branches: BranchOption[]
   initialFromBranchId: string
   stockByPartBranch: Record<string, number>
@@ -52,6 +53,7 @@ function getAvailableStock(
 
 export function TransferenciaDialog({
   part,
+  parts,
   branches,
   initialFromBranchId,
   stockByPartBranch,
@@ -75,7 +77,7 @@ export function TransferenciaDialog({
       part_id: part?.id ?? '',
       from_branch_id: initialFromBranchId,
       to_branch_id: '',
-      quantity: '',
+      quantity: 1,
       notes: '',
     },
   })
@@ -85,24 +87,26 @@ export function TransferenciaDialog({
       part_id: part?.id ?? '',
       from_branch_id: initialFromBranchId,
       to_branch_id: '',
-      quantity: '',
+      quantity: 1,
       notes: '',
     })
   }, [part?.id, initialFromBranchId, open, reset])
 
+  const watchedPartId = watch('part_id')
   const watchedFromBranchId = watch('from_branch_id')
   const watchedToBranchId = watch('to_branch_id')
-
-  // Ao trocar filial de origem, limpa destino se for igual
   React.useEffect(() => {
     if (watchedToBranchId && watchedToBranchId === watchedFromBranchId) {
       setValue('to_branch_id', '')
     }
   }, [watchedFromBranchId, watchedToBranchId, setValue])
 
-  const availableStock = part
-    ? getAvailableStock(stockByPartBranch, reservedByPartBranch, part.id, watchedFromBranchId)
-    : 0
+  const currentPart = parts.find((p) => p.id === watchedPartId) ?? null
+
+  const availableStock =
+    watchedPartId && watchedFromBranchId
+      ? getAvailableStock(stockByPartBranch, reservedByPartBranch, watchedPartId, watchedFromBranchId)
+      : 0
 
   const destinationBranches = branches.filter((b) => b.id !== watchedFromBranchId)
 
@@ -119,45 +123,39 @@ export function TransferenciaDialog({
     })
   }
 
-  if (!part) return null
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <ArrowRightLeft className="size-5 text-primary" />
+            <ArrowRightLeft className="size-4 text-muted-foreground" />
             Transferir entre filiais
           </DialogTitle>
-          <DialogDescription>
-            <span className="font-medium text-foreground">{part.name}</span>
-            {part.sku && <span className="text-muted-foreground"> · SKU {part.sku}</span>}
-          </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-2">
-          {/* Filial de origem */}
-          <div>
-            <Label className="mb-1.5 block text-sm font-medium">Filial de origem *</Label>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {/* Peça */}
+          <div className="space-y-1.5">
+            <Label className="text-sm font-medium">Peça</Label>
             <Controller
               control={control}
-              name="from_branch_id"
+              name="part_id"
               render={({ field }) => {
-                const selected = branches.find((b) => b.id === field.value)
+                const selected = parts.find((p) => p.id === field.value)
                 return (
-                  <Select
-                    value={field.value}
-                    onValueChange={(v) => field.onChange(v)}
-                  >
-                    <SelectTrigger className={errors.from_branch_id ? 'border-destructive' : ''}>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger className={cn('w-full', errors.part_id && 'border-destructive')}>
                       <span className={field.value ? 'text-foreground' : 'text-muted-foreground'}>
-                        {selected ? selected.name : 'Selecione a filial de origem'}
+                        {selected
+                          ? `${selected.name}${selected.sku ? ` — ${selected.sku}` : ''}`
+                          : 'Selecione a peça'}
                       </span>
                     </SelectTrigger>
-                    <SelectContent>
-                      {branches.map((b) => (
-                        <SelectItem key={b.id} value={b.id}>
-                          {b.name}
+                    <SelectContent side="bottom">
+                      {parts.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.name}
+                          {p.sku && <span className="text-muted-foreground"> — {p.sku}</span>}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -165,97 +163,121 @@ export function TransferenciaDialog({
                 )
               }}
             />
-            {errors.from_branch_id && (
-              <p className="text-destructive mt-1 text-xs">{errors.from_branch_id.message}</p>
+            {errors.part_id && (
+              <p className="text-destructive text-xs">{errors.part_id.message}</p>
             )}
           </div>
 
-          {/* Saldo disponível na origem */}
-          {watchedFromBranchId && (
-            <div className="rounded-lg bg-muted/60 px-4 py-3 text-sm">
-              <span className="text-muted-foreground">Disponível para transferir: </span>
-              <span className={`font-semibold tabular-nums ${availableStock <= 0 ? 'text-destructive' : ''}`}>
-                {availableStock} {part.unit}
-              </span>
-              {availableStock <= 0 && (
-                <p className="mt-1 text-xs text-destructive">
-                  Sem saldo disponível nesta filial. Peças reservadas não podem ser transferidas.
-                </p>
+          {/* Filial de origem + destino lado a lado */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">Filial de origem</Label>
+              <Controller
+                control={control}
+                name="from_branch_id"
+                render={({ field }) => {
+                  const selected = branches.find((b) => b.id === field.value)
+                  return (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger className={cn('w-full', errors.from_branch_id && 'border-destructive')}>
+                        <span className={field.value ? 'text-foreground truncate' : 'text-muted-foreground'}>
+                          {selected ? selected.name : 'Origem'}
+                        </span>
+                      </SelectTrigger>
+                      <SelectContent side="bottom">
+                        {branches.map((b) => (
+                          <SelectItem key={b.id} value={b.id}>
+                            {b.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )
+                }}
+              />
+              {errors.from_branch_id && (
+                <p className="text-destructive text-xs">{errors.from_branch_id.message}</p>
               )}
             </div>
-          )}
 
-          {/* Filial de destino */}
-          <div>
-            <Label className="mb-1.5 block text-sm font-medium">Filial de destino *</Label>
-            <Controller
-              control={control}
-              name="to_branch_id"
-              render={({ field }) => {
-                const selected = destinationBranches.find((b) => b.id === field.value)
-                return (
-                  <Select
-                    value={field.value}
-                    onValueChange={(v) => field.onChange(v)}
-                    disabled={destinationBranches.length === 0}
-                  >
-                    <SelectTrigger className={errors.to_branch_id ? 'border-destructive' : ''}>
-                      <span className={field.value ? 'text-foreground' : 'text-muted-foreground'}>
-                        {selected ? selected.name : 'Selecione a filial de destino'}
-                      </span>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {destinationBranches.map((b) => (
-                        <SelectItem key={b.id} value={b.id}>
-                          {b.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )
-              }}
-            />
-            {errors.to_branch_id && (
-              <p className="text-destructive mt-1 text-xs">{errors.to_branch_id.message}</p>
-            )}
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">Filial de destino</Label>
+              <Controller
+                control={control}
+                name="to_branch_id"
+                render={({ field }) => {
+                  const selected = destinationBranches.find((b) => b.id === field.value)
+                  return (
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      disabled={destinationBranches.length === 0}
+                    >
+                      <SelectTrigger className={cn('w-full', errors.to_branch_id && 'border-destructive')}>
+                        <span className={field.value ? 'text-foreground truncate' : 'text-muted-foreground'}>
+                          {selected ? selected.name : 'Destino'}
+                        </span>
+                      </SelectTrigger>
+                      <SelectContent side="bottom">
+                        {destinationBranches.map((b) => (
+                          <SelectItem key={b.id} value={b.id}>
+                            {b.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )
+                }}
+              />
+              {errors.to_branch_id && (
+                <p className="text-destructive text-xs">{errors.to_branch_id.message}</p>
+              )}
+            </div>
           </div>
 
-          {/* Quantidade */}
+          {/* Quantidade com stepper */}
           <Controller
             control={control}
             name="quantity"
             render={({ field }) => (
-              <InputField
-                label={`Quantidade a transferir *`}
-                type="number"
+              <StepperInput
+                label="Quantidade"
+                value={field.value ?? 1}
+                onChange={field.onChange}
                 min={1}
-                max={availableStock > 0 ? availableStock : undefined}
-                step={1}
-                placeholder="0"
-                error={errors.quantity?.message}
+                max={availableStock > 0 ? availableStock : 0}
                 disabled={availableStock <= 0}
-                helper={availableStock > 0 ? `Máximo: ${availableStock} ${part.unit}` : undefined}
-                {...field}
-                value={String(field.value ?? '')}
-                onChange={(e) => field.onChange(e.target.value)}
+                helper={
+                  watchedFromBranchId && watchedPartId
+                    ? availableStock <= 0
+                      ? 'Sem saldo disponível nesta filial.'
+                      : `Disponível na origem: ${availableStock} ${currentPart?.unit ?? 'unid.'}`
+                    : undefined
+                }
+                error={errors.quantity?.message}
               />
             )}
           />
 
-          {/* Observações */}
-          <Controller
-            control={control}
-            name="notes"
-            render={({ field }) => (
-              <InputField
-                label="Motivo / observações (opcional)"
-                placeholder="Ex: Redistribuição para atender demanda da filial centro..."
-                error={errors.notes?.message}
-                {...field}
-                value={field.value ?? ''}
-              />
+          {/* Motivo */}
+          <div className="space-y-1.5">
+            <Label className="text-sm font-medium">Motivo (opcional)</Label>
+            <Controller
+              control={control}
+              name="notes"
+              render={({ field }) => (
+                <input
+                  placeholder="Ex: reposição para campanha"
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:ring-1 focus:ring-ring disabled:opacity-50"
+                  {...field}
+                  value={field.value ?? ''}
+                />
+              )}
+            />
+            {errors.notes && (
+              <p className="text-destructive text-xs">{errors.notes.message}</p>
             )}
-          />
+          </div>
 
           <DialogFooter>
             <Button
@@ -268,11 +290,11 @@ export function TransferenciaDialog({
             </Button>
             <Button
               type="submit"
-              disabled={isPending || availableStock <= 0}
+              disabled={isPending || availableStock <= 0 || !watchedPartId}
               className="gap-2 cursor-pointer"
             >
               <ArrowRightLeft className="size-4" />
-              {isPending ? 'Transferindo...' : 'Confirmar Transferência'}
+              {isPending ? 'Transferindo...' : 'Confirmar transferência'}
             </Button>
           </DialogFooter>
         </form>

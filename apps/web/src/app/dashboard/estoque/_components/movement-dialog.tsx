@@ -8,7 +8,6 @@ import { ArrowDownToLine, ArrowRight, SlidersHorizontal } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -17,6 +16,7 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { DatePickerField } from '@/components/ui/date-picker-field'
 import { InputField } from '@/components/ui/input-field'
+import { StepperInput } from '@/components/ui/stepper-input'
 import { MaskedInputField } from '@/components/ui/masked-input-field'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
@@ -343,17 +343,14 @@ function EntradaForm({
           control={control}
           name="quantity"
           render={({ field }) => (
-            <InputField
-              label={`Quantidade a entrar *${selectedPart ? ` (saldo atual: ${currentStock} ${selectedPart.unit})` : ''}`}
-              type="number"
+            <StepperInput
+              label="Quantidade a entrar *"
+              value={field.value ?? 1}
+              onChange={field.onChange}
               min={1}
-              step={1}
-              placeholder="0"
-              error={errors.quantity?.message}
               disabled={!selectedPart}
-              {...field}
-              value={String(field.value ?? '')}
-              onChange={(e) => field.onChange(e.target.value)}
+              helper={selectedPart ? `Saldo atual: ${currentStock} ${selectedPart.unit}` : undefined}
+              error={errors.quantity?.message}
             />
           )}
         />
@@ -389,7 +386,7 @@ function EntradaForm({
         )}
       />
 
-      <DialogFooter>
+      <DialogFooter className="-mx-6 -mb-6">
         <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
           Cancelar
         </Button>
@@ -605,7 +602,7 @@ function AjusteForm({
         )}
       />
 
-      <DialogFooter>
+      <DialogFooter className="-mx-6 -mb-6">
         <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
           Cancelar
         </Button>
@@ -638,8 +635,8 @@ export function MovementDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="gap-0 p-0 sm:max-w-md">
-        <DialogHeader className="border-b border-border px-6 py-4">
+      <DialogContent className="gap-0 p-0 sm:max-w-2xl">
+        <DialogHeader className="mx-0 mt-0 px-6 py-4 border-border">
           <DialogTitle className="flex items-center gap-2">
             {isEntrada ? (
               <>
@@ -653,11 +650,6 @@ export function MovementDialog({
               </>
             )}
           </DialogTitle>
-          {isEntrada && (
-            <DialogDescription>
-              Selecione a peça, informe o fornecedor real da compra e registre as datas do recebimento.
-            </DialogDescription>
-          )}
         </DialogHeader>
 
         <div className="px-6 pb-6">
