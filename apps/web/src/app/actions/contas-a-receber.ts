@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { getAdminContext } from '@/lib/auth/admin-context'
+import { assertBillingFeature } from '@/lib/billing/entitlements'
 import { firstRelation } from '@/lib/supabase/relations'
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
@@ -55,6 +56,7 @@ export async function getContasAReceber(
   try {
     const { companyId } = await getAdminContext('financeiro')
     const supabase = await createClient()
+    await assertBillingFeature(supabase, companyId, 'financial_module')
     const today = new Date().toISOString().slice(0, 10)
 
     let query = supabase

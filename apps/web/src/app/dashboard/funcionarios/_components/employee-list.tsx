@@ -42,6 +42,12 @@ interface EmployeeListProps {
   initialEmployees: EmployeeData[]
   branches: BranchOption[]
   isAdmin: boolean
+  employeeSeatUsage: {
+    used: number
+    limit: number | null
+    reached: boolean
+    planName: string | null
+  }
 }
 
 type DialogState =
@@ -61,7 +67,7 @@ const roleColors: Record<EmployeeRole, string> = {
 type AccessFilter = 'all' | 'with-access' | 'without-access' | 'without-email'
 type AccessOption = Exclude<AccessFilter, 'all'>
 
-export function EmployeeList({ initialEmployees, branches, isAdmin }: EmployeeListProps) {
+export function EmployeeList({ initialEmployees, branches, isAdmin, employeeSeatUsage }: EmployeeListProps) {
   const router = useRouter()
   const [employees, setEmployees] = React.useState(initialEmployees)
   const [dialog, setDialog] = React.useState<DialogState>({ type: 'none' })
@@ -553,6 +559,7 @@ export function EmployeeList({ initialEmployees, branches, isAdmin }: EmployeeLi
         branches={branches}
         open={dialog.type === 'edit'}
         onOpenChange={(open) => { if (!open) closeDialog() }}
+        employeeSeatUsage={employeeSeatUsage}
       />
 
       {dialog.type === 'delete' && (

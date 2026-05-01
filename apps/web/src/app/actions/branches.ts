@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAuditLog } from '@/lib/audit/audit-log'
 import { getAdminContext } from '@/lib/auth/admin-context'
+import { assertCanCreateBranch } from '@/lib/billing/entitlements'
 import { branchSchema, type BranchSchema } from '@/lib/validations/branch'
 
 const revalidateBranchesPage = () => {
@@ -20,6 +21,8 @@ export async function createBranch(data: BranchSchema) {
     }
 
     const supabase = await createClient()
+    await assertCanCreateBranch(supabase, companyId)
+
     const { data: branch, error } = await supabase
       .from('branches')
       .insert({

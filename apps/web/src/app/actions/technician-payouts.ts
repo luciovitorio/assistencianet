@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAuditLog } from '@/lib/audit/audit-log'
 import { getAdminContext } from '@/lib/auth/admin-context'
+import { assertBillingFeature } from '@/lib/billing/entitlements'
 import { firstRelation } from '@/lib/supabase/relations'
 import {
   payoutCreateSchema,
@@ -30,6 +31,12 @@ const getActionErrorMessage = (error: unknown, fallback: string) => {
     return (error as { message: string }).message
   }
   return fallback
+}
+
+async function createFinancialActionClient(companyId: string) {
+  const supabase = await createClient()
+  await assertBillingFeature(supabase, companyId, 'financial_module')
+  return supabase
 }
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
@@ -96,7 +103,7 @@ export async function createPayouts(data: PayoutCreateSchema) {
       return { error: 'A data inicial não pode ser maior que a data final.' }
     }
 
-    const supabase = await createClient()
+    const supabase = await createFinancialActionClient(companyId)
 
     // Precisa de uma filial default para o bill (branch_id é NOT NULL).
     const { data: firstBranch, error: branchError } = await supabase
@@ -331,7 +338,7 @@ export async function listPayouts(
 ): Promise<{ data: PayoutRow[] | null; error?: string }> {
   try {
     const { companyId } = await getAdminContext('financeiro')
-    const supabase = await createClient()
+    const supabase = await createFinancialActionClient(companyId)
 
     let query = supabase
       .from('technician_payouts')
@@ -397,7 +404,7 @@ export async function getPayoutDetail(
 ): Promise<{ data: PayoutDetail | null; error?: string }> {
   try {
     const { companyId } = await getAdminContext('financeiro')
-    const supabase = await createClient()
+    const supabase = await createFinancialActionClient(companyId)
 
     const { data: payout, error: payoutError } = await supabase
       .from('technician_payouts')
@@ -511,7 +518,7 @@ export async function markPayoutPaid(payoutId: string, data: PayoutMarkAsPaidSch
     const parsed = payoutMarkAsPaidSchema.safeParse(data)
     if (!parsed.success) return { error: parsed.error.issues[0].message }
 
-    const supabase = await createClient()
+    const supabase = await createFinancialActionClient(companyId)
 
     const { data: payout, error: fetchError } = await supabase
       .from('technician_payouts')
@@ -567,7 +574,7 @@ export async function markPayoutPaid(payoutId: string, data: PayoutMarkAsPaidSch
 export async function cancelPayout(payoutId: string, reason?: string) {
   try {
     const { companyId, user } = await getAdminContext('financeiro')
-    const supabase = await createClient()
+    const supabase = await createFinancialActionClient(companyId)
 
     const { data: payout, error: fetchError } = await supabase
       .from('technician_payouts')

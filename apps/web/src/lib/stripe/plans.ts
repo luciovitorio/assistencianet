@@ -8,4 +8,20 @@ export function isSubscriptionActive(status: string | null | undefined): boolean
   return ACTIVE_STATUSES.includes(status as SubscriptionStatus)
 }
 
+export type SubscriptionAccessRecord = {
+  status: string | null
+  trial_ends_at: string | null
+}
+
+export function isTrialActive(subscription: SubscriptionAccessRecord | null | undefined): boolean {
+  if (!subscription || subscription.status !== 'trialing') return false
+  return !subscription.trial_ends_at || new Date(subscription.trial_ends_at) > new Date()
+}
+
+export function hasSubscriptionAccess(subscription: SubscriptionAccessRecord | null | undefined): boolean {
+  if (!subscription || !isSubscriptionActive(subscription.status)) return false
+  if (subscription.status === 'trialing') return isTrialActive(subscription)
+  return true
+}
+
 export const TRIAL_DAYS = 14

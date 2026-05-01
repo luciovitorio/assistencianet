@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { getAdminContext } from '@/lib/auth/admin-context'
+import { assertBillingFeature } from '@/lib/billing/entitlements'
 
 export type ReportBranchOption = {
   id: string
@@ -237,6 +238,7 @@ export async function getBusinessReports(
     const branchId = toBranchId(filters.branchId)
     const { companyId } = await getAdminContext('financeiro')
     const supabase = await createClient()
+    await assertBillingFeature(supabase, companyId, 'advanced_reports')
 
     const { data: branchesData, error: branchesError } = await supabase
       .from('branches')

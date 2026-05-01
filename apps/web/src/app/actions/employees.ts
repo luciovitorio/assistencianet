@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createAuditLog } from '@/lib/audit/audit-log'
 import { getAdminContext } from '@/lib/auth/admin-context'
+import { assertCanCreateEmployee, assertCanCreateEmployeeAccess } from '@/lib/billing/entitlements'
 import { employeeSchema, type EmployeeSchema, type EmployeeValues } from '@/lib/validations/employee'
 import { PASSWORD_MIN_LENGTH } from '@/lib/validations/auth'
 
@@ -124,6 +125,7 @@ export async function createEmployee(data: EmployeeSchema | EmployeeValues) {
     const { ...rest } = parsed.data
     const supabase = await createClient()
 
+    await assertCanCreateEmployee(supabase, companyId)
     await ensureEmployeeEmailIsAvailable(email)
 
     const { data: createdEmployee, error } = await supabase
@@ -388,6 +390,8 @@ export async function inviteEmployee(employeeId: string) {
       throw new Error('Este funcionário já possui acesso ao sistema.')
     }
 
+    await assertCanCreateEmployeeAccess(supabase, companyId)
+
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3001'
     const admin = createAdminClient()
     const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(
@@ -528,6 +532,8 @@ export async function createEmployeeDirectAccess(
     if (employee.user_id) {
       throw new Error('Este funcionário já possui acesso ao sistema.')
     }
+
+    await assertCanCreateEmployeeAccess(supabase, companyId)
 
     const normalizedEmail = normalizeEmail(email)
     if (!normalizedEmail) {

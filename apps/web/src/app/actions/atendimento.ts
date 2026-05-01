@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { getCompanyContext } from '@/lib/auth/company-context'
+import { assertBillingFeature } from '@/lib/billing/entitlements'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { firstRelation } from '@/lib/supabase/relations'
 import { createClient } from '@/lib/supabase/server'
@@ -46,6 +47,13 @@ type ConversationQueryRow = Omit<ConversationRow, 'branches' | 'clients'> & {
 
 // ── Helpers ───────────────────────────────────────────────────
 
+const getAtendimentoContext = async () => {
+  const context = await getCompanyContext()
+  const supabase = await createClient()
+  await assertBillingFeature(supabase, context.companyId, 'whatsapp_bot')
+  return { ...context, supabase }
+}
+
 const getEvolutionClient = async (companyId: string) => {
   const supabase = createAdminClient()
   const { data } = await supabase
@@ -81,8 +89,7 @@ export async function getConversations(
   filters: ConversationFilters = {},
 ): Promise<ConversationRow[]> {
   try {
-    const { companyId, isAdmin, currentBranchId } = await getCompanyContext()
-    const supabase = await createClient()
+    const { companyId, isAdmin, currentBranchId, supabase } = await getAtendimentoContext()
 
     // Não-admin sem branch não vê conversa nenhuma
     if (!isAdmin && !currentBranchId) return []
@@ -136,10 +143,9 @@ export async function getConversations(
 
 export async function getWaitingConversationsCount(): Promise<number> {
   try {
-    const { companyId, isAdmin, currentBranchId } = await getCompanyContext()
+    const { companyId, isAdmin, currentBranchId, supabase } = await getAtendimentoContext()
     if (!isAdmin && !currentBranchId) return 0
 
-    const supabase = await createClient()
     let query = supabase
       .from('whatsapp_conversations')
       .select('id', { count: 'exact', head: true })
@@ -161,8 +167,7 @@ export async function getConversationMessages(
   conversationId: string,
 ): Promise<MessageRow[]> {
   try {
-    const { companyId } = await getCompanyContext()
-    const supabase = await createClient()
+    const { companyId, supabase } = await getAtendimentoContext()
 
     const { data } = await supabase
       .from('whatsapp_messages')
@@ -185,8 +190,7 @@ export async function sendAtendimentoReply(
   text: string,
 ): Promise<{ message?: MessageRow; error?: string }> {
   try {
-    const { companyId, user } = await getCompanyContext()
-    const supabase = await createClient()
+    const { companyId, user, supabase } = await getAtendimentoContext()
     const adminSupabase = createAdminClient()
 
     const { data: employee } = await supabase
@@ -264,7 +268,7 @@ export async function sendAtendimentoReply(
 
 export async function getCurrentEmployeeId(): Promise<string | null> {
   try {
-    const { companyId, user } = await getCompanyContext()
+    const { companyId, user } = await getAtendimentoContext()
     return await getEmployeeId(user.id, companyId)
   } catch {
     return null
@@ -286,8 +290,7 @@ export async function assumeConversation(
   conversationId: string,
 ): Promise<{ error?: string; assignedTo?: string }> {
   try {
-    const { companyId, user } = await getCompanyContext()
-    const supabase = await createClient()
+    const { companyId, user, supabase } = await getAtendimentoContext()
 
     const employeeId = await getEmployeeId(user.id, companyId)
     if (!employeeId) return { error: 'Funcionário não encontrado.' }
@@ -311,8 +314,7 @@ export async function resolveConversation(
   conversationId: string,
 ): Promise<{ error?: string }> {
   try {
-    const { companyId } = await getCompanyContext()
-    const supabase = await createClient()
+    const { companyId, supabase } = await getAtendimentoContext()
     const adminSupabase = createAdminClient()
 
     // Pega quem estava atendendo para atrelar à avaliação
@@ -376,8 +378,7 @@ export async function reopenConversation(
   conversationId: string,
 ): Promise<{ error?: string; assignedTo?: string }> {
   try {
-    const { companyId, user } = await getCompanyContext()
-    const supabase = await createClient()
+    const { companyId, user, supabase } = await getAtendimentoContext()
 
     const employeeId = await getEmployeeId(user.id, companyId)
     if (!employeeId) return { error: 'Funcionário não encontrado.' }
@@ -408,8 +409,7 @@ export async function markConversationRead(
   conversationId: string,
 ): Promise<void> {
   try {
-    const { companyId } = await getCompanyContext()
-    const supabase = await createClient()
+    const { companyId, supabase } = await getAtendimentoContext()
 
     await supabase
       .from('whatsapp_conversations')
@@ -425,7 +425,7 @@ export async function deleteConversation(
   conversationId: string,
 ): Promise<{ error?: string }> {
   try {
-    const { companyId } = await getCompanyContext()
+    const { companyId } = await getAtendimentoContext()
     const supabase = createAdminClient()
 
     const { data: conversation, error: conversationError } = await supabase

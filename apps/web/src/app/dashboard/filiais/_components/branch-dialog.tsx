@@ -1,10 +1,13 @@
 'use client'
 
 import * as React from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
 import {
   Dialog,
   DialogContent,
@@ -20,7 +23,7 @@ import { MaskedInputField } from '@/components/ui/masked-input-field'
 import { Label } from '@/components/ui/label'
 import { branchSchema, type BranchSchema } from '@/lib/validations/branch'
 import { createBranch, updateBranch } from '@/app/actions/branches'
-import { Building2, Loader2 } from 'lucide-react'
+import { AlertTriangle, Building2, Loader2 } from 'lucide-react'
 
 export interface BranchFormState {
   id?: string
@@ -37,6 +40,12 @@ interface BranchDialogProps {
   branch?: BranchFormState
   open: boolean
   onOpenChange: (open: boolean) => void
+  branchUsage: {
+    used: number
+    limit: number | null
+    reached: boolean
+    planName: string | null
+  }
 }
 
 async function fetchAddressByCep(cep: string) {
@@ -56,8 +65,9 @@ async function fetchAddressByCep(cep: string) {
   }
 }
 
-export function BranchDialog({ branch, open, onOpenChange }: BranchDialogProps) {
+export function BranchDialog({ branch, open, onOpenChange, branchUsage }: BranchDialogProps) {
   const isEditing = !!branch?.id
+  const showUpgradeNotice = !isEditing && branchUsage.reached
   const router = useRouter()
   const [isPending, startTransition] = React.useTransition()
   const [isFetchingCep, setIsFetchingCep] = React.useState(false)
@@ -108,6 +118,11 @@ export function BranchDialog({ branch, open, onOpenChange }: BranchDialogProps) 
   }
 
   const onSubmit = (data: BranchSchema) => {
+    if (showUpgradeNotice) {
+      toast.error('Faça upgrade para o plano Empresarial para adicionar novas filiais.')
+      return
+    }
+
     startTransition(async () => {
       try {
         if (isEditing) {
@@ -141,6 +156,27 @@ export function BranchDialog({ branch, open, onOpenChange }: BranchDialogProps) 
               : 'Preencha os dados abaixo para cadastrar uma nova filial no sistema.'}
           </DialogDescription>
         </DialogHeader>
+
+        {showUpgradeNotice && (
+          <Alert className="border-amber-200 bg-amber-50 text-amber-900">
+            <AlertTriangle className="size-4" />
+            <AlertTitle className="flex flex-wrap items-center gap-2">
+              Limite de filiais atingido
+              <Badge variant="outline" className="border-amber-300 bg-white text-amber-800">
+                Upgrade para Empresarial
+              </Badge>
+            </AlertTitle>
+            <AlertDescription className="text-amber-800">
+              O plano {branchUsage.planName ?? 'atual'} permite {branchUsage.limit} unidade
+              {branchUsage.limit === 1 ? '' : 's'} e já existem {branchUsage.used} em uso.
+              Para adicionar uma nova filial, acesse{' '}
+              <Link href="/dashboard/assinatura" className="font-medium underline underline-offset-4">
+                Assinatura
+              </Link>
+              {' '}e altere para o plano Empresarial.
+            </AlertDescription>
+          </Alert>
+        )}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4" id="branch-form">
           <div className="grid gap-4 sm:grid-cols-2">
@@ -263,7 +299,12 @@ export function BranchDialog({ branch, open, onOpenChange }: BranchDialogProps) 
           >
             Cancelar
           </Button>
-          <Button type="submit" form="branch-form" disabled={isPending} loading={isPending}>
+          <Button
+            type="submit"
+            form="branch-form"
+            disabled={isPending || showUpgradeNotice}
+            loading={isPending}
+          >
             Salvar Filial
           </Button>
         </DialogFooter>

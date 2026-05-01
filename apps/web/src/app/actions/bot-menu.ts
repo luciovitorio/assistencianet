@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { getAdminContext } from '@/lib/auth/admin-context'
+import { assertBillingFeature } from '@/lib/billing/entitlements'
 import { createClient } from '@/lib/supabase/server'
 import {
   botMenuItemSchema,
@@ -9,6 +10,13 @@ import {
 } from '@/lib/validations/bot-menu-item'
 
 const REVALIDATE = () => revalidatePath('/dashboard/configuracoes/bot')
+
+async function getBotContext() {
+  const { companyId } = await getAdminContext('configuracoes')
+  const supabase = await createClient()
+  await assertBillingFeature(supabase, companyId, 'whatsapp_bot')
+  return { companyId, supabase }
+}
 
 // ── Tipos retornados ─────────────────────────────────────────
 
@@ -48,8 +56,7 @@ export async function getBotMenuItems(): Promise<
   { data: BotMenuItemWithChildren[] } | { error: string }
 > {
   try {
-    const { companyId } = await getAdminContext('configuracoes')
-    const supabase = await createClient()
+    const { companyId, supabase } = await getBotContext()
 
     const { data, error } = await supabase
       .from('whatsapp_menu_items')
@@ -88,13 +95,12 @@ export async function createBotMenuItem(
   input: BotMenuItemSchema,
 ): Promise<{ success: true; id: string } | { error: string }> {
   try {
-    const { companyId } = await getAdminContext('configuracoes')
+    const { companyId, supabase } = await getBotContext()
     const parsed = botMenuItemSchema.safeParse(input)
     if (!parsed.success) return { error: parsed.error.issues[0].message }
 
     const row: MenuItemInsert = { ...parsed.data, company_id: companyId }
 
-    const supabase = await createClient()
     const { data, error } = await supabase
       .from('whatsapp_menu_items')
       .insert(row as unknown as Parameters<ReturnType<typeof supabase.from>['insert']>[0])
@@ -117,13 +123,12 @@ export async function updateBotMenuItem(
   input: BotMenuItemSchema,
 ): Promise<{ success: true } | { error: string }> {
   try {
-    const { companyId } = await getAdminContext('configuracoes')
+    const { companyId, supabase } = await getBotContext()
     const parsed = botMenuItemSchema.safeParse(input)
     if (!parsed.success) return { error: parsed.error.issues[0].message }
 
     const update: MenuItemUpdate = parsed.data
 
-    const supabase = await createClient()
     const { error } = await supabase
       .from('whatsapp_menu_items')
       .update(update as unknown as Parameters<ReturnType<typeof supabase.from>['update']>[0])
@@ -146,8 +151,7 @@ export async function toggleBotMenuItem(
   enabled: boolean,
 ): Promise<{ success: true } | { error: string }> {
   try {
-    const { companyId } = await getAdminContext('configuracoes')
-    const supabase = await createClient()
+    const { companyId, supabase } = await getBotContext()
 
     const { error } = await supabase
       .from('whatsapp_menu_items')
@@ -170,8 +174,7 @@ export async function deleteBotMenuItem(
   id: string,
 ): Promise<{ success: true } | { error: string }> {
   try {
-    const { companyId } = await getAdminContext('configuracoes')
-    const supabase = await createClient()
+    const { companyId, supabase } = await getBotContext()
 
     // ON DELETE CASCADE cuida dos filhos automaticamente
     const { error } = await supabase
@@ -199,10 +202,8 @@ export async function reorderBotMenuItems(
   ids: string[],
 ): Promise<{ success: true } | { error: string }> {
   try {
-    const { companyId } = await getAdminContext('configuracoes')
+    const { companyId, supabase } = await getBotContext()
     if (ids.length === 0) return { success: true }
-
-    const supabase = await createClient()
 
     await Promise.all(
       ids.map((id, index) =>

@@ -18,7 +18,7 @@ import {
   ChevronRight,
   Folder,
   BarChart3,
-  CreditCard,
+  LockKeyhole,
 } from 'lucide-react'
 import { logout } from '@/app/actions/auth'
 import { RouteTransitionProvider } from '@/components/ui/route-transition-indicator'
@@ -34,7 +34,9 @@ interface DashboardShellProps {
   currentDate: string
   isAdmin: boolean
   initialIsExpanded: boolean
-  planLabel?: string
+  canAccessFinancial: boolean
+  canAccessWhatsApp: boolean
+  canAccessReports: boolean
 }
 
 const SIDEBAR_EXPANDED_STORAGE_KEY = 'dashboard-sidebar-expanded'
@@ -149,6 +151,7 @@ function SidebarMenu({
   isExpanded,
   setIsExpanded,
   children,
+  badge,
 }: {
   id: SidebarMenuId
   icon: React.ElementType
@@ -159,6 +162,7 @@ function SidebarMenu({
   isExpanded: boolean
   setIsExpanded: (val: boolean) => void
   children: React.ReactNode
+  badge?: React.ReactNode
 }) {
   const isOpen = openMenu === id
 
@@ -181,13 +185,17 @@ function SidebarMenu({
         }`}
       >
         <div className="flex items-center gap-4">
-          <div className="flex items-center justify-center min-w-6">
+          <div className="flex items-center justify-center min-w-6 relative">
             <Icon className="size-5" />
+            {!isExpanded && badge ? (
+              <span className="absolute -right-2 -top-2">{badge}</span>
+            ) : null}
           </div>
           <div
-            className={`whitespace-nowrap text-sm font-medium transition-all duration-300 ${isExpanded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4 pointer-events-none absolute left-14'}`}
+            className={`flex items-center gap-2 whitespace-nowrap text-sm font-medium transition-all duration-300 ${isExpanded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4 pointer-events-none absolute left-14'}`}
           >
-            {label}
+            <span>{label}</span>
+            {isExpanded && badge}
           </div>
         </div>
         {isExpanded && (
@@ -215,14 +223,6 @@ function SidebarMenu({
   )
 }
 
-const PLAN_BADGE_COLORS: Record<string, string> = {
-  Trial: 'bg-amber-100 text-amber-700',
-  Básico: 'bg-slate-100 text-slate-600',
-  Pro: 'bg-blue-100 text-blue-700',
-  Empresa: 'bg-purple-100 text-purple-700',
-  Vencido: 'bg-red-100 text-red-700',
-}
-
 export function DashboardShell({
   children,
   companyId,
@@ -231,7 +231,9 @@ export function DashboardShell({
   currentDate,
   isAdmin,
   initialIsExpanded,
-  planLabel,
+  canAccessFinancial,
+  canAccessWhatsApp,
+  canAccessReports,
 }: DashboardShellProps) {
   const [isExpanded, setIsExpanded] = useState(initialIsExpanded)
   const pathname = usePathname()
@@ -270,6 +272,21 @@ export function DashboardShell({
   useEffect(() => {
     setOpenMenu(activeSidebarMenu)
   }, [activeSidebarMenu])
+
+  const upgradeToProBadge = (
+    <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-blue-700">
+      <LockKeyhole className="size-3" />
+      Pro
+    </span>
+  )
+  const lockedFinancialBadge = canAccessFinancial ? undefined : upgradeToProBadge
+  const lockedFinancialSubItemBadge = canAccessFinancial ? undefined : upgradeToProBadge
+  const lockedWhatsAppBadge = canAccessWhatsApp ? undefined : upgradeToProBadge
+  const lockedWhatsAppSubItemBadge = canAccessWhatsApp ? undefined : upgradeToProBadge
+  const lockedReportsBadge = canAccessReports ? undefined : upgradeToProBadge
+  const financialHref = (href: string) => canAccessFinancial ? href : '/dashboard/assinatura'
+  const whatsappHref = (href: string) => canAccessWhatsApp ? href : '/dashboard/assinatura'
+  const reportsHref = canAccessReports ? '/dashboard/relatorios' : '/dashboard/assinatura'
 
   return (
     <RouteTransitionProvider>
@@ -386,12 +403,14 @@ export function DashboardShell({
             isExpanded={isExpanded}
           />
           <SidebarLink
-            href="/dashboard/atendimento"
+            href={whatsappHref('/dashboard/atendimento')}
             icon={MessagesSquare}
             label="Atendimento"
-            active={inAtendimento}
+            active={canAccessWhatsApp && inAtendimento}
             isExpanded={isExpanded}
-            badge={<AtendimentoWaitingBadge companyId={companyId} isExpanded={isExpanded} />}
+            badge={canAccessWhatsApp
+              ? <AtendimentoWaitingBadge companyId={companyId} isExpanded={isExpanded} />
+              : lockedWhatsAppBadge}
           />
           <SidebarLink
             href="/dashboard/estoque"
@@ -410,44 +429,52 @@ export function DashboardShell({
               setOpenMenu={setOpenMenu}
               isExpanded={isExpanded}
               setIsExpanded={setIsExpanded}
+              badge={lockedFinancialBadge}
             >
               <SidebarSubItem
-                href="/dashboard/financeiro/contas-a-pagar"
+                href={financialHref('/dashboard/financeiro/contas-a-pagar')}
                 label="Contas a Pagar"
-                active={pathname.startsWith('/dashboard/financeiro/contas-a-pagar')}
+                active={canAccessFinancial && pathname.startsWith('/dashboard/financeiro/contas-a-pagar')}
                 isExpanded={isExpanded}
+                badge={lockedFinancialSubItemBadge}
               />
               <SidebarSubItem
-                href="/dashboard/financeiro/contas-a-receber"
+                href={financialHref('/dashboard/financeiro/contas-a-receber')}
                 label="Contas a Receber"
-                active={pathname.startsWith('/dashboard/financeiro/contas-a-receber')}
+                active={canAccessFinancial && pathname.startsWith('/dashboard/financeiro/contas-a-receber')}
                 isExpanded={isExpanded}
+                badge={lockedFinancialSubItemBadge}
               />
               <SidebarSubItem
-                href="/dashboard/financeiro/producao-tecnicos"
+                href={financialHref('/dashboard/financeiro/producao-tecnicos')}
                 label="Produção de Técnicos"
                 active={
+                  canAccessFinancial &&
                   pathname === '/dashboard/financeiro/producao-tecnicos' ||
-                  (pathname.startsWith('/dashboard/financeiro/producao-tecnicos') &&
+                  (canAccessFinancial &&
+                    pathname.startsWith('/dashboard/financeiro/producao-tecnicos') &&
                     !pathname.startsWith('/dashboard/financeiro/producao-tecnicos/fechamentos'))
                 }
                 isExpanded={isExpanded}
+                badge={lockedFinancialSubItemBadge}
               />
               <SidebarSubItem
-                href="/dashboard/financeiro/producao-tecnicos/fechamentos"
+                href={financialHref('/dashboard/financeiro/producao-tecnicos/fechamentos')}
                 label="Fechamentos"
-                active={pathname.startsWith('/dashboard/financeiro/producao-tecnicos/fechamentos')}
+                active={canAccessFinancial && pathname.startsWith('/dashboard/financeiro/producao-tecnicos/fechamentos')}
                 isExpanded={isExpanded}
+                badge={lockedFinancialSubItemBadge}
               />
             </SidebarMenu>
           )}
           {isAdmin && (
             <SidebarLink
-              href="/dashboard/relatorios"
+              href={reportsHref}
               icon={BarChart3}
               label="Relatórios"
-              active={inRelatorios}
+              active={canAccessReports && inRelatorios}
               isExpanded={isExpanded}
+              badge={lockedReportsBadge}
             />
           )}
         </nav>
@@ -471,21 +498,17 @@ export function DashboardShell({
                 isExpanded={isExpanded}
               />
               <SidebarSubItem
-                href="/dashboard/configuracoes/automacao"
+                href={whatsappHref('/dashboard/configuracoes/automacao')}
                 label="Automação"
-                active={pathname.startsWith('/dashboard/configuracoes/automacao')}
+                active={canAccessWhatsApp && pathname.startsWith('/dashboard/configuracoes/automacao')}
                 isExpanded={isExpanded}
+                badge={lockedWhatsAppSubItemBadge}
               />
               <SidebarSubItem
                 href="/dashboard/assinatura"
                 label="Assinatura"
                 active={pathname.startsWith('/dashboard/assinatura')}
                 isExpanded={isExpanded}
-                badge={planLabel ? (
-                  <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full leading-none ${PLAN_BADGE_COLORS[planLabel] ?? 'bg-slate-100 text-slate-600'}`}>
-                    {planLabel}
-                  </span>
-                ) : undefined}
               />
               <SidebarSubItem
                 href="/dashboard/logs"

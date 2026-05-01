@@ -35,16 +35,26 @@ export function PlanCard({ plan, currentPlanId, isPopular, hasStripeConfigured, 
   const isCanceling = isCurrent && cancelAtPeriodEnd
 
   const features = [
+    plan.id === 'empresarial' ? 'Tudo do Profissional' : null,
     plan.max_os_per_month ? `Até ${plan.max_os_per_month} OS por mês` : 'OS ilimitadas',
+    'Cadastro ilimitado de clientes',
+    plan.id === 'basico' ? 'Controle básico de estoque' : 'Estoque com alertas de mínimo',
     plan.max_users ? (plan.max_users === 1 ? '1 usuário' : `Até ${plan.max_users} usuários`) : 'Usuários ilimitados',
-    plan.has_multiple_branches ? 'Múltiplas unidades' : null,
+    plan.id !== 'basico' ? 'Módulo financeiro' : null,
     plan.has_whatsapp_bot ? 'Bot WhatsApp incluído' : null,
     plan.has_advanced_reports ? 'Relatórios completos + exportação' : null,
+    plan.has_multiple_branches ? 'Múltiplas unidades' : null,
+    plan.id === 'empresarial' ? 'API e integrações avançadas' : null,
+    plan.id === 'empresarial' ? 'Suporte prioritário' : null,
+    plan.id === 'empresarial' ? 'Onboarding personalizado' : null,
   ].filter(Boolean) as string[]
 
   const unavailable = [
+    plan.id === 'basico' ? 'Alertas de estoque mínimo' : null,
+    plan.id === 'basico' ? 'Módulo financeiro' : null,
     !plan.has_whatsapp_bot ? 'Bot WhatsApp' : null,
     !plan.has_advanced_reports ? 'Relatórios avançados' : null,
+    !plan.has_multiple_branches ? 'Múltiplas unidades' : null,
   ].filter(Boolean) as string[]
 
   const hasCents = plan.price_brl % 100 !== 0

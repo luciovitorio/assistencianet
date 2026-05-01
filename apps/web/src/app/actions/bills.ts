@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAuditLog } from '@/lib/audit/audit-log'
 import { getAdminContext } from '@/lib/auth/admin-context'
+import { assertBillingFeature } from '@/lib/billing/entitlements'
 import { firstRelation } from '@/lib/supabase/relations'
 import {
   BILL_CATEGORY_LABELS,
@@ -35,6 +36,12 @@ const getBillDescription = (
   description: string | null | undefined,
   category: BillCategory,
 ) => description?.trim() || BILL_CATEGORY_LABELS[category]
+
+async function createFinancialActionClient(companyId: string) {
+  const supabase = await createClient()
+  await assertBillingFeature(supabase, companyId, 'financial_module')
+  return supabase
+}
 
 // ── Tipos públicos ────────────────────────────────────────────────────────────
 
@@ -142,7 +149,7 @@ export async function createBill(data: BillCreateSchema) {
       return { error: parsed.error.issues[0].message }
     }
 
-    const supabase = await createClient()
+    const supabase = await createFinancialActionClient(companyId)
     const isRecurring = !!parsed.data.recurrence
     const count = isRecurring ? (parsed.data.recurrence_count ?? 1) : 1
     const groupId = isRecurring ? crypto.randomUUID() : null
@@ -204,7 +211,7 @@ export async function updateBill(id: string, data: BillEditSchema) {
       return { error: parsed.error.issues[0].message }
     }
 
-    const supabase = await createClient()
+    const supabase = await createFinancialActionClient(companyId)
 
     const { data: existing, error: fetchError } = await supabase
       .from('bills')
@@ -255,7 +262,7 @@ export async function updateBill(id: string, data: BillEditSchema) {
 export async function deleteBill(id: string) {
   try {
     const { companyId } = await getAdminContext('financeiro')
-    const supabase = await createClient()
+    const supabase = await createFinancialActionClient(companyId)
 
     const { data: existing, error: fetchError } = await supabase
       .from('bills')
@@ -304,7 +311,7 @@ export async function markBillAsPaid(id: string, data: BillMarkAsPaidSchema) {
       return { error: parsed.error.issues[0].message }
     }
 
-    const supabase = await createClient()
+    const supabase = await createFinancialActionClient(companyId)
 
     const { data: existing, error: fetchError } = await supabase
       .from('bills')
@@ -366,7 +373,7 @@ export async function getBills(
 ): Promise<{ data: BillRow[] | null; error?: string }> {
   try {
     const { companyId } = await getAdminContext('financeiro')
-    const supabase = await createClient()
+    const supabase = await createFinancialActionClient(companyId)
     const today = new Date().toISOString().slice(0, 10)
 
     let query = supabase
@@ -423,7 +430,7 @@ export async function getBillsSummary(
 ): Promise<{ data: BillsSummary | null; error?: string }> {
   try {
     const { companyId } = await getAdminContext('financeiro')
-    const supabase = await createClient()
+    const supabase = await createFinancialActionClient(companyId)
     const today = new Date().toISOString().slice(0, 10)
     const [todayYear, todayMonth] = today.split('-').map(Number)
     const firstOfMonth = `${todayYear}-${String(todayMonth).padStart(2, '0')}-01`

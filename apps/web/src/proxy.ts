@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
-import { isSubscriptionActive } from '@/lib/stripe/plans'
+import { hasSubscriptionAccess, isTrialActive } from '@/lib/stripe/plans'
 
 const PUBLIC_ROUTES = [
   '/login',
@@ -29,6 +29,141 @@ const PUBLIC_FILE_ROUTES = [
   '/apple-icon',
   '/brand-icon',
 ]
+
+type BillingPlan = {
+  has_whatsapp_bot: boolean
+  has_advanced_reports: boolean
+  has_multiple_branches: boolean
+  max_users: number | null
+}
+
+type BillingSubscription = {
+  status: string | null
+  trial_ends_at: string | null
+  plan_id: string | null
+}
+
+async function getBillingAccess(
+  supabase: ReturnType<typeof createServerClient>,
+  companyId: string,
+) {
+  const { data: subscription } = await supabase
+    .from('subscriptions')
+    .select('status, trial_ends_at, plan_id')
+    .eq('company_id', companyId)
+    .maybeSingle()
+  const subscriptionRecord = subscription as BillingSubscription | null
+
+  if (!hasSubscriptionAccess(subscriptionRecord)) {
+    return {
+      active: false,
+      hasWhatsAppBot: false,
+      hasAdvancedReports: false,
+      hasMultipleBranches: false,
+      hasFinancialModule: false,
+      maxUsers: 0,
+    }
+  }
+
+  if (isTrialActive(subscriptionRecord)) {
+    return {
+      active: true,
+      hasWhatsAppBot: true,
+      hasAdvancedReports: true,
+      hasMultipleBranches: true,
+      hasFinancialModule: true,
+      maxUsers: null,
+    }
+  }
+
+  if (!subscriptionRecord?.plan_id) {
+    return {
+      active: false,
+      hasWhatsAppBot: false,
+      hasAdvancedReports: false,
+      hasMultipleBranches: false,
+      hasFinancialModule: false,
+      maxUsers: 0,
+    }
+  }
+
+  const { data: plan } = await supabase
+    .from('plans')
+    .select('has_whatsapp_bot, has_advanced_reports, has_multiple_branches, max_users')
+    .eq('id', subscriptionRecord.plan_id)
+    .maybeSingle()
+  const planRecord = plan as BillingPlan | null
+
+  return {
+    active: true,
+    hasWhatsAppBot: Boolean(planRecord?.has_whatsapp_bot),
+    hasAdvancedReports: Boolean(planRecord?.has_advanced_reports),
+    hasMultipleBranches: Boolean(planRecord?.has_multiple_branches),
+    hasFinancialModule: subscriptionRecord.plan_id !== 'basico',
+    maxUsers: planRecord?.max_users ?? 0,
+  }
+}
+
+async function canUserOccupyBillingSeat(
+  supabase: ReturnType<typeof createServerClient>,
+  companyId: string,
+  userId: string,
+  maxUsers: number | null,
+) {
+  if (maxUsers === null) return true
+  if (maxUsers <= 0) return false
+
+  const [{ data: company }, { data: employees }] = await Promise.all([
+    supabase
+      .from('companies')
+      .select('owner_id')
+      .eq('id', companyId)
+      .maybeSingle(),
+    supabase
+      .from('employees')
+      .select('user_id, created_at')
+      .eq('company_id', companyId)
+      .eq('active', true)
+      .is('deleted_at', null)
+      .not('user_id', 'is', null)
+      .order('created_at', { ascending: true }),
+  ])
+
+  const allowedUserIds: string[] = []
+  const ownerId = (company as { owner_id?: string } | null)?.owner_id
+  if (ownerId) allowedUserIds.push(ownerId)
+
+  for (const employee of (employees ?? []) as { user_id: string | null }[]) {
+    if (employee.user_id && !allowedUserIds.includes(employee.user_id)) {
+      allowedUserIds.push(employee.user_id)
+    }
+  }
+
+  return allowedUserIds.slice(0, maxUsers).includes(userId)
+}
+
+function getBlockedPlanFeature(pathname: string, access: Awaited<ReturnType<typeof getBillingAccess>>) {
+  if (pathname.startsWith('/dashboard/relatorios') && !access.hasAdvancedReports) {
+    return 'advanced_reports'
+  }
+
+  if (pathname.startsWith('/dashboard/financeiro') && !access.hasFinancialModule) {
+    return 'financial_module'
+  }
+
+  if (
+    (
+      pathname.startsWith('/dashboard/atendimento') ||
+      pathname.startsWith('/dashboard/configuracoes/bot') ||
+      pathname.startsWith('/dashboard/configuracoes/automacao')
+    ) &&
+    !access.hasWhatsAppBot
+  ) {
+    return 'whatsapp_bot'
+  }
+
+  return null
+}
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -62,7 +197,7 @@ export async function proxy(request: NextRequest) {
   if (user?.app_metadata?.role) {
     const { data: employee } = await supabase
       .from('employees')
-      .select('active')
+      .select('active, company_id')
       .eq('user_id', user.id)
       .is('deleted_at', null)
       .maybeSingle()
@@ -102,8 +237,37 @@ export async function proxy(request: NextRequest) {
 
   // Authenticated user accessing dashboard — check onboarding + subscription
   if (pathname.startsWith('/dashboard')) {
-    // Funcionários (têm role em app_metadata) não passam por onboarding/billing
+    // Funcionários não passam por onboarding, mas obedecem ao billing da empresa.
     if (user.app_metadata?.role) {
+      const { data: employee } = await supabase
+        .from('employees')
+        .select('company_id')
+        .eq('user_id', user.id)
+        .eq('active', true)
+        .is('deleted_at', null)
+        .maybeSingle()
+
+      if (!employee?.company_id) {
+        await supabase.auth.signOut()
+        return NextResponse.redirect(new URL('/login', request.url))
+      }
+
+      const billingAccess = await getBillingAccess(supabase, employee.company_id)
+      if (!billingAccess.active || getBlockedPlanFeature(pathname, billingAccess)) {
+        return NextResponse.redirect(new URL('/sem-plano', request.url))
+      }
+
+      const userSeatAllowed = await canUserOccupyBillingSeat(
+        supabase,
+        employee.company_id,
+        user.id,
+        billingAccess.maxUsers,
+      )
+
+      if (!userSeatAllowed) {
+        return NextResponse.redirect(new URL('/sem-plano', request.url))
+      }
+
       return response
     }
 
@@ -130,20 +294,13 @@ export async function proxy(request: NextRequest) {
       return response
     }
 
-    // Verifica se a assinatura está ativa
-    const { data: subscription } = await supabase
-      .from('subscriptions')
-      .select('status, trial_ends_at')
-      .eq('company_id', company.id)
-      .maybeSingle()
+    const billingAccess = await getBillingAccess(supabase, company.id)
 
-    const subscriptionActive =
-      subscription && isSubscriptionActive(subscription.status) &&
-      (subscription.status !== 'trialing' ||
-        !subscription.trial_ends_at ||
-        new Date(subscription.trial_ends_at) > new Date())
+    if (!billingAccess.active) {
+      return NextResponse.redirect(new URL('/dashboard/assinatura', request.url))
+    }
 
-    if (!subscriptionActive) {
+    if (getBlockedPlanFeature(pathname, billingAccess)) {
       return NextResponse.redirect(new URL('/dashboard/assinatura', request.url))
     }
   }

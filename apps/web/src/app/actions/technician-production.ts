@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { getAdminContext } from '@/lib/auth/admin-context'
+import { assertBillingFeature } from '@/lib/billing/entitlements'
 import { firstRelation } from '@/lib/supabase/relations'
 
 export type TechnicianProductionRow = {
@@ -29,6 +30,7 @@ export async function getTechnicianProduction(
   try {
     const { companyId } = await getAdminContext('financeiro')
     const supabase = await createClient()
+    await assertBillingFeature(supabase, companyId, 'financial_module')
 
     // Busca técnicos ativos com suas OS concluídas no período
     const { data: technicians, error: techError } = await supabase

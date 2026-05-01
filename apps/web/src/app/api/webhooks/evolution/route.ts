@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getCompanySubscriptionAccess } from '@/lib/billing/entitlements'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createEvolutionApiClient } from '@/lib/whatsapp/evolution-client'
 import { runBotEngine } from '@/lib/whatsapp/bot-engine'
@@ -184,12 +185,17 @@ export async function POST(request: NextRequest) {
     return new NextResponse('Segredo inválido.', { status: 403 })
   }
 
+  const supabase = createAdminClient()
+  const access = await getCompanySubscriptionAccess(supabase, settings.company_id)
+  if (!access.active || !access.hasWhatsAppBot) {
+    return NextResponse.json({ received: true, ignored: 'billing' })
+  }
+
   // 6. Automação desabilitada: apenas registra
   if (!settings.notify_inbound_message) {
     return NextResponse.json({ received: true, ignored: 'trigger' })
   }
 
-  const supabase = createAdminClient()
   const messageText = extractMessageText(payload) ?? '[mídia]'
 
   // 7. Encontra ou cria a conversa

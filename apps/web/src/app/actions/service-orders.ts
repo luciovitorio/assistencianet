@@ -5,6 +5,7 @@ import { createClient as createSupabaseClient } from '@/lib/supabase/server'
 import { createAuditLog } from '@/lib/audit/audit-log'
 import { getAdminContext } from '@/lib/auth/admin-context'
 import { getCompanyContext } from '@/lib/auth/company-context'
+import { assertCanCreateServiceOrder } from '@/lib/billing/entitlements'
 import { calculatePickupPayment } from '@/lib/service-orders/pickup-payment'
 import { reserveEstimatePartsIfAvailable } from '@/lib/service-orders/reserve-estimate-parts'
 import { applyEstimateClientResponse } from '@/lib/service-orders/apply-estimate-response'
@@ -779,6 +780,8 @@ export async function createServiceOrder(data: ServiceOrderSchema) {
     }
 
     const supabase = await createSupabaseClient()
+    await assertCanCreateServiceOrder(supabase, companyId)
+
     const equipmentModel = await getActiveEquipmentModel(
       supabase,
       companyId,

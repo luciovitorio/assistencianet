@@ -130,7 +130,7 @@ export default async function AssinaturaPage({
 
   const trialEndsAt = subscription?.trial_ends_at ? new Date(subscription.trial_ends_at) : null
   const trialDaysLeft = trialEndsAt
-    ? Math.max(0, Math.ceil((trialEndsAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    ? Math.max(0, Math.ceil((trialEndsAt.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))
     : null
 
   const periodEnd = subscription?.current_period_end

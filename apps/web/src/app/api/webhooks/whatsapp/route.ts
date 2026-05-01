@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import { NextRequest, NextResponse } from 'next/server'
+import { getCompanySubscriptionAccess } from '@/lib/billing/entitlements'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 export const runtime = 'nodejs'
@@ -92,13 +93,18 @@ export async function GET(request: NextRequest) {
   const supabase = createAdminClient()
   const { data: settings } = await supabase
     .from('whatsapp_automation_settings')
-    .select('id')
+    .select('id, company_id')
     .eq('webhook_verify_token', verifyToken)
     .limit(1)
-    .maybeSingle()
+    .maybeSingle<{ id: string; company_id: string }>()
 
   if (!settings) {
     return new NextResponse('Token de verificação inválido.', { status: 403 })
+  }
+
+  const access = await getCompanySubscriptionAccess(supabase, settings.company_id)
+  if (!access.active || !access.hasWhatsAppBot) {
+    return new NextResponse('Plano sem automação WhatsApp.', { status: 403 })
   }
 
   return new NextResponse(challenge, { status: 200 })
@@ -139,12 +145,12 @@ export async function POST(request: NextRequest) {
   const supabase = createAdminClient()
   const { data: settings } = await supabase
     .from('whatsapp_automation_settings')
-    .select('app_secret')
+    .select('company_id, app_secret')
     .eq('enabled', true)
     .eq('provider', 'whatsapp_cloud_api')
     .eq('business_account_id', businessAccountId)
     .limit(1)
-    .maybeSingle()
+    .maybeSingle<{ company_id: string; app_secret: string | null }>()
 
   if (!settings) {
     console.warn(
@@ -161,6 +167,11 @@ export async function POST(request: NextRequest) {
   if (!verifySignature(rawBody, signature, settings.app_secret)) {
     console.warn('[whatsapp-webhook] Assinatura inválida.')
     return new NextResponse('Assinatura inválida.', { status: 403 })
+  }
+
+  const access = await getCompanySubscriptionAccess(supabase, settings.company_id)
+  if (!access.active || !access.hasWhatsAppBot) {
+    return NextResponse.json({ received: true, ignored: 'billing' })
   }
 
   return NextResponse.json({ received: true })

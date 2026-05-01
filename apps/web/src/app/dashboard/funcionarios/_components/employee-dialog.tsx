@@ -1,11 +1,14 @@
 'use client'
 
 import * as React from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useForm, Controller, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
-import { UserPlus } from 'lucide-react'
+import { AlertTriangle, UserPlus } from 'lucide-react'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
 import {
   Dialog,
   DialogContent,
@@ -60,10 +63,17 @@ interface EmployeeDialogProps {
   branches: BranchOption[]
   open: boolean
   onOpenChange: (open: boolean) => void
+  employeeSeatUsage: {
+    used: number
+    limit: number | null
+    reached: boolean
+    planName: string | null
+  }
 }
 
-export function EmployeeDialog({ employee, branches, open, onOpenChange }: EmployeeDialogProps) {
+export function EmployeeDialog({ employee, branches, open, onOpenChange, employeeSeatUsage }: EmployeeDialogProps) {
   const isEditing = !!employee?.id
+  const showUpgradeNotice = !isEditing && employeeSeatUsage.reached
   const router = useRouter()
   const [isPending, startTransition] = React.useTransition()
 
@@ -104,6 +114,11 @@ export function EmployeeDialog({ employee, branches, open, onOpenChange }: Emplo
   }, [open, employee, reset])
 
   const onSubmit = (data: EmployeeValues) => {
+    if (showUpgradeNotice) {
+      toast.error('Faça upgrade para o plano Profissional para adicionar novos funcionários.')
+      return
+    }
+
     const payload = {
       ...data,
       labor_rate: data.labor_rate ?? null,
@@ -142,6 +157,27 @@ export function EmployeeDialog({ employee, branches, open, onOpenChange }: Emplo
               : 'Preencha os dados abaixo para cadastrar um novo funcionário.'}
           </DialogDescription>
         </DialogHeader>
+
+        {showUpgradeNotice && (
+          <Alert className="border-amber-200 bg-amber-50 text-amber-900">
+            <AlertTriangle className="size-4" />
+            <AlertTitle className="flex flex-wrap items-center gap-2">
+              Limite de usuários atingido
+              <Badge variant="outline" className="border-amber-300 bg-white text-amber-800">
+                Upgrade para Profissional
+              </Badge>
+            </AlertTitle>
+            <AlertDescription className="text-amber-800">
+              O plano {employeeSeatUsage.planName ?? 'atual'} permite {employeeSeatUsage.limit} usuário
+              {employeeSeatUsage.limit === 1 ? '' : 's'} e já existem {employeeSeatUsage.used} em uso.
+              Para adicionar um novo funcionário, acesse{' '}
+              <Link href="/dashboard/assinatura" className="font-medium underline underline-offset-4">
+                Assinatura
+              </Link>
+              {' '}e altere para o plano Profissional.
+            </AlertDescription>
+          </Alert>
+        )}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4" id="employee-form" noValidate>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -317,7 +353,12 @@ export function EmployeeDialog({ employee, branches, open, onOpenChange }: Emplo
           >
             Cancelar
           </Button>
-          <Button type="submit" form="employee-form" disabled={isPending} loading={isPending}>
+          <Button
+            type="submit"
+            form="employee-form"
+            disabled={isPending || showUpgradeNotice}
+            loading={isPending}
+          >
             Salvar Funcionário
           </Button>
         </DialogFooter>

@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getAdminContext } from '@/lib/auth/admin-context'
+import { getBillingBranchUsage } from '@/lib/billing/entitlements'
 import { BranchList } from './_components/branch-list'
 
 export default async function FiliaisPage() {
@@ -17,17 +18,20 @@ export default async function FiliaisPage() {
     redirect('/dashboard')
   }
 
-  const { data: branches } = await supabase
-    .from('branches')
-    .select('*')
-    .eq('company_id', companyId)
-    .is('deleted_at', null)
-    .order('created_at', { ascending: true })
-    .order('id', { ascending: true })
+  const [{ data: branches }, branchUsage] = await Promise.all([
+    supabase
+      .from('branches')
+      .select('*')
+      .eq('company_id', companyId)
+      .is('deleted_at', null)
+      .order('created_at', { ascending: true })
+      .order('id', { ascending: true }),
+    getBillingBranchUsage(supabase, companyId),
+  ])
 
   return (
     <div className="space-y-6">
-      <BranchList initialBranches={branches || []} isAdmin />
+      <BranchList initialBranches={branches || []} isAdmin branchUsage={branchUsage} />
     </div>
   )
 }

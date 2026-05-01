@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getAdminContext } from '@/lib/auth/admin-context'
+import { getBillingSeatUsage } from '@/lib/billing/entitlements'
 import { EmployeeList } from './_components/employee-list'
 
 export default async function FuncionariosPage() {
@@ -17,7 +18,7 @@ export default async function FuncionariosPage() {
     redirect('/dashboard')
   }
 
-  const [{ data: employees }, { data: branches }] = await Promise.all([
+  const [{ data: employees }, { data: branches }, seatUsage] = await Promise.all([
     supabase
       .from('employees')
       .select('id, name, role, email, phone, cpf, active, branch_id, user_id, labor_rate, is_owner')
@@ -31,6 +32,7 @@ export default async function FuncionariosPage() {
       .is('deleted_at', null)
       .eq('active', true)
       .order('name', { ascending: true }),
+    getBillingSeatUsage(supabase, companyId),
   ])
 
   return (
@@ -39,6 +41,7 @@ export default async function FuncionariosPage() {
         initialEmployees={employees || []}
         branches={branches || []}
         isAdmin
+        employeeSeatUsage={seatUsage}
       />
     </div>
   )

@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createAuditLog } from '@/lib/audit/audit-log'
 import { getAdminContext } from '@/lib/auth/admin-context'
+import { assertBillingFeature } from '@/lib/billing/entitlements'
 import { createClient } from '@/lib/supabase/server'
 import { maskSecretState } from '@/lib/whatsapp/automation-settings'
 import { createEvolutionApiClient } from '@/lib/whatsapp/evolution-client'
@@ -175,6 +176,8 @@ const getErrorMessage = (error: unknown, fallback: string) => {
 
 const getSavedWhatsAppSettings = async (companyId: string) => {
   const supabase = await createClient()
+  await assertBillingFeature(supabase, companyId, 'whatsapp_bot')
+
   const { data: settings, error } = await supabase
     .from('whatsapp_automation_settings')
     .select(WHATSAPP_SETTINGS_SELECT)
@@ -230,6 +233,8 @@ export async function saveWhatsAppAutomationSettings(
     }
 
     const supabase = await createClient()
+    await assertBillingFeature(supabase, companyId, 'whatsapp_bot')
+
     const { data: previousSettings } = await supabase
       .from('whatsapp_automation_settings')
       .select(WHATSAPP_SETTINGS_SELECT)

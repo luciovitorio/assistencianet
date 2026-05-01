@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/supabase/database.types'
+import { canUseStockAlerts } from '@/lib/billing/entitlements'
 
 type SupabaseServerClient = SupabaseClient<Database>
 
@@ -111,6 +112,10 @@ export async function createLowStockNotificationForTransition({
   previousAvailableStock: number
   currentAvailableStock: number
 }) {
+  if (!(await canUseStockAlerts(supabase, companyId))) {
+    return
+  }
+
   const previousLevel = getStockAlertLevel(previousAvailableStock, minStock)
   const currentLevel = getStockAlertLevel(currentAvailableStock, minStock)
 

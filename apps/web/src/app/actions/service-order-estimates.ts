@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createAuditLog } from '@/lib/audit/audit-log'
 import { getCompanyContext } from '@/lib/auth/company-context'
+import { assertBillingFeature } from '@/lib/billing/entitlements'
 import {
   getPartAvailabilitySnapshots,
 } from '@/lib/stock/low-stock-notifications'
@@ -815,6 +816,10 @@ export async function sendEstimate(
   try {
     const { companyId } = await getCompanyContext()
     const supabase = await createClient()
+    if (via === 'whatsapp') {
+      await assertBillingFeature(supabase, companyId, 'whatsapp_bot')
+    }
+
     const validation = await validateEstimateSendabilityInternal(
       supabase,
       companyId,
