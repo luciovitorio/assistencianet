@@ -26,10 +26,14 @@ export interface SearchAutocompleteProps<TOption extends { id: string }> {
   emptyMessage?: (search: string) => string
   createLabel?: (search: string) => string
   onCreate?: (search: string) => void
+  inlineCreateLabel?: string
   maxResults?: number
   searchDebounceMs?: number
   loadingMessage?: string
   className?: string
+  triggerClassName?: string
+  inputClassName?: string
+  optionClassName?: string
 }
 
 export function SearchAutocomplete<TOption extends { id: string }>({
@@ -48,10 +52,14 @@ export function SearchAutocomplete<TOption extends { id: string }>({
     search.trim() ? `Nenhum resultado encontrado para "${search}".` : 'Nenhum item cadastrado.',
   createLabel,
   onCreate,
+  inlineCreateLabel,
   maxResults = 10,
   searchDebounceMs = 250,
   loadingMessage = 'Buscando...',
   className,
+  triggerClassName,
+  inputClassName,
+  optionClassName,
 }: SearchAutocompleteProps<TOption>) {
   const [search, setSearch] = React.useState('')
   const [isOpen, setIsOpen] = React.useState(false)
@@ -160,7 +168,7 @@ export function SearchAutocomplete<TOption extends { id: string }>({
           <div
             ref={dropdownRef}
             style={dropdownStyle}
-            className="overflow-hidden rounded-xl bg-popover ring-1 ring-foreground/10 shadow-xl shadow-slate-950/10"
+            className="overflow-hidden rounded-md bg-popover ring-1 ring-foreground/10 shadow-xl shadow-slate-950/10"
           >
             <div className="max-h-72 overflow-y-auto">
               {isSearching ? (
@@ -174,7 +182,10 @@ export function SearchAutocomplete<TOption extends { id: string }>({
                   <button
                     key={option.id}
                     type="button"
-                    className="flex w-full items-start justify-between gap-3 px-3 py-2.5 text-left text-sm transition-colors hover:bg-muted/60"
+                    className={cn(
+                      'flex w-full items-start justify-between gap-3 px-3 py-2.5 text-left text-sm transition-colors hover:bg-muted/60',
+                      optionClassName,
+                    )}
                     onMouseDown={(event) => {
                       event.preventDefault()
                       onSelectOption?.(option)
@@ -193,7 +204,7 @@ export function SearchAutocomplete<TOption extends { id: string }>({
               <div className="border-t">
                 <button
                   type="button"
-                  className="flex w-full items-center gap-2 px-3 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-primary/5"
+                  className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-primary transition-colors hover:bg-primary/5"
                   onMouseDown={(event) => {
                     event.preventDefault()
                     setIsOpen(false)
@@ -217,6 +228,8 @@ export function SearchAutocomplete<TOption extends { id: string }>({
           className={cn(
             'relative flex h-11 items-center rounded-xl border bg-background shadow-sm shadow-slate-950/5 transition-colors focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50',
             error ? 'border-destructive ring-3 ring-destructive/20' : 'border-input',
+            inlineCreateLabel && 'overflow-hidden',
+            triggerClassName,
           )}
         >
           <Search className="pointer-events-none absolute left-3 size-4 text-muted-foreground" />
@@ -237,7 +250,11 @@ export function SearchAutocomplete<TOption extends { id: string }>({
               setIsOpen(true)
             }}
             placeholder={placeholder}
-            className="flex-1 bg-transparent py-1 pl-10 pr-9 text-sm text-foreground outline-none placeholder:text-muted-foreground/70"
+            className={cn(
+              'flex-1 bg-transparent py-1 pl-10 text-sm text-foreground outline-none placeholder:text-muted-foreground/70',
+              inlineCreateLabel ? 'pr-[5.25rem]' : 'pr-9',
+              inputClassName,
+            )}
             autoComplete="off"
           />
           {(selectedOption || search) && (
@@ -250,9 +267,25 @@ export function SearchAutocomplete<TOption extends { id: string }>({
                 setIsOpen(false)
                 setTimeout(() => inputRef.current?.focus(), 0)
               }}
-              className="absolute right-2.5 text-muted-foreground transition-colors hover:text-foreground"
+              className={cn(
+                'absolute text-muted-foreground transition-colors hover:text-foreground',
+                inlineCreateLabel ? 'right-[4.25rem]' : 'right-2.5',
+              )}
             >
               <X className="size-4" />
+            </button>
+          )}
+          {onCreate && inlineCreateLabel && (
+            <button
+              type="button"
+              className="absolute inset-y-0 right-0 flex items-center border-l border-border bg-background px-3 text-xs font-medium text-primary transition-colors hover:bg-primary/5"
+              onMouseDown={(event) => {
+                event.preventDefault()
+                setIsOpen(false)
+                onCreate(search)
+              }}
+            >
+              {inlineCreateLabel}
             </button>
           )}
         </div>

@@ -16,6 +16,7 @@ import {
   ShieldAlert,
   ShieldCheck,
   Smartphone,
+  User,
   X,
 } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -28,6 +29,7 @@ import { useRouteTransition } from '@/components/ui/route-transition-indicator'
 import { SearchAutocomplete } from '@/components/ui/search-autocomplete'
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { searchClientsForServiceOrder } from '@/app/actions/clients'
 import { searchEquipmentModelsForServiceOrder } from '@/app/actions/equipments'
 import {
@@ -47,7 +49,7 @@ import {
 } from '@/lib/validations/service-order'
 import { cn } from '@/lib/utils'
 
-const CONTROL = 'h-9 rounded-md border-slate-200 bg-white placeholder:text-slate-400/70 shadow-none'
+const CONTROL = 'h-9 w-full min-w-0 rounded-md border-slate-200 bg-white placeholder:text-slate-400/70 shadow-none'
 const AREA = 'rounded-md border-slate-200 bg-white placeholder:text-slate-400/70 shadow-none'
 
 export interface ClientOption {
@@ -89,6 +91,8 @@ const mergeClientsById = (...groups: ClientOption[][]) =>
 
 const formatOsNumber = (num: number) =>
   `${String(num).slice(0, 4)}-${String(num).slice(4).padStart(4, '0')}`
+
+const getShortClientName = (name: string) => name.trim().split(/\s+/).slice(0, 2).join(' ')
 
 const normalizeAutocompleteSearch = (value: string) =>
   value
@@ -135,7 +139,7 @@ function ClientSearchInput({
         value={value}
         onChange={onChange}
         onSelectOption={onClientCreated}
-        placeholder="Buscar pelo nome, telefone ou CPF/CNPJ..."
+        placeholder="Buscar cliente..."
         error={error}
         getOptionLabel={(client) => client.name}
         getOptionSearchText={(client) => [client.name, client.phone, client.document].filter(Boolean).join(' ')}
@@ -152,18 +156,43 @@ function ClientSearchInput({
             .some((value) => value!.replace(/\D/g, '').includes(numericQuery))
         }}
         searchOptions={searchClients}
-        renderOption={(client) => (
-          <>
-            <span className="font-medium">{client.name}</span>
-            {client.phone && <span className="ml-2 text-xs text-muted-foreground">{client.phone}</span>}
-          </>
-        )}
+        renderOption={(client) => {
+          const shortName = getShortClientName(client.name)
+          return (
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <div className="flex min-w-0 flex-1 items-center gap-2" />
+                }
+              >
+                <User className="size-3.5 shrink-0 text-slate-400" />
+                <span className="min-w-0 flex-1 truncate text-left text-[13px] font-medium text-slate-700">
+                  {shortName}
+                </span>
+                {client.phone && (
+                  <span className="ml-auto max-w-24 shrink-0 text-right text-[11px] leading-tight text-slate-400">
+                    {client.phone}
+                  </span>
+                )}
+              </TooltipTrigger>
+              <TooltipContent side="right" align="center" className="z-[10000] flex-col items-start gap-1">
+                <div><span className="font-semibold">Nome:</span> {client.name}</div>
+                {client.phone && <div><span className="font-semibold">Telefone:</span> {client.phone}</div>}
+                {client.document && <div><span className="font-semibold">CPF/CNPJ:</span> {client.document}</div>}
+              </TooltipContent>
+            </Tooltip>
+          )
+        }}
         emptyMessage={(search) =>
           search.trim()
             ? `Nenhum cliente encontrado para "${search}".`
             : 'Nenhum cliente cadastrado.'
         }
-        createLabel={() => 'Cadastrar novo cliente'}
+        createLabel={() => 'Criar novo cliente'}
+        inlineCreateLabel="+ Novo"
+        triggerClassName="h-9 rounded-md shadow-none"
+        inputClassName="text-[13px]"
+        optionClassName="items-center px-3 py-2 text-xs"
         onCreate={(search) => {
           setNewClientName(search.trim())
           setShowCreateDialog(true)
@@ -258,6 +287,9 @@ function EquipmentSearchInput({
             : 'Nenhum equipamento cadastrado.'
         }
         createLabel={() => 'Cadastrar novo equipamento'}
+        inlineCreateLabel="+ Novo"
+        triggerClassName="h-9 rounded-md shadow-none"
+        inputClassName="text-[13px]"
         onCreate={() => setShowCreateDialog(true)}
       />
 
@@ -567,7 +599,7 @@ export function ServiceOrderForm({
       >
 
         {/* ──────────── LEFT SIDEBAR ──────────── */}
-        <div className="shrink-0 border-b border-slate-200 xl:w-64 xl:border-b-0 xl:border-r">
+        <div className="shrink-0 border-b border-slate-200 xl:w-72 xl:border-b-0 xl:border-r">
 
           {/* Atendimento section */}
           <div className="px-5 pt-5 pb-5">
