@@ -759,6 +759,58 @@ export type Database = {
           },
         ]
       }
+      os_technician_history: {
+        Row: {
+          action: string
+          company_id: string
+          created_at: string
+          employee_id: string | null
+          id: string
+          os_status_at_action: string
+          service_order_id: string
+        }
+        Insert: {
+          action: string
+          company_id: string
+          created_at?: string
+          employee_id?: string | null
+          id?: string
+          os_status_at_action: string
+          service_order_id: string
+        }
+        Update: {
+          action?: string
+          company_id?: string
+          created_at?: string
+          employee_id?: string | null
+          id?: string
+          os_status_at_action?: string
+          service_order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "os_technician_history_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "os_technician_history_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "os_technician_history_service_order_id_fkey"
+            columns: ["service_order_id"]
+            isOneToOne: false
+            referencedRelation: "service_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       parts: {
         Row: {
           active: boolean
