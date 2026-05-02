@@ -9,11 +9,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const cookieStore = await cookies()
   const initialIsExpanded = cookieStore.get('dashboard_sidebar_expanded')?.value !== 'false'
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) redirect('/login')
 
   let company: { id: string; name: string; owner_id: string } | null = null
+  let userEmail = ''
   let isAdmin = false
   let canAccessFinancial = true
   let canAccessWhatsApp = true
@@ -28,12 +26,16 @@ export default async function DashboardLayout({ children }: { children: React.Re
     ])
 
     company = companyResult.data
+    userEmail = context.user.email || ''
     isAdmin = context.isOwner || context.isAdmin
     canManageSubscription = context.isOwner
     canAccessFinancial = billingAccess.active && billingAccess.hasFinancialModule
     canAccessWhatsApp = billingAccess.active && billingAccess.hasWhatsAppBot
     canAccessReports = billingAccess.active && billingAccess.hasAdvancedReports
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message === 'Usuário não autenticado') {
+      redirect('/login')
+    }
     redirect('/onboarding/empresa')
   }
 
@@ -50,7 +52,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <DashboardShell
       companyId={company?.id || ''}
       companyName={company?.name || 'Assistência'}
-      userEmail={user?.email || ''}
+      userEmail={userEmail}
       currentDate={currentDate}
       isAdmin={isAdmin}
       initialIsExpanded={initialIsExpanded}

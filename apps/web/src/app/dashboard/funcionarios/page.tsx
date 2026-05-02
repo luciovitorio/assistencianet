@@ -6,9 +6,6 @@ import { EmployeeList } from './_components/employee-list'
 
 export default async function FuncionariosPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) redirect('/login')
 
   let companyId: string
   let isAdmin = false

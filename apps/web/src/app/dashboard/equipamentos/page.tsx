@@ -5,11 +5,6 @@ import { EquipmentList } from './_components/equipment-list'
 
 export default async function EquipamentosPage() {
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) redirect('/login')
 
   let companyId: string
 

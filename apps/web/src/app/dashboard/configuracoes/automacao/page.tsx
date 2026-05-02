@@ -6,11 +6,6 @@ import { resolveWhatsAppAutomationSettings } from '@/lib/whatsapp/automation-set
 
 export default async function ConfiguracoesAutomacaoPage() {
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) redirect('/login')
 
   let companyId: string
 

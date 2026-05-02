@@ -6,9 +6,6 @@ import { ReceivablesList } from './_components/receivables-list'
 
 export default async function ContasAReceberPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) redirect('/login')
 
   let companyId: string
   let isAdmin: boolean

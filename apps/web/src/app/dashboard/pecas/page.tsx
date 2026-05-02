@@ -5,9 +5,6 @@ import { PartList } from './_components/part-list'
 
 export default async function PecasPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) redirect('/login')
 
   let companyId: string
 

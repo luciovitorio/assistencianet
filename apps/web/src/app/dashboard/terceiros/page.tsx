@@ -5,11 +5,6 @@ import { ThirdPartyList } from './_components/third-party-list'
 
 export default async function TerceirosPage() {
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) redirect('/login')
 
   let companyId: string
 

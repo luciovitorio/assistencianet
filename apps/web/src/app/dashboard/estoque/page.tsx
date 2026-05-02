@@ -17,10 +17,7 @@ export default async function EstoquePage({
   searchParams?: Promise<EstoquePageSearchParams>
 }) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
   const resolvedSearchParams = (await searchParams) ?? {}
-
-  if (!user) redirect('/login')
 
   let companyId: string
   let isAdmin: boolean

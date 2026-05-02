@@ -2,19 +2,11 @@ import { redirect } from 'next/navigation'
 import { getBotMenuItems } from '@/app/actions/bot-menu'
 import { getBotMessages } from '@/app/actions/bot-messages'
 import { getAdminContext } from '@/lib/auth/admin-context'
-import { createClient } from '@/lib/supabase/server'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { BotMenuManager } from './_components/bot-menu-manager'
 import { BotMessagesForm } from './_components/bot-messages-form'
 
 export default async function ConfiguracoesBotPage() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) redirect('/login')
-
   try {
     await getAdminContext('configuracoes')
   } catch {

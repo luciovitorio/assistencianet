@@ -6,9 +6,6 @@ import { BillsList } from './_components/bills-list'
 
 export default async function ContasAPagarPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) redirect('/login')
 
   let companyId: string
   let isAdmin: boolean

@@ -23,11 +23,6 @@ const sortClientsByBranchPreference = <
 
 export default async function ClientesPage() {
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) redirect('/login')
 
   let companyId: string
   let currentBranchId: string | null

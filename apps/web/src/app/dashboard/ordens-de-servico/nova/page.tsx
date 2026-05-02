@@ -6,11 +6,6 @@ import { ServiceOrderForm } from '../_components/service-order-form'
 
 export default async function NovaOrdemDeServicoPage() {
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) redirect('/login')
 
   let companyId: string
   let currentBranchId: string | null

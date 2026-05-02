@@ -1,5 +1,4 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
 import { getCompanyContext } from '@/lib/auth/company-context'
 import { getTechnicianProduction } from '@/app/actions/technician-production'
 import { ProductionReport } from './_components/production-report'
@@ -22,10 +21,6 @@ function getCurrentFridayWeek() {
 }
 
 export default async function ProducaoTecnicosPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
   let isAdmin: boolean
 
   try {

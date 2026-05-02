@@ -42,11 +42,6 @@ const normalizeServiceOrder = (order: ServiceOrderQueryRow): ServiceOrderData =>
 
 export default async function OrdensDeServicoPage() {
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) redirect('/login')
 
   let companyId: string
   let currentBranchId: string | null

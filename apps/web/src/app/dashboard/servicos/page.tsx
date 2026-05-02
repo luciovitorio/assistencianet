@@ -5,9 +5,6 @@ import { ServiceList } from './_components/service-list'
 
 export default async function ServicosPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) redirect('/login')
 
   let companyId: string
 

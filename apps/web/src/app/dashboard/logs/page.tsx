@@ -5,13 +5,6 @@ import { AuditLogList } from './_components/audit-log-list'
 
 export default async function LogsPage() {
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect('/login')
-  }
 
   let companyId: string
 

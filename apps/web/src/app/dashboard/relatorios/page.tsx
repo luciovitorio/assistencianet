@@ -1,5 +1,4 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
 import { getCompanyContext } from '@/lib/auth/company-context'
 import { getBusinessReports } from '@/app/actions/reports'
 import { ReportsDashboard } from './_components/reports-dashboard'
@@ -16,13 +15,6 @@ const getDefaultReportRange = () => {
 }
 
 export default async function RelatoriosPage() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) redirect('/login')
-
   let isAdmin: boolean
 
   try {

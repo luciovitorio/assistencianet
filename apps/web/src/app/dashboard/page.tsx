@@ -1,14 +1,11 @@
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
+import { getCompanyContext } from '@/lib/auth/company-context'
 import { AdminDashboard } from './_components/admin-dashboard'
 import { TechnicianDashboard } from './_components/technician-dashboard'
 
 export default async function DashboardPage() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { user } = await getCompanyContext()
 
   const employeeRole = user?.app_metadata?.role
   let forcePasswordChange = Boolean(user?.app_metadata?.force_password_change)

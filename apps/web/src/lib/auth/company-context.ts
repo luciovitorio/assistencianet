@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
 
@@ -10,7 +11,7 @@ export interface CompanyContext {
   isEmployee: boolean
 }
 
-export const getCompanyContext = async (): Promise<CompanyContext> => {
+const resolveCompanyContext = async (): Promise<CompanyContext> => {
   const supabase = await createClient()
   const {
     data: { user },
@@ -52,3 +53,5 @@ export const getCompanyContext = async (): Promise<CompanyContext> => {
     isEmployee: Boolean(employee),
   }
 }
+
+export const getCompanyContext = cache(resolveCompanyContext)

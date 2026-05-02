@@ -10,11 +10,6 @@ export default async function EditarOrdemDeServicoPage({
 }) {
   const { id } = await params
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) redirect('/login')
 
   let companyId: string
   let isAdmin: boolean

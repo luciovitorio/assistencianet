@@ -6,9 +6,6 @@ import { BranchList } from './_components/branch-list'
 
 export default async function FiliaisPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) redirect('/login')
 
   let companyId: string
   let isAdmin = false

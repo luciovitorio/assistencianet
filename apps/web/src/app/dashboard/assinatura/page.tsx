@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getCompanyContext } from '@/lib/auth/company-context'
 import { getStripe } from '@/lib/stripe/client'
 import { PlanCard } from './_components/plan-card'
 import { PortalButton } from './_components/portal-button'
@@ -77,16 +78,16 @@ export default async function AssinaturaPage({
 }) {
   const { checkout, session_id, portal } = await searchParams
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const context = await getCompanyContext()
 
   const { data: company } = await supabase
     .from('companies')
     .select('id, name')
-    .eq('owner_id', user.id)
+    .eq('id', context.companyId)
     .single()
 
   if (!company) redirect('/onboarding/empresa')
+  if (!context.isOwner) redirect('/dashboard')
 
   // Sincroniza com o Stripe antes de ler o banco, evitando race condition com o webhook
   if (checkout === 'success' && session_id) {
