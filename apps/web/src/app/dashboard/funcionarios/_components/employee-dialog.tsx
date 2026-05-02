@@ -63,6 +63,7 @@ interface EmployeeDialogProps {
   branches: BranchOption[]
   open: boolean
   onOpenChange: (open: boolean) => void
+  upgradeHref: string
   employeeSeatUsage: {
     used: number
     limit: number | null
@@ -71,7 +72,14 @@ interface EmployeeDialogProps {
   }
 }
 
-export function EmployeeDialog({ employee, branches, open, onOpenChange, employeeSeatUsage }: EmployeeDialogProps) {
+export function EmployeeDialog({
+  employee,
+  branches,
+  open,
+  onOpenChange,
+  upgradeHref,
+  employeeSeatUsage,
+}: EmployeeDialogProps) {
   const isEditing = !!employee?.id
   const showUpgradeNotice = !isEditing && employeeSeatUsage.reached
   const router = useRouter()
@@ -171,7 +179,7 @@ export function EmployeeDialog({ employee, branches, open, onOpenChange, employe
               O plano {employeeSeatUsage.planName ?? 'atual'} permite {employeeSeatUsage.limit} usuário
               {employeeSeatUsage.limit === 1 ? '' : 's'} e já existem {employeeSeatUsage.used} em uso.
               Para adicionar um novo funcionário, acesse{' '}
-              <Link href="/dashboard/assinatura" className="font-medium underline underline-offset-4">
+              <Link href={upgradeHref} className="font-medium underline underline-offset-4">
                 Assinatura
               </Link>
               {' '}e altere para o plano Profissional.

@@ -26,6 +26,7 @@ export interface BranchData {
 interface BranchListProps {
   initialBranches: BranchData[]
   isAdmin: boolean
+  upgradeHref: string
   branchUsage: {
     used: number
     limit: number | null
@@ -34,7 +35,7 @@ interface BranchListProps {
   }
 }
 
-export function BranchList({ initialBranches, isAdmin, branchUsage }: BranchListProps) {
+export function BranchList({ initialBranches, isAdmin, upgradeHref, branchUsage }: BranchListProps) {
   const router = useRouter()
   const [branches, setBranches] = React.useState(initialBranches)
   const [selectedBranch, setSelectedBranch] = React.useState<BranchFormState>({})
@@ -122,6 +123,7 @@ export function BranchList({ initialBranches, isAdmin, branchUsage }: BranchList
         branch={selectedBranch}
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
+        upgradeHref={upgradeHref}
         branchUsage={branchUsage}
       />
 

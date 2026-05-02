@@ -40,6 +40,7 @@ interface BranchDialogProps {
   branch?: BranchFormState
   open: boolean
   onOpenChange: (open: boolean) => void
+  upgradeHref: string
   branchUsage: {
     used: number
     limit: number | null
@@ -65,7 +66,7 @@ async function fetchAddressByCep(cep: string) {
   }
 }
 
-export function BranchDialog({ branch, open, onOpenChange, branchUsage }: BranchDialogProps) {
+export function BranchDialog({ branch, open, onOpenChange, upgradeHref, branchUsage }: BranchDialogProps) {
   const isEditing = !!branch?.id
   const showUpgradeNotice = !isEditing && branchUsage.reached
   const router = useRouter()
@@ -170,7 +171,7 @@ export function BranchDialog({ branch, open, onOpenChange, branchUsage }: Branch
               O plano {branchUsage.planName ?? 'atual'} permite {branchUsage.limit} unidade
               {branchUsage.limit === 1 ? '' : 's'} e já existem {branchUsage.used} em uso.
               Para adicionar uma nova filial, acesse{' '}
-              <Link href="/dashboard/assinatura" className="font-medium underline underline-offset-4">
+              <Link href={upgradeHref} className="font-medium underline underline-offset-4">
                 Assinatura
               </Link>
               {' '}e altere para o plano Empresarial.

@@ -3,13 +3,23 @@ import { AlertTriangleIcon, CreditCardIcon } from 'lucide-react'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { logout } from '@/app/actions/auth'
 import { createClient } from '@/lib/supabase/server'
+import { getCompanyContext } from '@/lib/auth/company-context'
 
 export default async function SemPlanoPage() {
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  const canManageSubscription = Boolean(user && !user.app_metadata?.role)
+
+  let canManageSubscription = false
+  if (user) {
+    try {
+      const context = await getCompanyContext()
+      canManageSubscription = context.isOwner
+    } catch {
+      canManageSubscription = false
+    }
+  }
 
   return (
     <main className="min-h-screen bg-slate-50 px-6 py-12 text-slate-900">

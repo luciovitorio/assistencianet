@@ -15,12 +15,14 @@ export default async function NovaOrdemDeServicoPage() {
   let companyId: string
   let currentBranchId: string | null
   let isAdmin: boolean
+  let upgradeHref = '/sem-plano'
 
   try {
     const context = await getCompanyContext()
     companyId = context.companyId
     currentBranchId = context.currentBranchId
     isAdmin = context.isAdmin
+    upgradeHref = context.isOwner ? '/dashboard/assinatura' : '/sem-plano'
   } catch {
     redirect('/dashboard')
   }
@@ -91,6 +93,7 @@ export default async function NovaOrdemDeServicoPage() {
       nextNumber={nextNumber}
       isAdmin={isAdmin}
       serviceOrderUsage={serviceOrderUsage}
+      upgradeHref={upgradeHref}
     />
   )
 }

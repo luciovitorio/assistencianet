@@ -11,9 +11,14 @@ export default async function FiliaisPage() {
   if (!user) redirect('/login')
 
   let companyId: string
+  let isAdmin = false
+  let upgradeHref = '/sem-plano'
 
   try {
-    companyId = (await getAdminContext('filiais')).companyId
+    const context = await getAdminContext('filiais')
+    companyId = context.companyId
+    isAdmin = context.isAdmin
+    upgradeHref = context.isOwner ? '/dashboard/assinatura' : '/sem-plano'
   } catch {
     redirect('/dashboard')
   }
@@ -31,7 +36,12 @@ export default async function FiliaisPage() {
 
   return (
     <div className="space-y-6">
-      <BranchList initialBranches={branches || []} isAdmin branchUsage={branchUsage} />
+      <BranchList
+        initialBranches={branches || []}
+        isAdmin={isAdmin}
+        branchUsage={branchUsage}
+        upgradeHref={upgradeHref}
+      />
     </div>
   )
 }

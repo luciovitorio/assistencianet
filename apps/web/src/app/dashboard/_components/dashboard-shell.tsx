@@ -39,6 +39,7 @@ interface DashboardShellProps {
   canAccessFinancial: boolean
   canAccessWhatsApp: boolean
   canAccessReports: boolean
+  canManageSubscription: boolean
 }
 
 const SIDEBAR_EXPANDED_STORAGE_KEY = 'dashboard-sidebar-expanded'
@@ -387,6 +388,7 @@ export function DashboardShell({
   canAccessFinancial,
   canAccessWhatsApp,
   canAccessReports,
+  canManageSubscription,
 }: DashboardShellProps) {
   const [isExpanded, setIsExpanded] = useState(initialIsExpanded)
   const pathname = usePathname()
@@ -439,9 +441,10 @@ export function DashboardShell({
   const lockedWhatsAppBadge = canAccessWhatsApp ? undefined : upgradeToProBadge
   const lockedWhatsAppSubItemBadge = canAccessWhatsApp ? undefined : upgradeToProBadge
   const lockedReportsBadge = canAccessReports ? undefined : upgradeToProBadge
-  const financialHref = (href: string) => canAccessFinancial ? href : '/dashboard/assinatura'
-  const whatsappHref = (href: string) => canAccessWhatsApp ? href : '/dashboard/assinatura'
-  const reportsHref = canAccessReports ? '/dashboard/relatorios' : '/dashboard/assinatura'
+  const upgradeHref = canManageSubscription ? '/dashboard/assinatura' : '/sem-plano'
+  const financialHref = (href: string) => canAccessFinancial ? href : upgradeHref
+  const whatsappHref = (href: string) => canAccessWhatsApp ? href : upgradeHref
+  const reportsHref = canAccessReports ? '/dashboard/relatorios' : upgradeHref
 
   return (
     <RouteTransitionProvider>
@@ -660,12 +663,14 @@ export function DashboardShell({
                 isExpanded={isExpanded}
                 badge={lockedWhatsAppSubItemBadge}
               />
-              <SidebarSubItem
-                href="/dashboard/assinatura"
-                label="Assinatura"
-                active={pathname.startsWith('/dashboard/assinatura')}
-                isExpanded={isExpanded}
-              />
+              {canManageSubscription && (
+                <SidebarSubItem
+                  href="/dashboard/assinatura"
+                  label="Assinatura"
+                  active={pathname.startsWith('/dashboard/assinatura')}
+                  isExpanded={isExpanded}
+                />
+              )}
               <SidebarSubItem
                 href="/dashboard/logs"
                 label="Logs do Sistema"

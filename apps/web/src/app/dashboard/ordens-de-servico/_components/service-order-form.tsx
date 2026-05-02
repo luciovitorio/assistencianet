@@ -336,6 +336,7 @@ interface ServiceOrderFormProps {
   initialData?: ServiceOrderInitialData
   isAdmin?: boolean
   serviceOrderUsage?: ServiceOrderUsage
+  upgradeHref?: string
 }
 
 export function ServiceOrderForm({
@@ -349,6 +350,7 @@ export function ServiceOrderForm({
   initialData,
   isAdmin = true,
   serviceOrderUsage,
+  upgradeHref = '/dashboard/assinatura',
 }: ServiceOrderFormProps) {
   const router = useRouter()
   const { navigate } = useRouteTransition()
@@ -584,7 +586,7 @@ export function ServiceOrderForm({
             O plano {serviceOrderUsage.planName ?? 'atual'} permite {serviceOrderUsage.limit} OS por mês
             e já existem {serviceOrderUsage.used} neste mês. Para abrir novas ordens de serviço,
             acesse{' '}
-            <Link href="/dashboard/assinatura" className="font-medium underline underline-offset-4">
+            <Link href={upgradeHref} className="font-medium underline underline-offset-4">
               Assinatura
             </Link>
             {' '}e altere para o plano Profissional.

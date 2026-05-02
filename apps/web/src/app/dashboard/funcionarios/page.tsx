@@ -11,9 +11,14 @@ export default async function FuncionariosPage() {
   if (!user) redirect('/login')
 
   let companyId: string
+  let isAdmin = false
+  let upgradeHref = '/sem-plano'
 
   try {
-    companyId = (await getAdminContext('funcionarios')).companyId
+    const context = await getAdminContext('funcionarios')
+    companyId = context.companyId
+    isAdmin = context.isAdmin
+    upgradeHref = context.isOwner ? '/dashboard/assinatura' : '/sem-plano'
   } catch {
     redirect('/dashboard')
   }
@@ -40,8 +45,9 @@ export default async function FuncionariosPage() {
       <EmployeeList
         initialEmployees={employees || []}
         branches={branches || []}
-        isAdmin
+        isAdmin={isAdmin}
         employeeSeatUsage={seatUsage}
+        upgradeHref={upgradeHref}
       />
     </div>
   )

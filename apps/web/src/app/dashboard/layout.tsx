@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { getCompanyContext } from '@/lib/auth/company-context'
-import { hasSubscriptionAccess, isTrialActive } from '@/lib/stripe/plans'
+import { getCompanySubscriptionAccess } from '@/lib/billing/entitlements'
 import { DashboardShell } from './_components/dashboard-shell'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -18,24 +18,21 @@ export default async function DashboardLayout({ children }: { children: React.Re
   let canAccessFinancial = true
   let canAccessWhatsApp = true
   let canAccessReports = true
+  let canManageSubscription = false
 
   try {
     const context = await getCompanyContext()
-    const [companyResult, subscriptionResult] = await Promise.all([
+    const [companyResult, billingAccess] = await Promise.all([
       supabase.from('companies').select('id, name, owner_id').eq('id', context.companyId).maybeSingle(),
-      supabase.from('subscriptions').select('status, trial_ends_at, plan_id').eq('company_id', context.companyId).maybeSingle(),
+      getCompanySubscriptionAccess(supabase, context.companyId),
     ])
 
     company = companyResult.data
     isAdmin = context.isOwner || context.isAdmin
-
-    const sub = subscriptionResult.data
-    const hasProPlanAccess = Boolean(
-      hasSubscriptionAccess(sub) && (isTrialActive(sub) || sub?.plan_id !== 'basico'),
-    )
-    canAccessFinancial = hasProPlanAccess
-    canAccessWhatsApp = hasProPlanAccess
-    canAccessReports = hasProPlanAccess
+    canManageSubscription = context.isOwner
+    canAccessFinancial = billingAccess.active && billingAccess.hasFinancialModule
+    canAccessWhatsApp = billingAccess.active && billingAccess.hasWhatsAppBot
+    canAccessReports = billingAccess.active && billingAccess.hasAdvancedReports
   } catch {
     redirect('/onboarding/empresa')
   }
@@ -60,6 +57,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       canAccessFinancial={canAccessFinancial}
       canAccessWhatsApp={canAccessWhatsApp}
       canAccessReports={canAccessReports}
+      canManageSubscription={canManageSubscription}
     >
       {children}
     </DashboardShell>
