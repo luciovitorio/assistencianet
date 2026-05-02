@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { AlertTriangleIcon, CreditCardIcon } from 'lucide-react'
 import { buttonVariants } from '@/components/ui/button-variants'
+import { logout } from '@/app/actions/auth'
 import { createClient } from '@/lib/supabase/server'
 
 export default async function SemPlanoPage() {
@@ -30,9 +31,17 @@ export default async function SemPlanoPage() {
               Ver assinatura
             </Link>
           )}
-          <Link href="/login" className={buttonVariants({ variant: 'outline' })}>
-            {user ? 'Entrar com outra conta' : 'Ir para o login'}
-          </Link>
+          {user ? (
+            <form action={logout}>
+              <button type="submit" className={buttonVariants({ variant: 'outline' })}>
+                Entrar com outra conta
+              </button>
+            </form>
+          ) : (
+            <Link href="/login" className={buttonVariants({ variant: 'outline' })}>
+              Ir para o login
+            </Link>
+          )}
         </div>
       </div>
     </main>

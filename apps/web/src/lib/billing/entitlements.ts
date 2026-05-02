@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/supabase/database.types'
 import type { PlanId } from '@/lib/stripe/plans'
 import { hasSubscriptionAccess, isTrialActive } from '@/lib/stripe/plans'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 type SupabaseServerClient = SupabaseClient<Database>
 
@@ -94,22 +95,46 @@ export async function getCompanySubscriptionAccess(
   supabase: SupabaseServerClient,
   companyId: string,
 ): Promise<SubscriptionAccess> {
-  const { data: subscription, error: subscriptionError } = await supabase
+  let { data: subscription, error: subscriptionError } = await supabase
     .from('subscriptions')
     .select('status, trial_ends_at, plan_id')
     .eq('company_id', companyId)
     .maybeSingle<SubscriptionRow>()
+
+  if (!subscriptionError && !subscription) {
+    const billingSupabase = createAdminClient()
+    const fallback = await billingSupabase
+      .from('subscriptions')
+      .select('status, trial_ends_at, plan_id')
+      .eq('company_id', companyId)
+      .maybeSingle<SubscriptionRow>()
+
+    subscription = fallback.data
+    subscriptionError = fallback.error
+  }
 
   if (subscriptionError) throw subscriptionError
   if (!hasSubscriptionAccess(subscription)) return INACTIVE_ACCESS
   if (isTrialActive(subscription)) return TRIAL_ACCESS
   if (!subscription?.plan_id) return INACTIVE_ACCESS
 
-  const { data: plan, error: planError } = await supabase
+  let { data: plan, error: planError } = await supabase
     .from('plans')
     .select('id, name, max_os_per_month, max_users, has_whatsapp_bot, has_advanced_reports, has_multiple_branches')
     .eq('id', subscription.plan_id)
     .maybeSingle<PlanRow>()
+
+  if (!planError && !plan) {
+    const billingSupabase = createAdminClient()
+    const fallback = await billingSupabase
+      .from('plans')
+      .select('id, name, max_os_per_month, max_users, has_whatsapp_bot, has_advanced_reports, has_multiple_branches')
+      .eq('id', subscription.plan_id)
+      .maybeSingle<PlanRow>()
+
+    plan = fallback.data
+    planError = fallback.error
+  }
 
   if (planError) throw planError
   if (!plan) return INACTIVE_ACCESS

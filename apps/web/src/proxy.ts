@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { hasSubscriptionAccess, isTrialActive } from '@/lib/stripe/plans'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 const PUBLIC_ROUTES = [
   '/login',
@@ -44,10 +45,10 @@ type BillingSubscription = {
 }
 
 async function getBillingAccess(
-  supabase: ReturnType<typeof createServerClient>,
   companyId: string,
 ) {
-  const { data: subscription } = await supabase
+  const adminSupabase = createAdminClient()
+  const { data: subscription } = await adminSupabase
     .from('subscriptions')
     .select('status, trial_ends_at, plan_id')
     .eq('company_id', companyId)
@@ -87,7 +88,7 @@ async function getBillingAccess(
     }
   }
 
-  const { data: plan } = await supabase
+  const { data: plan } = await adminSupabase
     .from('plans')
     .select('has_whatsapp_bot, has_advanced_reports, has_multiple_branches, max_users')
     .eq('id', subscriptionRecord.plan_id)
@@ -105,7 +106,6 @@ async function getBillingAccess(
 }
 
 async function canUserOccupyBillingSeat(
-  supabase: ReturnType<typeof createServerClient>,
   companyId: string,
   userId: string,
   maxUsers: number | null,
@@ -113,13 +113,14 @@ async function canUserOccupyBillingSeat(
   if (maxUsers === null) return true
   if (maxUsers <= 0) return false
 
+  const adminSupabase = createAdminClient()
   const [{ data: company }, { data: employees }] = await Promise.all([
-    supabase
+    adminSupabase
       .from('companies')
       .select('owner_id')
       .eq('id', companyId)
       .maybeSingle(),
-    supabase
+    adminSupabase
       .from('employees')
       .select('user_id, created_at')
       .eq('company_id', companyId)
@@ -252,13 +253,12 @@ export async function proxy(request: NextRequest) {
         return NextResponse.redirect(new URL('/login', request.url))
       }
 
-      const billingAccess = await getBillingAccess(supabase, employee.company_id)
+      const billingAccess = await getBillingAccess(employee.company_id)
       if (!billingAccess.active || getBlockedPlanFeature(pathname, billingAccess)) {
         return NextResponse.redirect(new URL('/sem-plano', request.url))
       }
 
       const userSeatAllowed = await canUserOccupyBillingSeat(
-        supabase,
         employee.company_id,
         user.id,
         billingAccess.maxUsers,
@@ -294,7 +294,7 @@ export async function proxy(request: NextRequest) {
       return response
     }
 
-    const billingAccess = await getBillingAccess(supabase, company.id)
+    const billingAccess = await getBillingAccess(company.id)
 
     if (!billingAccess.active) {
       return NextResponse.redirect(new URL('/dashboard/assinatura', request.url))
