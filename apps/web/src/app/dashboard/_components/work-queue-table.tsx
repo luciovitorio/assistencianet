@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowRight, ClipboardCheck, MoreHorizontal } from 'lucide-react'
+import { ArrowRight, ClipboardCheck, LogOut, MoreHorizontal } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { buttonVariants } from '@/components/ui/button-variants'
@@ -18,7 +18,7 @@ import {
 import { DataTablePagination } from '@/components/ui/data-table'
 import { useRouteTransition } from '@/components/ui/route-transition-indicator'
 import { cn } from '@/lib/utils'
-import { claimServiceOrder } from '@/app/actions/service-orders'
+import { claimServiceOrder, releaseServiceOrder } from '@/app/actions/service-orders'
 import {
   STATUS_LABELS,
   STATUS_COLORS,
@@ -29,6 +29,7 @@ export interface WorkQueueOrder {
   id: string
   number: number
   status: string
+  technician_id: string | null
   device_type: string
   device_brand: string | null
   device_model: string | null
@@ -68,14 +69,15 @@ function formatDeliveryFull(dateStr: string): string {
 interface WorkQueueTableProps {
   orders: WorkQueueOrder[]
   todayStr: string
+  currentEmployeeId: string | null
 }
 
-export function WorkQueueTable({ orders, todayStr }: WorkQueueTableProps) {
+export function WorkQueueTable({ orders, todayStr, currentEmployeeId }: WorkQueueTableProps) {
   const router = useRouter()
   const { navigate } = useRouteTransition()
   const [rowsPerPage, setRowsPerPage] = React.useState(5)
   const [currentPage, setCurrentPage] = React.useState(1)
-  const [claimingId, setClaimingId] = React.useState<string | null>(null)
+  const [loadingId, setLoadingId] = React.useState<string | null>(null)
 
   const totalPages = Math.max(1, Math.ceil(orders.length / rowsPerPage))
 
@@ -93,13 +95,25 @@ export function WorkQueueTable({ orders, todayStr }: WorkQueueTableProps) {
   }, [currentPage, totalPages])
 
   const handleClaim = async (id: string, number: number) => {
-    setClaimingId(id)
+    setLoadingId(id)
     const result = await claimServiceOrder(id)
-    setClaimingId(null)
+    setLoadingId(null)
     if (result?.error) {
       toast.error(result.error)
     } else {
-      toast.success(`OS #${number}: iniciada com sucesso.`)
+      toast.success(`OS #${number}: assumida com sucesso.`)
+      router.refresh()
+    }
+  }
+
+  const handleRelease = async (id: string, number: number) => {
+    setLoadingId(id)
+    const result = await releaseServiceOrder(id)
+    setLoadingId(null)
+    if (result?.error) {
+      toast.error(result.error)
+    } else {
+      toast.success(`OS #${number}: liberada.`)
       router.refresh()
     }
   }
@@ -138,6 +152,8 @@ export function WorkQueueTable({ orders, todayStr }: WorkQueueTableProps) {
                 .filter(Boolean)
                 .join(' · ')
               const status = os.status as ServiceOrderStatus
+              const canClaim = !os.technician_id
+              const canRelease = !!os.technician_id && os.technician_id === currentEmployeeId
 
               return (
                 <tr key={os.id} className="hover:bg-muted/20 transition-colors">
@@ -213,17 +229,27 @@ export function WorkQueueTable({ orders, todayStr }: WorkQueueTableProps) {
                           <MoreHorizontal className="size-4" />
                           <span className="sr-only">Ações</span>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-40">
+                        <DropdownMenuContent align="end" className="w-44">
                           <DropdownMenuGroup>
                             <DropdownMenuLabel>Ações da OS</DropdownMenuLabel>
                             <DropdownMenuSeparator />
-                            {os.status === 'aguardando' && (
+                            {canClaim && (
                               <DropdownMenuItem
                                 onClick={() => handleClaim(os.id, os.number)}
-                                disabled={claimingId === os.id}
+                                disabled={loadingId === os.id}
                               >
                                 <ClipboardCheck className="size-4" />
                                 Pegar OS
+                              </DropdownMenuItem>
+                            )}
+                            {canRelease && (
+                              <DropdownMenuItem
+                                onClick={() => handleRelease(os.id, os.number)}
+                                disabled={loadingId === os.id}
+                                className="text-muted-foreground"
+                              >
+                                <LogOut className="size-4" />
+                                Liberar OS
                               </DropdownMenuItem>
                             )}
                             <DropdownMenuItem

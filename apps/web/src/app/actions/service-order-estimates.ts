@@ -31,7 +31,7 @@ const normalizeOptional = (value: string | null | undefined) => {
 }
 
 const roundCurrency = (value: number) => Number(value.toFixed(2))
-const EDITABLE_ESTIMATE_SERVICE_ORDER_STATUSES = ['aguardando', 'em_analise', 'reprovado', 'enviado_terceiro'] as const
+const EDITABLE_ESTIMATE_SERVICE_ORDER_STATUSES = ['aberta', 'em_analise', 'aguardando_envio', 'reprovado', 'enviado_terceiro'] as const
 const FALLBACK_ESTIMATE_SESSION_TIMEOUT_MINUTES = 60
 
 const currencyFormatter = new Intl.NumberFormat('pt-BR', {
@@ -613,7 +613,7 @@ export async function createServiceOrderEstimate(
 
     if (itemsError) throw itemsError
 
-    // Atualiza OS: status → em_analise + atribui técnico responsável (quem criou o orçamento)
+    // Atualiza OS: status → aguardando_envio + atribui técnico responsável (quem criou o orçamento)
     const { data: creatorEmployee } = await supabase
       .from('employees')
       .select('id')
@@ -622,11 +622,11 @@ export async function createServiceOrderEstimate(
       .is('deleted_at', null)
       .maybeSingle()
 
-    const TERMINAL_STATUSES = ['aguardando_aprovacao', 'aprovado', 'aguardando_peca', 'enviado_terceiro', 'pronto', 'finalizado', 'cancelado']
+    const TERMINAL_STATUSES = ['aguardando_aprovacao', 'aprovado', 'aguardando_peca', 'enviado_terceiro', 'em_reparo', 'pronto', 'finalizado', 'cancelado']
     const osUpdates: Record<string, unknown> = {}
 
     if (!TERMINAL_STATUSES.includes(serviceOrder.status)) {
-      osUpdates.status = 'em_analise'
+      osUpdates.status = 'aguardando_envio'
     }
 
     if (creatorEmployee && !serviceOrder.technician_id) {

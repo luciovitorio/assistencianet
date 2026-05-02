@@ -149,7 +149,7 @@ export const applyEstimateClientResponse = async (params: {
       const { error: osError2 } = await supabase
         .from('service_orders')
         .update({
-          status: 'em_analise',
+          status: 'reprovado',
           client_notified_at: null,
           client_notified_via: null,
         })
@@ -178,10 +178,10 @@ export const applyEstimateClientResponse = async (params: {
         entityType: 'service_order',
         entityId: os.id,
         companyId,
-        summary: `OS #${os.number}: cliente recusou o orçamento. OS retornou para em análise.`,
+        summary: `OS #${os.number}: cliente recusou o orçamento.`,
         metadata: {
           previous_status: 'aguardando_aprovacao',
-          new_status: 'em_analise',
+          new_status: 'reprovado',
           estimate_response: response,
         },
       })

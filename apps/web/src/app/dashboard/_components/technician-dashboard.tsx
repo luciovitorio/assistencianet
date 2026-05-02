@@ -24,20 +24,37 @@ function formatDeliveryShort(dateStr: string): string {
 }
 
 export async function TechnicianDashboard() {
-  const { companyId, currentBranchId } = await getCompanyContext()
+  const { companyId, currentBranchId, user, isAdmin } = await getCompanyContext()
   const supabase = await createClient()
 
   const todayStr = new Date().toISOString().split('T')[0]
 
+  // Descobre o employee_id e role do usuário logado
+  const { data: currentEmployee } = await supabase
+    .from('employees')
+    .select('id, role')
+    .eq('user_id', user.id)
+    .eq('company_id', companyId)
+    .is('deleted_at', null)
+    .maybeSingle()
+
+  const currentEmployeeId = currentEmployee?.id ?? null
+  const isTecnico = !isAdmin && currentEmployee?.role === 'tecnico'
+
   const activeOrdersQuery = supabase
     .from('service_orders')
-    .select('id, number, status, device_type, device_brand, device_model, reported_issue, estimated_delivery, clients(name, phone)')
+    .select('id, number, status, technician_id, device_type, device_brand, device_model, reported_issue, estimated_delivery, clients(name, phone)')
     .eq('company_id', companyId)
     .is('deleted_at', null)
     .neq('status', 'finalizado')
     .neq('status', 'cancelado')
     .order('number', { ascending: false })
     .limit(100)
+
+  // Técnicos veem apenas as próprias OS + sem responsável
+  if (isTecnico && currentEmployeeId) {
+    activeOrdersQuery.or(`technician_id.is.null,technician_id.eq.${currentEmployeeId}`)
+  }
 
   const concluidasQuery = supabase
     .from('service_orders')
@@ -82,6 +99,7 @@ export async function TechnicianDashboard() {
       id: o.id,
       number: o.number,
       status: o.status,
+      technician_id: o.technician_id ?? null,
       device_type: o.device_type,
       device_brand: o.device_brand,
       device_model: o.device_model,
@@ -96,10 +114,11 @@ export async function TechnicianDashboard() {
     .slice(0, 6)
 
   const statusBreakdown = [
-    { key: 'em_analise', label: 'Em Reparo', color: 'bg-primary' },
-    { key: 'aguardando_peca', label: 'Aguardando Peça', color: 'bg-amber-500' },
-    { key: 'pronto', label: 'Pronto p/ Entrega', color: 'bg-emerald-500' },
-    { key: 'aguardando', label: 'Aguardando Início', color: 'bg-slate-400' },
+    { key: 'em_analise',       label: 'Em Análise',          color: 'bg-blue-500' },
+    { key: 'em_reparo',        label: 'Em Reparo',           color: 'bg-cyan-500' },
+    { key: 'aguardando_peca',  label: 'Aguardando Peça',     color: 'bg-amber-500' },
+    { key: 'pronto',           label: 'Pronto p/ Entrega',   color: 'bg-emerald-500' },
+    { key: 'aberta',           label: 'Aguardando Início',   color: 'bg-slate-400' },
   ]
   const totalActive = orders.length || 1
 
@@ -186,7 +205,7 @@ export async function TechnicianDashboard() {
             Ver Todas <ArrowRight className="size-4 ml-1" />
           </Link>
         </div>
-        <WorkQueueTable orders={queue} todayStr={todayStr} />
+        <WorkQueueTable orders={queue} todayStr={todayStr} currentEmployeeId={currentEmployeeId} />
       </section>
 
       {/* BOTTOM ROW */}

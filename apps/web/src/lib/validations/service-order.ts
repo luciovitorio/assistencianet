@@ -1,13 +1,15 @@
 import * as z from 'zod'
 
 export const SERVICE_ORDER_STATUSES = [
-  'aguardando',
+  'aberta',
   'em_analise',
+  'aguardando_envio',
   'aguardando_aprovacao',
   'aprovado',
   'reprovado',
   'aguardando_peca',
   'enviado_terceiro',
+  'em_reparo',
   'pronto',
   'finalizado',
   'cancelado',
@@ -38,26 +40,30 @@ export const SERVICE_ORDER_CANCEL_REASON_LABELS: Record<
 ) as Record<ServiceOrderCancelReasonValue, string>
 
 export const STATUS_LABELS: Record<ServiceOrderStatus, string> = {
-  aguardando: 'Aguardando Orçamento',
+  aberta: 'Aberta',
   em_analise: 'Em Análise',
+  aguardando_envio: 'Aguardando Envio',
   aguardando_aprovacao: 'Aguardando Aprovação',
   aprovado: 'Aprovado',
   reprovado: 'Reprovado',
   aguardando_peca: 'Aguardando Peça',
   enviado_terceiro: 'Enviado p/ Terceiro',
+  em_reparo: 'Em Reparo',
   pronto: 'Pronto para Retirada',
   finalizado: 'Finalizado',
   cancelado: 'Cancelado',
 }
 
 export const STATUS_COLORS: Record<ServiceOrderStatus, string> = {
-  aguardando: 'bg-yellow-100 text-yellow-700',
+  aberta: 'bg-yellow-100 text-yellow-700',
   em_analise: 'bg-blue-100 text-blue-700',
+  aguardando_envio: 'bg-sky-100 text-sky-700',
   aguardando_aprovacao: 'bg-purple-100 text-purple-700',
   aprovado: 'bg-emerald-100 text-emerald-700',
   reprovado: 'bg-rose-100 text-rose-700',
   aguardando_peca: 'bg-orange-100 text-orange-700',
   enviado_terceiro: 'bg-indigo-100 text-indigo-700',
+  em_reparo: 'bg-cyan-100 text-cyan-700',
   pronto: 'bg-teal-100 text-teal-700',
   finalizado: 'bg-muted text-muted-foreground',
   cancelado: 'bg-red-100 text-red-700',

@@ -32,22 +32,25 @@ import {
 
 // Transições manuais permitidas via botões de ação (excluindo as gerenciadas por actions específicas)
 const ALLOWED_MANUAL_TRANSITIONS: Partial<Record<ServiceOrderStatus, ServiceOrderStatus[]>> = {
-  aguardando:        ['cancelado'],
-  em_analise:        ['cancelado'],
+  aberta:               ['cancelado'],
+  em_analise:           ['cancelado'],
+  aguardando_envio:     ['cancelado'],
   aguardando_aprovacao: ['cancelado'],
-  aprovado:          ['pronto', 'cancelado'],
-  aguardando_peca:   ['aprovado', 'cancelado'],
-  enviado_terceiro:  ['cancelado'],
-  reprovado:         ['cancelado'],
-  pronto:            ['cancelado'],
+  aprovado:             ['em_reparo', 'pronto', 'cancelado'],
+  aguardando_peca:      ['aprovado', 'cancelado'],
+  enviado_terceiro:     ['cancelado'],
+  reprovado:            ['cancelado'],
+  em_reparo:            ['pronto', 'cancelado'],
+  pronto:               ['cancelado'],
 }
 
 // Statuses que permitem envio para terceiro
-const DISPATCHABLE_STATUSES: ServiceOrderStatus[] = ['aguardando', 'em_analise', 'aprovado', 'aguardando_peca']
+const DISPATCHABLE_STATUSES: ServiceOrderStatus[] = ['aberta', 'em_analise', 'aguardando_envio', 'aprovado', 'aguardando_peca']
 
 const EDITABLE_SERVICE_ORDER_STATUSES: ServiceOrderStatus[] = [
-  'aguardando',
+  'aberta',
   'em_analise',
+  'aguardando_envio',
   'reprovado',
 ]
 
@@ -286,7 +289,8 @@ export async function cancelServiceOrder(
   }
 }
 
-// Técnico ou atendente "pega" a OS → status vai para em_analise
+// Técnico ou atendente "pega" a OS → atribui como responsável
+// Se status for 'aberta', avança para 'em_analise'; caso contrário mantém o status atual
 export async function claimServiceOrder(id: string) {
   try {
     const { companyId, user } = await getCompanyContext()
@@ -294,7 +298,7 @@ export async function claimServiceOrder(id: string) {
 
     const { data: os, error: osError } = await supabase
       .from('service_orders')
-      .select('id, number, status')
+      .select('id, number, status, technician_id')
       .eq('id', id)
       .eq('company_id', companyId)
       .is('deleted_at', null)
@@ -304,25 +308,58 @@ export async function claimServiceOrder(id: string) {
       return { error: 'Ordem de serviço não encontrada.' }
     }
 
-    if (os.status !== 'aguardando') {
-      return { error: 'Apenas OS com status "Aguardando Orçamento" podem ser iniciadas.' }
+    if (os.technician_id) {
+      return { error: 'Esta OS já possui um técnico responsável.' }
     }
+
+    const UNCLAIMED_STATUSES: ServiceOrderStatus[] = [
+      'aberta', 'em_analise', 'aguardando_envio', 'aguardando_aprovacao',
+      'aprovado', 'reprovado', 'aguardando_peca', 'em_reparo', 'pronto',
+    ]
+    if (!UNCLAIMED_STATUSES.includes(os.status as ServiceOrderStatus)) {
+      return { error: 'Esta OS não pode ser assumida no status atual.' }
+    }
+
+    // Busca employee_id do usuário para gravar technician_id e histórico
+    const { data: employee } = await supabase
+      .from('employees')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('company_id', companyId)
+      .is('deleted_at', null)
+      .maybeSingle()
+
+    const employeeId = employee?.id ?? null
+
+    if (!employeeId) {
+      return { error: 'Você precisa ter um cadastro de funcionário ativo para assumir uma OS.' }
+    }
+
+    const nextStatus: ServiceOrderStatus = os.status === 'aberta' ? 'em_analise' : (os.status as ServiceOrderStatus)
 
     const { error } = await supabase
       .from('service_orders')
-      .update({ status: 'em_analise', technician_id: user.id })
+      .update({ status: nextStatus, technician_id: employeeId })
       .eq('id', id)
       .eq('company_id', companyId)
 
     if (error) throw error
+
+    await supabase.from('os_technician_history').insert({
+      service_order_id: id,
+      company_id: companyId,
+      employee_id: employeeId,
+      action: 'pegou',
+      os_status_at_action: nextStatus,
+    })
 
     await createAuditLog({
       action: 'update',
       entityType: 'service_order',
       entityId: os.id,
       companyId,
-      summary: `OS #${os.number}: iniciada por ${user.id} (em análise).`,
-      metadata: { previous_status: 'aguardando', new_status: 'em_analise', claimed_by: user.id },
+      summary: `OS #${os.number}: assumida. Status: ${nextStatus}.`,
+      metadata: { previous_status: os.status, new_status: nextStatus, claimed_by: user.id },
     })
 
     revalidateServiceOrdersPage()
@@ -330,7 +367,79 @@ export async function claimServiceOrder(id: string) {
     return { success: true }
   } catch (error: unknown) {
     if (error instanceof Error) return { error: error.message }
-    return { error: 'Erro ao iniciar OS.' }
+    return { error: 'Erro ao assumir OS.' }
+  }
+}
+
+// Técnico libera a OS → remove responsável, status permanece, OS volta a aparecer para todos
+export async function releaseServiceOrder(id: string) {
+  try {
+    const { companyId, user, isAdmin } = await getCompanyContext()
+    const supabase = await createSupabaseClient()
+
+    const { data: os, error: osError } = await supabase
+      .from('service_orders')
+      .select('id, number, status, technician_id')
+      .eq('id', id)
+      .eq('company_id', companyId)
+      .is('deleted_at', null)
+      .single()
+
+    if (osError || !os) {
+      return { error: 'Ordem de serviço não encontrada.' }
+    }
+
+    if (!os.technician_id) {
+      return { error: 'Esta OS não possui técnico responsável.' }
+    }
+
+    // Só o próprio técnico ou admin/dono pode liberar
+    const { data: employee } = await supabase
+      .from('employees')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('company_id', companyId)
+      .is('deleted_at', null)
+      .maybeSingle()
+
+    const isResponsible = employee?.id === os.technician_id
+    if (!isResponsible && !isAdmin) {
+      return { error: 'Apenas o técnico responsável ou um administrador pode liberar esta OS.' }
+    }
+
+    const { error } = await supabase
+      .from('service_orders')
+      .update({ technician_id: null })
+      .eq('id', id)
+      .eq('company_id', companyId)
+
+    if (error) throw error
+
+    if (employee?.id) {
+      await supabase.from('os_technician_history').insert({
+        service_order_id: id,
+        company_id: companyId,
+        employee_id: employee.id,
+        action: 'liberou',
+        os_status_at_action: os.status,
+      })
+    }
+
+    await createAuditLog({
+      action: 'update',
+      entityType: 'service_order',
+      entityId: os.id,
+      companyId,
+      summary: `OS #${os.number}: técnico liberou a OS (sem responsável).`,
+      metadata: { released_by: user.id, os_status: os.status },
+    })
+
+    revalidateServiceOrdersPage()
+    revalidateServiceOrderDetailPage(id)
+    return { success: true }
+  } catch (error: unknown) {
+    if (error instanceof Error) return { error: error.message }
+    return { error: 'Erro ao liberar OS.' }
   }
 }
 
@@ -831,7 +940,7 @@ export async function createServiceOrder(data: ServiceOrderSchema) {
         parent_service_order_id: normalizeOptional(parsed.data.parent_service_order_id) || null,
         is_warranty_rework: parsed.data.is_warranty_rework ?? false,
         created_by: user.id,
-        status: 'aguardando',
+        status: 'aberta',
       })
       .select('id, number, branch_id, client_id')
       .single()
@@ -897,7 +1006,7 @@ export async function deleteServiceOrder(id: string) {
       throw new Error('Ordem de serviço não encontrada.')
     }
 
-    if (os.status !== 'aguardando') {
+    if (os.status !== 'aberta') {
       return {
         error:
           'Esta OS já possui andamento operacional. Use o cancelamento para preservar o histórico.',
