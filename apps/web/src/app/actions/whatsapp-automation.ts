@@ -4,9 +4,11 @@ import { revalidatePath } from 'next/cache'
 import { createAuditLog } from '@/lib/audit/audit-log'
 import { getAdminContext } from '@/lib/auth/admin-context'
 import { assertBillingFeature } from '@/lib/billing/entitlements'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { maskSecretState } from '@/lib/whatsapp/automation-settings'
 import { createEvolutionApiClient } from '@/lib/whatsapp/evolution-client'
+import { upsertEvolutionHealthNotification } from '@/app/actions/notifications'
 import { createWhatsAppCloudApiClient } from '@/lib/whatsapp/official-client'
 import {
   whatsappAutomationSettingsSchema,
@@ -480,11 +482,37 @@ export async function getEvolutionApiConnectionState() {
   try {
     const { companyId } = await getAdminContext('configuracoes')
     const { client } = await getEvolutionClientFromSavedSettings(companyId)
-    const connection = await client.getConnectionState()
+    const [connection, webhook] = await Promise.all([
+      client.getConnectionState(),
+      client.getWebhook(),
+    ])
+
+    const appBaseUrl = process.env.APP_BASE_URL?.replace(/\/+$/, '')
+    const expectedUrl = appBaseUrl
+      ? `${appBaseUrl}/api/webhooks/evolution`
+      : null
+    const isConnected = connection.state === 'open'
+    const webhookOk =
+      webhook.enabled &&
+      !!webhook.url &&
+      (!expectedUrl || webhook.url === expectedUrl)
+    const isOk = isConnected && webhookOk
+
+    const notifBody = !isConnected
+      ? 'O WhatsApp foi desconectado. Acesse Configurações → Automação para reconectar.'
+      : 'Webhook desconfigurado — mensagens não chegam ao bot. Clique em "Registrar webhook".'
+
+    // Sincroniza notificação e reseta o rate-limit do check automático (fire-and-forget)
+    void upsertEvolutionHealthNotification(companyId, isOk, notifBody)
+    void createAdminClient()
+      .from('whatsapp_automation_settings')
+      .update({ evolution_health_checked_at: new Date().toISOString() })
+      .eq('company_id', companyId)
 
     return {
       success: true,
       ...connection,
+      webhookOk,
     }
   } catch (error: unknown) {
     return {

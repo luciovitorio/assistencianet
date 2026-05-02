@@ -293,6 +293,21 @@ export class EvolutionApiClient {
     }
   }
 
+  async getWebhook(): Promise<{ enabled: boolean; url: string | null }> {
+    if (!this.instanceName) {
+      throw new Error('Informe o nome da instância da Evolution API.')
+    }
+    try {
+      const result = await this.request<{ enabled?: boolean; url?: string }>(
+        `/webhook/find/${encodeURIComponent(this.instanceName)}`,
+        { method: 'GET' },
+      )
+      return { enabled: result?.enabled ?? false, url: result?.url ?? null }
+    } catch {
+      return { enabled: false, url: null }
+    }
+  }
+
   async setWebhook({ url, events, headers }: EvolutionApiSetWebhookInput) {
     if (!this.instanceName) {
       throw new Error('Informe o nome da instância da Evolution API.')

@@ -73,11 +73,11 @@ function SidebarLink({
   const content = (
     <>
       <div className="flex items-center justify-center min-w-6 relative">
-        <Icon className="size-5" />
+        <Icon className={isExpanded ? 'size-4' : 'size-5'} />
       </div>
 
       <div
-        className={`whitespace-nowrap text-xs font-medium transition-all duration-300 ${isExpanded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4 pointer-events-none absolute left-14'}`}
+        className={`whitespace-nowrap text-sm font-medium transition-all duration-300 ${isExpanded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4 pointer-events-none absolute left-14'}`}
       >
         {label}
       </div>
@@ -87,7 +87,7 @@ function SidebarLink({
     </>
   )
 
-  const className = `flex items-center gap-4 p-3 mx-2 rounded-lg transition-colors group relative overflow-hidden ${
+  const className = `flex items-center gap-4 py-2 px-3 mx-2 rounded-lg transition-colors group relative overflow-hidden ${
     active ? 'bg-white/[0.12] text-white' : 'text-slate-300 hover:bg-white/[0.08] hover:text-white'
   }`
 
@@ -127,11 +127,11 @@ function SidebarSubItem({
   isExpanded: boolean
   badge?: React.ReactNode
 }) {
-  const className = `flex items-center justify-between px-3 py-2 rounded-md transition-colors ${
+  const className = `flex items-center justify-between px-3 py-1.5 rounded-md transition-colors ${
     active
       ? 'bg-white/[0.12] text-white font-medium'
       : 'text-slate-300 hover:bg-white/[0.08] hover:text-white'
-  } ${!isExpanded ? 'text-[11px] text-center px-1' : 'text-xs'}`
+  } ${!isExpanded ? 'text-[11px] text-center px-1' : 'text-sm'}`
 
   const content = isExpanded
     ? <><span>{label}</span>{badge}</>
@@ -191,16 +191,16 @@ function SidebarMenu({
       <div
         onClick={handleToggle}
         title={!isExpanded ? label : undefined}
-        className={`flex items-center justify-between p-3 mx-2 rounded-lg transition-colors cursor-pointer group relative overflow-hidden ${
+        className={`flex items-center justify-between py-2 px-3 mx-2 rounded-lg transition-colors cursor-pointer group relative overflow-hidden ${
           active ? 'bg-white/[0.12] text-white' : 'text-slate-300 hover:bg-white/[0.08] hover:text-white'
         }`}
       >
         <div className="flex items-center gap-4">
           <div className="flex items-center justify-center min-w-6 relative">
-            <Icon className="size-5" />
+            <Icon className={isExpanded ? 'size-4' : 'size-5'} />
           </div>
           <div
-            className={`flex items-center gap-2 whitespace-nowrap text-xs font-medium transition-all duration-300 ${isExpanded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4 pointer-events-none absolute left-14'}`}
+            className={`flex items-center gap-2 whitespace-nowrap text-sm font-medium transition-all duration-300 ${isExpanded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4 pointer-events-none absolute left-14'}`}
           >
             <span>{label}</span>
             {isExpanded && badge}

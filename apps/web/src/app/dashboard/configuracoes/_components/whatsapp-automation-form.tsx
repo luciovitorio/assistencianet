@@ -480,6 +480,7 @@ function EvolutionConnectionPanel({
   operation,
   qrCodeCount,
   qrCodeImage,
+  webhookOk,
   onCreateInstance,
   onDelete,
   onGenerateQrCode,
@@ -494,6 +495,7 @@ function EvolutionConnectionPanel({
   operation: EvolutionOperation | null
   qrCodeCount: number | null
   qrCodeImage: string | null
+  webhookOk: boolean | null
   onCreateInstance: () => void
   onDelete: () => void
   onGenerateQrCode: () => void
@@ -539,6 +541,21 @@ function EvolutionConnectionPanel({
           >
             {getEvolutionStateLabel(connectionState)}
           </span>
+          {isEvolutionConnected(connectionState) && webhookOk === false && (
+            <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5">
+              <p className="text-xs font-medium leading-5 text-amber-800">
+                Webhook desconfigurado — o bot não receberá mensagens. Clique em{' '}
+                <button
+                  type="button"
+                  className="underline underline-offset-2"
+                  onClick={onCreateInstance}
+                >
+                  Registrar webhook
+                </button>{' '}
+                para corrigir.
+              </p>
+            </div>
+          )}
         </div>
 
         {qrCodeImage ? (
@@ -702,6 +719,9 @@ export function WhatsAppAutomationForm({
     React.useState<number | null>(null)
   const [evolutionInstanceReady, setEvolutionInstanceReady] =
     React.useState(false)
+  const [evolutionWebhookOk, setEvolutionWebhookOk] = React.useState<
+    boolean | null
+  >(null)
   const hasNotifiedEvolutionConnectedRef = React.useRef(false)
   const {
     control,
@@ -845,9 +865,16 @@ export function WhatsAppAutomationForm({
         isEvolutionConnected(result.state) ? (result.connectedPhone ?? null) : null,
       )
       setEvolutionInstanceReady(true)
+      setEvolutionWebhookOk(result.webhookOk ?? null)
 
       if (showToast) {
-        toast.success(`Status da Evolution: ${getEvolutionStateLabel(result.state)}.`)
+        const webhookWarning =
+          isEvolutionConnected(result.state) && result.webhookOk === false
+            ? ' Webhook desconfigurado — clique em "Registrar webhook".'
+            : ''
+        toast.success(
+          `Status da Evolution: ${getEvolutionStateLabel(result.state)}.${webhookWarning}`,
+        )
       }
 
       return true
@@ -878,6 +905,7 @@ export function WhatsAppAutomationForm({
         }
 
         setEvolutionInstanceReady(true)
+        setEvolutionWebhookOk(createResult.webhookConfigured ? true : false)
         toast.success(
           createResult.alreadyExists
             ? 'Instância já existe na Evolution API.'
@@ -1235,6 +1263,7 @@ export function WhatsAppAutomationForm({
               qrCodeCount={evolutionQrCodeCount}
               qrCodeImage={evolutionQrCodeImage}
               onCreateInstance={handleCreateEvolutionInstance}
+              webhookOk={evolutionWebhookOk}
               onDelete={handleDeleteEvolution}
               onGenerateQrCode={handleGenerateQrCode}
               onLogout={handleLogoutEvolution}

@@ -1918,6 +1918,7 @@ export type Database = {
           enabled: boolean
           evolution_api_key: string | null
           evolution_base_url: string
+          evolution_health_checked_at: string | null
           evolution_instance_name: string | null
           evolution_webhook_url: string | null
           graph_api_version: string
@@ -1957,6 +1958,7 @@ export type Database = {
           enabled?: boolean
           evolution_api_key?: string | null
           evolution_base_url?: string
+          evolution_health_checked_at?: string | null
           evolution_instance_name?: string | null
           evolution_webhook_url?: string | null
           graph_api_version?: string
@@ -1996,6 +1998,7 @@ export type Database = {
           enabled?: boolean
           evolution_api_key?: string | null
           evolution_base_url?: string
+          evolution_health_checked_at?: string | null
           evolution_instance_name?: string | null
           evolution_webhook_url?: string | null
           graph_api_version?: string

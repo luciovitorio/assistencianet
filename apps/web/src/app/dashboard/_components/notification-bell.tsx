@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useTransition } from 'react'
-import { Bell, Building2, Package, AlertTriangle, Check, CheckCheck, ClipboardList, UserX, MessagesSquare } from 'lucide-react'
+import { Bell, Building2, Package, AlertTriangle, Check, CheckCheck, ClipboardList, UserX, MessagesSquare, WifiOff } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -14,6 +14,7 @@ import {
   markAllNotificationsAsRead,
   checkThirdPartyOverdueNotifications,
   checkInactiveClientNotifications,
+  checkEvolutionConnectionNotifications,
   type Notification,
 } from '@/app/actions/notifications'
 
@@ -28,6 +29,8 @@ export function NotificationBell() {
     checkThirdPartyOverdueNotifications().catch(() => null)
     // Verifica clientes sem retorno há mais de 3 meses (fire-and-forget)
     checkInactiveClientNotifications(3).catch(() => null)
+    // Verifica saúde da conexão Evolution (rate-limitado a 1x/10min, fire-and-forget)
+    checkEvolutionConnectionNotifications().catch(() => null)
 
     getNotifications().then(setNotifications)
 
@@ -104,6 +107,11 @@ export function NotificationBell() {
       return
     }
 
+    if (notification.type === 'whatsapp_desconectado') {
+      navigate('/dashboard/configuracoes/automacao')
+      return
+    }
+
     if (!notification.part_id) return
 
     const params = new URLSearchParams({ part: notification.part_id })
@@ -169,7 +177,9 @@ export function NotificationBell() {
                             ? 'bg-orange-500/10 text-orange-600'
                             : n.type === 'whatsapp_atendimento'
                               ? 'bg-emerald-500/10 text-emerald-600'
-                              : 'bg-yellow-500/10 text-yellow-600'
+                              : n.type === 'whatsapp_desconectado'
+                                ? 'bg-amber-500/10 text-amber-600'
+                                : 'bg-yellow-500/10 text-yellow-600'
                   }`}
                 >
                   {n.type === 'estoque_zerado' ? (
@@ -182,13 +192,15 @@ export function NotificationBell() {
                     <UserX className="size-3.5" />
                   ) : n.type === 'whatsapp_atendimento' ? (
                     <MessagesSquare className="size-3.5" />
+                  ) : n.type === 'whatsapp_desconectado' ? (
+                    <WifiOff className="size-3.5" />
                   ) : (
                     <AlertTriangle className="size-3.5" />
                   )}
                 </div>
 
                 {/* Texto */}
-                {n.type === 'retorno_terceiro_vencido' || n.type === 'estoque_baixo' || n.type === 'estoque_zerado' || n.type === 'cliente_inativo' || n.type === 'whatsapp_atendimento' ? (
+                {n.type === 'retorno_terceiro_vencido' || n.type === 'estoque_baixo' || n.type === 'estoque_zerado' || n.type === 'cliente_inativo' || n.type === 'whatsapp_atendimento' || n.type === 'whatsapp_desconectado' ? (
                   <button
                     type="button"
                     className="min-w-0 flex-1 text-left"
