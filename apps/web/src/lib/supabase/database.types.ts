@@ -1911,6 +1911,7 @@ export type Database = {
           app_secret: string | null
           authorized_brands: string | null
           base_url: string
+          bot_messages: Json
           business_account_id: string | null
           company_id: string
           created_at: string
@@ -1951,6 +1952,7 @@ export type Database = {
           app_secret?: string | null
           authorized_brands?: string | null
           base_url?: string
+          bot_messages?: Json
           business_account_id?: string | null
           company_id: string
           created_at?: string
@@ -1991,6 +1993,7 @@ export type Database = {
           app_secret?: string | null
           authorized_brands?: string | null
           base_url?: string
+          bot_messages?: Json
           business_account_id?: string | null
           company_id?: string
           created_at?: string
