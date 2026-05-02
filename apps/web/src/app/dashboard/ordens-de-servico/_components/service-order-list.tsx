@@ -142,7 +142,7 @@ type DialogState =
   | { type: 'delete'; id: string; number: number }
   | { type: 'cancel'; id: string; number: number }
 
-const DISPATCHABLE_STATUSES: ServiceOrderStatus[] = ['aguardando', 'em_analise', 'aprovado', 'aguardando_peca']
+const DISPATCHABLE_STATUSES: ServiceOrderStatus[] = ['aberta', 'em_analise', 'aprovado', 'aguardando_peca']
 
 const SERVICE_ORDER_COLUMNS_BASE: DataTableColumnDef[] = [
   { id: 'number', label: 'OS', locked: true },

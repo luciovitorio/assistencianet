@@ -45,7 +45,7 @@ interface ServiceOrderActionsProps {
   clientEmail: string | null
 }
 
-const DISPATCHABLE_STATUSES: ServiceOrderStatus[] = ['aguardando', 'em_analise', 'aprovado', 'aguardando_peca']
+const DISPATCHABLE_STATUSES: ServiceOrderStatus[] = ['aberta', 'em_analise', 'aprovado', 'aguardando_peca']
 
 export function ServiceOrderActions({
   serviceOrderId,

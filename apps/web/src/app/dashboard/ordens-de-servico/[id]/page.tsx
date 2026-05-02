@@ -41,7 +41,7 @@ const STATUS_FLOW = [
 
 function getStepIndex(status: ServiceOrderStatus): number {
   const map: Partial<Record<ServiceOrderStatus, number>> = {
-    aguardando: 0,
+    aberta: 0,
     em_analise: 1,
     aguardando_aprovacao: 2,
     reprovado: 2,
@@ -348,9 +348,9 @@ export default async function ServiceOrderDetailPage({ params }: ServiceOrderPag
   const paymentStatus = serviceOrder.payment_status as PaymentStatus
   const hasDraftEstimate = initialEstimates.some((estimate) => estimate.status === 'rascunho')
   const canManageEstimate =
-    status === 'aguardando' || status === 'em_analise' || status === 'reprovado' || status === 'enviado_terceiro'
+    status === 'aberta' || status === 'aguardando_envio' || status === 'em_analise' || status === 'reprovado' || status === 'enviado_terceiro'
   const canEditServiceOrder =
-    status === 'aguardando' || status === 'em_analise' || status === 'reprovado'
+    status === 'aberta' || status === 'em_analise' || status === 'reprovado'
 
   return (
     <div className="space-y-6">

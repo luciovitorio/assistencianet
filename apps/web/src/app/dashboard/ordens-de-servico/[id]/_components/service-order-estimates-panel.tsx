@@ -391,7 +391,8 @@ export function ServiceOrderEstimatesPanel({
   const watchedValidUntil = useWatch({ control, name: 'valid_until' }) ?? ''
   const normalizedWatchedItems = React.useMemo(() => watchedItems ?? [], [watchedItems])
   const canManageEstimates =
-    serviceOrderStatus === 'aguardando' ||
+    serviceOrderStatus === 'aberta' ||
+    serviceOrderStatus === 'aguardando_envio' ||
     serviceOrderStatus === 'em_analise' ||
     serviceOrderStatus === 'reprovado' ||
     serviceOrderStatus === 'enviado_terceiro'
