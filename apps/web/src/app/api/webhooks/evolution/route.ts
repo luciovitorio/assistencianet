@@ -3,6 +3,7 @@ import { getCompanySubscriptionAccess } from '@/lib/billing/entitlements'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createEvolutionApiClient } from '@/lib/whatsapp/evolution-client'
 import { runBotEngine } from '@/lib/whatsapp/bot-engine'
+import { mergeBotMessages } from '@/lib/whatsapp/bot-messages'
 import {
   findOrCreateConversation,
   saveMessage,
@@ -41,6 +42,7 @@ type EvolutionSettings = {
   message_inbound_auto_reply: string | null
   authorized_brands: string | null
   session_timeout_minutes: number
+  bot_messages: unknown
 }
 
 // ── Helpers de parse ─────────────────────────────────────────
@@ -125,7 +127,7 @@ const findEvolutionSettings = async (
       `id, company_id, enabled, provider,
        evolution_base_url, evolution_api_key, evolution_instance_name,
        notify_inbound_message, message_inbound_auto_reply, authorized_brands,
-       session_timeout_minutes`
+       session_timeout_minutes, bot_messages`
     )
     .eq('enabled', true)
     .eq('provider', 'evolution_api')
@@ -246,6 +248,7 @@ export async function POST(request: NextRequest) {
     phoneNumber: inboundMessage.number,
     companyName,
     authorizedBrands: settings.authorized_brands,
+    botMessages: mergeBotMessages(settings.bot_messages),
     evolutionClient,
   })
 
