@@ -692,7 +692,7 @@ export function ServiceOrderList({
                   const status = order.status as ServiceOrderStatus
                   const isActionPending = actionOrderId === order.id
                   const canRegisterManualResponse = canRegisterManualClientResponse(order, client)
-                  const deviceName = order.device_model || order.device_type || '—'
+                  const deviceName = order.device_type || order.device_model || '—'
                   const deviceDetails = [
                     order.device_type ? { label: 'Tipo', value: order.device_type } : null,
                     order.device_brand ? { label: 'Marca', value: order.device_brand } : null,
