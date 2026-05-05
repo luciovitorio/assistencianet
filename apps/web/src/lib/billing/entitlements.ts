@@ -115,7 +115,9 @@ export async function getCompanySubscriptionAccess(
 
   if (subscriptionError) throw subscriptionError
   if (!hasSubscriptionAccess(subscription)) return INACTIVE_ACCESS
-  if (isTrialActive(subscription)) return TRIAL_ACCESS
+  // Trial sem plano ainda = período gratuito inicial com acesso total
+  // Trial com plano = Stripe trial de plano pago; usa limites do plano
+  if (isTrialActive(subscription) && !subscription?.plan_id) return TRIAL_ACCESS
   if (!subscription?.plan_id) return INACTIVE_ACCESS
 
   let { data: plan, error: planError } = await supabase
