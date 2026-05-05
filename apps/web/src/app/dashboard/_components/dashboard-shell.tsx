@@ -307,6 +307,7 @@ const ROUTE_HEADERS: RouteHeaderDefinition[] = [
 function acceptsHeaderSlot(pathname: string) {
   return (
     pathname === '/dashboard/ordens-de-servico/nova' ||
+    /^\/dashboard\/ordens-de-servico\/[^/]+$/.test(pathname) ||
     /^\/dashboard\/ordens-de-servico\/[^/]+\/editar$/.test(pathname)
   )
 }

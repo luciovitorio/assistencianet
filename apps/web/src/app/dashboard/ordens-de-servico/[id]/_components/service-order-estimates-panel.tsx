@@ -513,10 +513,10 @@ export function ServiceOrderEstimatesPanel({
       <div className="space-y-6">
         {showHistory ? (
           <Card>
-            <CardHeader>
-              <CardTitle>Historico de orcamentos</CardTitle>
+            <CardHeader className="px-6">
+              <CardTitle>Histórico de orçamentos</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 px-6 pb-6">
               {initialEstimates.length === 0 ? (
                 <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-10 text-center">
                   <FileText className="mb-3 size-10 text-muted-foreground/40" />

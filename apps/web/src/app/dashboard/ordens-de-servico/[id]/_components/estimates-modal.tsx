@@ -156,7 +156,7 @@ export function EstimatesModal({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+          <div className="min-h-0 flex-1 overflow-y-auto p-6">
             <ServiceOrderEstimatesPanel
               mode="history"
               serviceOrderId={serviceOrderId}
