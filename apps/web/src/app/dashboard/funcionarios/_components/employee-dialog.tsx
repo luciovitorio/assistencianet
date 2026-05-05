@@ -7,6 +7,7 @@ import { useForm, Controller, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
 import { AlertTriangle, UserPlus } from 'lucide-react'
+import { getUpgradePlanName } from '@/lib/stripe/plans'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -69,6 +70,7 @@ interface EmployeeDialogProps {
     limit: number | null
     reached: boolean
     planName: string | null
+    planId: string | null
   }
 }
 
@@ -82,6 +84,7 @@ export function EmployeeDialog({
 }: EmployeeDialogProps) {
   const isEditing = !!employee?.id
   const showUpgradeNotice = !isEditing && employeeSeatUsage.reached
+  const upgradePlanName = getUpgradePlanName(employeeSeatUsage.planId as import('@/lib/stripe/plans').PlanId)
   const router = useRouter()
   const [isPending, startTransition] = React.useTransition()
 
@@ -171,9 +174,11 @@ export function EmployeeDialog({
             <AlertTriangle className="size-4" />
             <AlertTitle className="flex flex-wrap items-center gap-2">
               Limite de usuários atingido
-              <Badge variant="outline" className="border-amber-300 bg-white text-amber-800">
-                Upgrade para Profissional
-              </Badge>
+              {upgradePlanName && (
+                <Badge variant="outline" className="border-amber-300 bg-white text-amber-800">
+                  Upgrade para {upgradePlanName}
+                </Badge>
+              )}
             </AlertTitle>
             <AlertDescription className="text-amber-800">
               O plano {employeeSeatUsage.planName ?? 'atual'} permite {employeeSeatUsage.limit} usuário
@@ -182,7 +187,7 @@ export function EmployeeDialog({
               <Link href={upgradeHref} className="font-medium underline underline-offset-4">
                 Assinatura
               </Link>
-              {' '}e altere para o plano Profissional.
+              {upgradePlanName ? ` e altere para o plano ${upgradePlanName}.` : '.'}
             </AlertDescription>
           </Alert>
         )}

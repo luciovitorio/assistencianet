@@ -238,6 +238,7 @@ export async function getBillingServiceOrderUsage(
     limit: access.maxOsPerMonth,
     reached: access.maxOsPerMonth !== null && used >= access.maxOsPerMonth,
     planName: access.planName,
+    planId: access.planId,
   }
 }
 
@@ -286,6 +287,7 @@ export async function getBillingSeatUsage(
     limit: access.maxUsers,
     reached: access.maxUsers !== null && used >= access.maxUsers,
     planName: access.planName,
+    planId: access.planId,
   }
 }
 
@@ -311,6 +313,7 @@ export async function getBillingBranchUsage(
     limit,
     reached: limit !== null && used >= limit,
     planName: access.planName,
+    planId: access.planId,
   }
 }
 

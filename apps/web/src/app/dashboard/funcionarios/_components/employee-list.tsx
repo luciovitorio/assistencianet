@@ -47,6 +47,7 @@ interface EmployeeListProps {
     limit: number | null
     reached: boolean
     planName: string | null
+    planId: string | null
   }
   upgradeHref: string
 }

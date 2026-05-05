@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Controller, useForm, useWatch, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { getUpgradePlanName } from '@/lib/stripe/plans'
 import { toast } from 'sonner'
 import {
   Building2,
@@ -84,6 +85,7 @@ export interface ServiceOrderUsage {
   limit: number | null
   reached: boolean
   planName: string | null
+  planId: string | null
 }
 
 const mergeClientsById = (...groups: ClientOption[][]) =>
@@ -376,6 +378,7 @@ export function ServiceOrderForm({
   const num = isEdit && initialData ? initialData.number : (nextNumber || 0)
   const osDisplayNumber = `${String(num).slice(0, 4)}-${String(num).slice(4).padStart(4, '0')}`
   const showUpgradeNotice = !isEdit && Boolean(serviceOrderUsage?.reached)
+  const upgradePlanName = getUpgradePlanName(serviceOrderUsage?.planId as import('@/lib/stripe/plans').PlanId)
 
   const headerConfig = React.useMemo(() => ({
     backHref: '/dashboard/ordens-de-servico',
@@ -491,7 +494,7 @@ export function ServiceOrderForm({
   const onSubmit = (data: ServiceOrderSchema) => {
     if (isPending || isNavigatingAway || pendingPrint) return
     if (showUpgradeNotice) {
-      toast.error('Faça upgrade para o plano Profissional para abrir novas OS neste mês.')
+      toast.error(`Faça upgrade${upgradePlanName ? ` para o plano ${upgradePlanName}` : ''} para abrir novas OS neste mês.`)
       return
     }
 
@@ -578,9 +581,11 @@ export function ServiceOrderForm({
           <ShieldAlert className="size-4" />
           <AlertTitle className="flex flex-wrap items-center gap-2">
             Limite mensal de OS atingido
-            <Badge variant="outline" className="border-amber-300 bg-white text-amber-800">
-              Upgrade para Profissional
-            </Badge>
+            {upgradePlanName && (
+              <Badge variant="outline" className="border-amber-300 bg-white text-amber-800">
+                Upgrade para {upgradePlanName}
+              </Badge>
+            )}
           </AlertTitle>
           <AlertDescription className="text-amber-800">
             O plano {serviceOrderUsage.planName ?? 'atual'} permite {serviceOrderUsage.limit} OS por mês
@@ -589,7 +594,7 @@ export function ServiceOrderForm({
             <Link href={upgradeHref} className="font-medium underline underline-offset-4">
               Assinatura
             </Link>
-            {' '}e altere para o plano Profissional.
+            {upgradePlanName ? ` e altere para o plano ${upgradePlanName}.` : '.'}
           </AlertDescription>
         </Alert>
       )}
