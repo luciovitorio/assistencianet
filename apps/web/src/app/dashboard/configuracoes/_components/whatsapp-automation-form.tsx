@@ -10,7 +10,6 @@ import {
   type Control,
   type FieldErrors,
   type UseFormRegister,
-  type UseFormRegisterReturn,
 } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
@@ -47,12 +46,10 @@ import {
 } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { InputField } from '@/components/ui/input-field'
-import { Textarea } from '@/components/ui/textarea'
 import type {
   ResolvedWhatsAppAutomationSettings,
   WhatsAppAutomationProvider,
 } from '@/lib/whatsapp/automation-settings'
-import { WHATSAPP_MESSAGE_VARIABLES } from '@/lib/whatsapp/message-templates'
 import {
   whatsappAutomationSettingsSchema,
   type WhatsAppAutomationSettingsSchema,
@@ -152,32 +149,6 @@ function ProviderTabs({
   )
 }
 
-function MessageTextareaField({
-  error,
-  helper,
-  label,
-  placeholder,
-  registration,
-}: {
-  error?: string
-  helper: string
-  label: string
-  placeholder?: string
-  registration: UseFormRegisterReturn
-}) {
-  return (
-    <div className="space-y-2">
-      <label className="text-sm font-semibold text-slate-900">{label}</label>
-      <Textarea
-        className={cn(CONTROL, 'h-auto min-h-[118px] py-3 leading-6')}
-        placeholder={placeholder}
-        {...registration}
-      />
-      <p className="text-xs leading-5 text-slate-500">{helper}</p>
-      {error && <p className="text-sm font-medium text-destructive">{error}</p>}
-    </div>
-  )
-}
 
 function TriggerFields({
   control,
@@ -188,10 +159,6 @@ function TriggerFields({
   errors: FieldErrors<WhatsAppAutomationSettingsSchema>
   register: UseFormRegister<WhatsAppAutomationSettingsSchema>
 }) {
-  const [activeTab, setActiveTab] = React.useState<'triggers' | 'messages'>(
-    'triggers',
-  )
-
   return (
     <Card className="border border-slate-200 shadow-sm shadow-slate-950/5">
       <CardHeader className="border-b border-slate-100">
@@ -200,31 +167,10 @@ function TriggerFields({
           Gatilhos operacionais
         </CardTitle>
         <CardDescription>
-          Defina quais eventos disparam mensagens e edite os textos usados pela automação.
+          Defina quais eventos disparam notificações proativas para o cliente.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4 pt-4">
-        <div className="inline-flex rounded-xl border border-slate-200 bg-slate-50 p-1">
-          {[
-            { value: 'triggers', label: 'Gatilhos' },
-            { value: 'messages', label: 'Mensagens' },
-          ].map((tab) => (
-            <button
-              key={tab.value}
-              type="button"
-              onClick={() => setActiveTab(tab.value as 'triggers' | 'messages')}
-              className={cn(
-                'rounded-lg px-3 py-2 text-sm font-semibold transition',
-                activeTab === tab.value
-                  ? 'bg-white text-slate-950 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-950',
-              )}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
         <div className="grid gap-4 md:grid-cols-2">
           <InputField
             label="DDI padrão"
@@ -251,165 +197,103 @@ function TriggerFields({
           {...register('session_timeout_minutes')}
         />
 
-        {activeTab === 'triggers' ? (
-          <div className="grid gap-4 md:grid-cols-2">
-            <Controller
-              control={control}
-              name="notify_inbound_message"
-              render={({ field }) => (
-                <BooleanField
-                  checked={field.value}
-                  label="Mensagem recebida"
-                  description="Responder automaticamente quando alguém chamar no WhatsApp."
-                  onCheckedChange={field.onChange}
-                />
-              )}
-            />
-            <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-xs leading-5 text-slate-600">
-              Este gatilho usa a mensagem editável da aba Mensagens. Para a Meta, respostas fora da janela de 24h ainda dependem de template aprovado.
-            </div>
-
-            <Controller
-              control={control}
-              name="notify_os_created"
-              render={({ field }) => (
-                <BooleanField
-                  checked={field.value}
-                  label="OS aberta"
-                  description="Enviar confirmação de recebimento quando a OS for aberta."
-                  onCheckedChange={field.onChange}
-                />
-              )}
-            />
-            <InputField
-              label="Template Meta para OS aberta"
-              placeholder="os_aberta"
-              className={CONTROL}
-              error={errors.template_os_created?.message}
-              {...register('template_os_created')}
-            />
-
-            <Controller
-              control={control}
-              name="notify_estimate_ready"
-              render={({ field }) => (
-                <BooleanField
-                  checked={field.value}
-                  label="Orçamento pronto"
-                  description="Avisar quando o orçamento estiver disponível para aprovação."
-                  onCheckedChange={field.onChange}
-                />
-              )}
-            />
-            <InputField
-              label="Template Meta para orçamento"
-              placeholder="orcamento_pronto"
-              className={CONTROL}
-              error={errors.template_estimate_ready?.message}
-              {...register('template_estimate_ready')}
-            />
-
-            <Controller
-              control={control}
-              name="notify_service_completed"
-              render={({ field }) => (
-                <BooleanField
-                  checked={field.value}
-                  label="Serviço concluído"
-                  description="Avisar quando o equipamento estiver pronto para retirada."
-                  onCheckedChange={field.onChange}
-                />
-              )}
-            />
-            <InputField
-              label="Template Meta para conclusão"
-              placeholder="servico_concluido"
-              className={CONTROL}
-              error={errors.template_service_completed?.message}
-              {...register('template_service_completed')}
-            />
-
-            <Controller
-              control={control}
-              name="notify_satisfaction_survey"
-              render={({ field }) => (
-                <BooleanField
-                  checked={field.value}
-                  label="Pesquisa de satisfação"
-                  description="Enviar pesquisa após a conclusão da OS."
-                  onCheckedChange={field.onChange}
-                />
-              )}
-            />
-            <InputField
-              label="Template Meta para satisfação"
-              placeholder="pesquisa_satisfacao"
-              className={CONTROL}
-              error={errors.template_satisfaction_survey?.message}
-              {...register('template_satisfaction_survey')}
-            />
-          </div>
-        ) : (
-          <div className="space-y-5">
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-              <p className="text-sm font-semibold text-emerald-950">
-                Variáveis disponíveis
-              </p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {WHATSAPP_MESSAGE_VARIABLES.map((variable) => (
-                  <span
-                    key={variable}
-                    className="rounded-lg bg-white px-2.5 py-1 text-xs font-semibold text-emerald-800 shadow-sm"
-                  >
-                    {variable}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <InputField
-              label="Marcas autorizadas"
-              helper="Exibidas na variável {{marcas_autorizadas}} do menu de boas-vindas. Ex: Samsung, Apple, Motorola, LG"
-              className={CONTROL}
-              placeholder="Samsung, Apple, Motorola, LG"
-              error={errors.authorized_brands?.message}
-              {...register('authorized_brands')}
-            />
-
-            <div className="grid gap-5 lg:grid-cols-2">
-              <MessageTextareaField
-                label="Resposta automática inicial"
-                helper="Usada quando alguém entra em contato pelo WhatsApp."
-                error={errors.message_inbound_auto_reply?.message}
-                registration={register('message_inbound_auto_reply')}
+        <div className="grid gap-4 md:grid-cols-2">
+          <Controller
+            control={control}
+            name="notify_inbound_message"
+            render={({ field }) => (
+              <BooleanField
+                checked={field.value}
+                label="Mensagem recebida"
+                description="Ativar o bot para responder quando alguém chamar no WhatsApp."
+                onCheckedChange={field.onChange}
               />
-              <MessageTextareaField
+            )}
+          />
+          <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-xs leading-5 text-slate-600">
+            As mensagens do bot são configuradas em <strong>Bot WhatsApp</strong>. Para a Meta, respostas fora da janela de 24h dependem de template aprovado.
+          </div>
+
+          <Controller
+            control={control}
+            name="notify_os_created"
+            render={({ field }) => (
+              <BooleanField
+                checked={field.value}
                 label="OS aberta"
-                helper="Mensagem enviada quando uma ordem de serviço é criada."
-                error={errors.message_os_created?.message}
-                registration={register('message_os_created')}
+                description="Enviar confirmação de recebimento quando a OS for aberta."
+                onCheckedChange={field.onChange}
               />
-              <MessageTextareaField
+            )}
+          />
+          <InputField
+            label="Template Meta para OS aberta"
+            placeholder="os_aberta"
+            className={CONTROL}
+            error={errors.template_os_created?.message}
+            {...register('template_os_created')}
+          />
+
+          <Controller
+            control={control}
+            name="notify_estimate_ready"
+            render={({ field }) => (
+              <BooleanField
+                checked={field.value}
                 label="Orçamento pronto"
-                helper="Mensagem enviada quando o orçamento fica disponível."
-                error={errors.message_estimate_ready?.message}
-                registration={register('message_estimate_ready')}
+                description="Avisar quando o orçamento estiver disponível para aprovação."
+                onCheckedChange={field.onChange}
               />
-              <MessageTextareaField
+            )}
+          />
+          <InputField
+            label="Template Meta para orçamento"
+            placeholder="orcamento_pronto"
+            className={CONTROL}
+            error={errors.template_estimate_ready?.message}
+            {...register('template_estimate_ready')}
+          />
+
+          <Controller
+            control={control}
+            name="notify_service_completed"
+            render={({ field }) => (
+              <BooleanField
+                checked={field.value}
                 label="Serviço concluído"
-                helper="Mensagem enviada quando o equipamento fica pronto para retirada."
-                error={errors.message_service_completed?.message}
-                registration={register('message_service_completed')}
+                description="Avisar quando o equipamento estiver pronto para retirada."
+                onCheckedChange={field.onChange}
               />
-              <MessageTextareaField
+            )}
+          />
+          <InputField
+            label="Template Meta para conclusão"
+            placeholder="servico_concluido"
+            className={CONTROL}
+            error={errors.template_service_completed?.message}
+            {...register('template_service_completed')}
+          />
+
+          <Controller
+            control={control}
+            name="notify_satisfaction_survey"
+            render={({ field }) => (
+              <BooleanField
+                checked={field.value}
                 label="Pesquisa de satisfação"
-                helper="Mensagem enviada após a conclusão do atendimento."
-                error={errors.message_satisfaction_survey?.message}
-                registration={register('message_satisfaction_survey')}
+                description="Enviar pesquisa após a conclusão da OS."
+                onCheckedChange={field.onChange}
               />
-            </div>
-          </div>
-        )}
+            )}
+          />
+          <InputField
+            label="Template Meta para satisfação"
+            placeholder="pesquisa_satisfacao"
+            className={CONTROL}
+            error={errors.template_satisfaction_survey?.message}
+            {...register('template_satisfaction_survey')}
+          />
+        </div>
       </CardContent>
     </Card>
   )
