@@ -89,6 +89,18 @@ export async function createCheckoutSession(_prev: unknown, formData: FormData) 
   const email = company.email ?? user.email ?? ''
   const customerId = await getOrCreateStripeCustomer(company.id, company.name, email)
 
+  const { data: currentSub } = await adminSupabase
+    .from('subscriptions')
+    .select('trial_ends_at')
+    .eq('company_id', company.id)
+    .maybeSingle()
+
+  const trialEndsAt = currentSub?.trial_ends_at ? new Date(currentSub.trial_ends_at) : null
+  const trialEndUnix =
+    trialEndsAt && trialEndsAt > new Date()
+      ? Math.floor(trialEndsAt.getTime() / 1000)
+      : undefined
+
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3001'
 
   const session = await getStripe().checkout.sessions.create({
@@ -97,7 +109,7 @@ export async function createCheckoutSession(_prev: unknown, formData: FormData) 
     mode: 'subscription',
     line_items: [{ price: plan.stripe_price_id, quantity: 1 }],
     subscription_data: {
-      trial_period_days: 14,
+      ...(trialEndUnix ? { trial_end: trialEndUnix } : {}),
       metadata: {
         company_id: company.id,
         plan_id: planId,
