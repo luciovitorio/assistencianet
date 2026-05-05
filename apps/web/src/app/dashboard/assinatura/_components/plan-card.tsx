@@ -20,6 +20,11 @@ type Plan = {
   stripe_price_id: string
 }
 
+type CurrentUsage = {
+  seats: number
+  branches: number
+}
+
 type Props = {
   plan: Plan
   currentPlanId: string | null
@@ -27,12 +32,27 @@ type Props = {
   hasStripeConfigured: boolean
   hasStripeSubscription: boolean
   cancelAtPeriodEnd: boolean
+  currentUsage: CurrentUsage
 }
 
-export function PlanCard({ plan, currentPlanId, isPopular, hasStripeConfigured, hasStripeSubscription, cancelAtPeriodEnd }: Props) {
+export function PlanCard({ plan, currentPlanId, isPopular, hasStripeConfigured, hasStripeSubscription, cancelAtPeriodEnd, currentUsage }: Props) {
   const [isPending, startTransition] = useTransition()
   const isCurrent = hasStripeSubscription && currentPlanId === plan.id
   const isCanceling = isCurrent && cancelAtPeriodEnd
+
+  const warnings: string[] = []
+  if (!plan.has_multiple_branches && currentUsage.branches > 1) {
+    const excess = currentUsage.branches - 1
+    warnings.push(
+      `Você tem ${currentUsage.branches} filiais ativas. Este plano permite apenas 1 — será necessário desativar ${excess} após assinar.`
+    )
+  }
+  if (plan.max_users !== null && currentUsage.seats > plan.max_users) {
+    const excess = currentUsage.seats - plan.max_users
+    warnings.push(
+      `Você tem ${currentUsage.seats} usuários ativos. Este plano permite até ${plan.max_users} — será necessário desativar ${excess} após assinar.`
+    )
+  }
 
   const features = [
     plan.id === 'empresarial' ? 'Tudo do Profissional' : null,
@@ -107,6 +127,17 @@ export function PlanCard({ plan, currentPlanId, isPopular, hasStripeConfigured, 
           </li>
         ))}
       </ul>
+
+      {warnings.length > 0 && (
+        <div className="mb-4 space-y-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
+          {warnings.map((w) => (
+            <div key={w} className="flex items-start gap-2">
+              <AlertTriangleIcon className="mt-0.5 size-3.5 shrink-0 text-amber-600" />
+              <p className="text-xs leading-5 text-amber-800">{w}</p>
+            </div>
+          ))}
+        </div>
+      )}
 
       {isCanceling ? (
         <Button variant="outline" disabled className="w-full border-destructive/40 text-destructive hover:text-destructive">

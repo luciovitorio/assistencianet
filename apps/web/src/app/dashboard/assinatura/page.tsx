@@ -108,7 +108,13 @@ export default async function AssinaturaPage({
     }
   }
 
-  const [{ data: subscription }, { data: plans }] = await Promise.all([
+  const [
+    { data: subscription },
+    { data: plans },
+    { data: companyWithOwner },
+    { data: activeEmployees },
+    { count: activeBranchCount },
+  ] = await Promise.all([
     adminSupabase
       .from('subscriptions')
       .select('status, plan_id, trial_ends_at, current_period_end, stripe_customer_id, stripe_subscription_id, cancel_at_period_end, cancel_at')
@@ -118,7 +124,35 @@ export default async function AssinaturaPage({
       .from('plans')
       .select('id, name, price_brl, max_os_per_month, max_users, has_whatsapp_bot, has_advanced_reports, has_multiple_branches, stripe_price_id, sort_order')
       .order('sort_order'),
+    adminSupabase
+      .from('companies')
+      .select('owner_id')
+      .eq('id', company.id)
+      .maybeSingle(),
+    adminSupabase
+      .from('employees')
+      .select('user_id')
+      .eq('company_id', company.id)
+      .eq('active', true)
+      .is('deleted_at', null)
+      .not('user_id', 'is', null),
+    adminSupabase
+      .from('branches')
+      .select('id', { count: 'exact', head: true })
+      .eq('company_id', company.id)
+      .eq('active', true)
+      .is('deleted_at', null),
   ])
+
+  const activeUserIds = new Set<string>()
+  if (companyWithOwner?.owner_id) activeUserIds.add(companyWithOwner.owner_id)
+  for (const emp of activeEmployees ?? []) {
+    if (emp.user_id) activeUserIds.add(emp.user_id)
+  }
+  const currentUsage = {
+    seats: activeUserIds.size,
+    branches: activeBranchCount ?? 0,
+  }
 
   const status = subscription?.status ?? 'trialing'
   const statusInfo = STATUS_LABELS[status] ?? STATUS_LABELS.trialing
@@ -266,6 +300,7 @@ export default async function AssinaturaPage({
               hasStripeConfigured={hasStripeConfigured}
               hasStripeSubscription={!!subscription?.stripe_subscription_id}
               cancelAtPeriodEnd={(subscription?.cancel_at_period_end || !!subscription?.cancel_at) ?? false}
+              currentUsage={currentUsage}
             />
           ))}
         </div>
