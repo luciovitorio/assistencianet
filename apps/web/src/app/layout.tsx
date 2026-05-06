@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google'
+import { Analytics } from '@vercel/analytics/next'
 import { CookieConsentBanner } from '@/components/cookie-consent-banner'
 import { Toaster } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
@@ -38,6 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <CookieConsentBanner />
           <Toaster richColors position="top-right" />
         </TooltipProvider>
+        <Analytics />
       </body>
     </html>
   )
