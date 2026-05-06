@@ -465,17 +465,21 @@ export function ServiceOrderList({
   }
 
   const canDeleteOrder = (order: ServiceOrderData) =>
-    order.status === 'aguardando' && (order.service_order_estimates?.length ?? 0) === 0
+    order.status === 'aberta' && (order.service_order_estimates?.length ?? 0) === 0
 
   const canEditOrder = (order: ServiceOrderData) =>
-    order.status === 'aguardando' || order.status === 'em_analise' || order.status === 'reprovado'
+    order.status === 'aberta' ||
+    order.status === 'em_analise' ||
+    order.status === 'aguardando_envio' ||
+    order.status === 'reprovado'
 
   const canManageEstimatesForOrder = (order: ServiceOrderData) =>
     order.status !== 'cancelado' && order.status !== 'finalizado'
 
   const canOpenEstimateEditor = (order: ServiceOrderData) =>
-    order.status === 'aguardando' ||
+    order.status === 'aberta' ||
     order.status === 'em_analise' ||
+    order.status === 'aguardando_envio' ||
     order.status === 'reprovado' ||
     order.status === 'enviado_terceiro'
 

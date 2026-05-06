@@ -391,7 +391,10 @@ export default async function ServiceOrderDetailPage({ params }: ServiceOrderPag
     status === 'reprovado' ||
     status === 'enviado_terceiro'
   const canEditServiceOrder =
-    status === 'aberta' || status === 'em_analise' || status === 'reprovado'
+    status === 'aberta' ||
+    status === 'em_analise' ||
+    status === 'aguardando_envio' ||
+    status === 'reprovado'
 
   return (
     <div className="flex min-h-0 flex-col overflow-hidden xl:-mx-8 xl:-mt-8 xl:-mb-12 xl:h-[calc(100vh-4rem)]">

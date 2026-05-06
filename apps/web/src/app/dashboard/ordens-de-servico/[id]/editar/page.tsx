@@ -52,7 +52,7 @@ export default async function EditarOrdemDeServicoPage({
     notFound()
   }
 
-  if (!['aguardando', 'em_analise', 'reprovado'].includes(os.status)) {
+  if (!['aberta', 'em_analise', 'aguardando_envio', 'reprovado'].includes(os.status)) {
     redirect(`/dashboard/ordens-de-servico/${os.id}`)
   }
 
