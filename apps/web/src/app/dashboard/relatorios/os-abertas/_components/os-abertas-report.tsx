@@ -42,7 +42,7 @@ const OPEN_STATUS_OPTIONS: DataTableFilterOption[] = [
   'aprovado', 'reprovado', 'aguardando_peca', 'enviado_terceiro', 'em_reparo', 'pronto',
 ].map((s) => ({ value: s, label: STATUS_LABELS[s as ServiceOrderStatus] ?? s }))
 
-const ROWS_PER_PAGE = 20
+const DEFAULT_ROWS = 20
 
 type Props = {
   initialData: OpenOsReportData
@@ -54,6 +54,7 @@ export function OsAbertasReport({ initialData }: Props) {
   const [statusFilter, setStatusFilter] = React.useState<string[]>([])
   const [search, setSearch] = React.useState('')
   const [currentPage, setCurrentPage] = React.useState(1)
+  const [rowsPerPage, setRowsPerPage] = React.useState(DEFAULT_ROWS)
   const [isPending, startTransition] = React.useTransition()
 
   const deferredSearch = React.useDeferredValue(search)
@@ -84,9 +85,9 @@ export function OsAbertasReport({ initialData }: Props) {
     return rows
   }, [data.rows, statusFilter, deferredSearch])
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / ROWS_PER_PAGE))
+  const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage))
   const page = Math.min(currentPage, totalPages)
-  const paginated = filtered.slice((page - 1) * ROWS_PER_PAGE, page * ROWS_PER_PAGE)
+  const paginated = filtered.slice((page - 1) * rowsPerPage, page * rowsPerPage)
 
   const overdueCount = filtered.filter((r) => r.is_overdue).length
 
@@ -261,9 +262,12 @@ export function OsAbertasReport({ initialData }: Props) {
         <DataTablePagination
           currentPage={page}
           totalPages={totalPages}
-          totalRows={filtered.length}
-          rowsPerPage={ROWS_PER_PAGE}
+          totalItems={filtered.length}
+          currentItemsCount={paginated.length}
+          rowsPerPage={rowsPerPage}
+          onRowsPerPageChange={(v) => { setRowsPerPage(v); setCurrentPage(1) }}
           onPageChange={setCurrentPage}
+          itemLabel="OS"
         />
       </div>
     </div>

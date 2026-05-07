@@ -26,7 +26,7 @@ import {
   type ClientRecurrenceRow,
 } from '@/app/actions/specific-reports'
 
-const ROWS_PER_PAGE = 25
+const DEFAULT_ROWS = 25
 
 type Props = {
   initialData: ClientRecurrenceReportData
@@ -42,6 +42,7 @@ export function ClientesRecorrentesReport({ initialData, initialStart, initialEn
   const [minOs, setMinOs] = React.useState('1')
   const [search, setSearch] = React.useState('')
   const [currentPage, setCurrentPage] = React.useState(1)
+  const [rowsPerPage, setRowsPerPage] = React.useState(DEFAULT_ROWS)
   const [isPending, startTransition] = React.useTransition()
 
   const deferredSearch = React.useDeferredValue(search)
@@ -75,9 +76,9 @@ export function ClientesRecorrentesReport({ initialData, initialStart, initialEn
     return rows
   }, [data.rows, minOs, deferredSearch])
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / ROWS_PER_PAGE))
+  const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage))
   const page = Math.min(currentPage, totalPages)
-  const paginated = filtered.slice((page - 1) * ROWS_PER_PAGE, page * ROWS_PER_PAGE)
+  const paginated = filtered.slice((page - 1) * rowsPerPage, page * rowsPerPage)
 
   const handleExportCsv = () => {
     exportCsv(
@@ -248,9 +249,12 @@ export function ClientesRecorrentesReport({ initialData, initialStart, initialEn
         <DataTablePagination
           currentPage={page}
           totalPages={totalPages}
-          totalRows={filtered.length}
-          rowsPerPage={ROWS_PER_PAGE}
+          totalItems={filtered.length}
+          currentItemsCount={paginated.length}
+          rowsPerPage={rowsPerPage}
+          onRowsPerPageChange={(v) => { setRowsPerPage(v); setCurrentPage(1) }}
           onPageChange={setCurrentPage}
+          itemLabel="cliente"
         />
       </div>
     </div>
