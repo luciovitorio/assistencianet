@@ -175,7 +175,7 @@ export class EvolutionApiClient {
     }
   }
 
-  async createInstance() {
+  async createInstance(options?: { browserName?: string }) {
     if (!this.instanceName) {
       throw new Error('Informe o nome da instância da Evolution API.')
     }
@@ -190,11 +190,14 @@ export class EvolutionApiClient {
       }
     }
 
+    const browserName = options?.browserName?.trim() || 'SmartConserto'
+
     await this.request<unknown>('/instance/create', {
       method: 'POST',
       body: JSON.stringify({
         instanceName: this.instanceName,
         integration: 'WHATSAPP-BAILEYS',
+        browser: [browserName, 'Desktop', '0.0.0'],
       }),
     })
 

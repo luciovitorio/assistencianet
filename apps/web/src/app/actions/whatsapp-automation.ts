@@ -527,8 +527,10 @@ export async function getEvolutionApiConnectionState() {
 export async function createEvolutionApiInstance() {
   try {
     const { companyId } = await getAdminContext('configuracoes')
+    const supabase = await createClient()
+    const { data: company } = await supabase.from('companies').select('name').eq('id', companyId).single()
     const { client, settings } = await getEvolutionClientFromSavedSettings(companyId)
-    const result = await client.createInstance()
+    const result = await client.createInstance({ browserName: company?.name ?? undefined })
 
     const appBaseUrl = process.env.APP_BASE_URL?.replace(/\/+$/, '')
     const webhookSecret = process.env.EVOLUTION_WEBHOOK_SECRET
