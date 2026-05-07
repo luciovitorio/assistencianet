@@ -386,6 +386,25 @@ function EvolutionConnectionPanel({
   onLogout: () => void
   onRefreshStatus: () => void
 }) {
+  const QR_TTL = 20
+  const [countdown, setCountdown] = React.useState(QR_TTL)
+
+  React.useEffect(() => {
+    if (!qrCodeImage) return
+    setCountdown(QR_TTL)
+    const id = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) { clearInterval(id); return 0 }
+        return prev - 1
+      })
+    }, 1000)
+    return () => clearInterval(id)
+  }, [qrCodeImage])
+
+  React.useEffect(() => {
+    if (countdown === 0 && qrCodeImage && !isPending) onGenerateQrCode()
+  }, [countdown, qrCodeImage, isPending, onGenerateQrCode])
+
   return (
     <Card className="border border-slate-200 shadow-sm shadow-slate-950/5">
       <CardHeader>
@@ -464,10 +483,21 @@ function EvolutionConnectionPanel({
                 className="size-56 max-w-full rounded-md"
               />
             </div>
-            <p className="mt-3 text-xs leading-5 text-emerald-900">
-              Escaneie pelo WhatsApp do aparelho que ficará conectado ao atendimento.
-              A tela atualiza automaticamente após conectar.
-            </p>
+            <div className="mt-3 space-y-1">
+              <div className="flex items-center justify-between text-xs text-emerald-700">
+                <span>Escaneie pelo WhatsApp do aparelho que ficará conectado.</span>
+                <span className="font-semibold tabular-nums">{countdown}s</span>
+              </div>
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-emerald-100">
+                <div
+                  className="h-1.5 rounded-full bg-emerald-500 transition-[width] duration-1000 ease-linear"
+                  style={{ width: `${(countdown / QR_TTL) * 100}%` }}
+                />
+              </div>
+              <p className="text-[11px] text-emerald-700/70">
+                O código expira automaticamente e um novo será gerado.
+              </p>
+            </div>
           </div>
         ) : (
           <div className="rounded-xl border border-dashed border-slate-300 bg-white p-4 text-sm leading-6 text-slate-600">
