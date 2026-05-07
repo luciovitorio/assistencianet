@@ -492,10 +492,12 @@ export async function getEvolutionApiConnectionState() {
       ? `${appBaseUrl}/api/webhooks/evolution`
       : null
     const isConnected = connection.state === 'open'
+    // Normalize both URLs before comparing (case-insensitive, strip trailing slash)
+    const normalizeUrl = (u: string) => u.replace(/\/+$/, '').toLowerCase()
     const webhookOk =
       webhook.enabled &&
       !!webhook.url &&
-      (!expectedUrl || webhook.url === expectedUrl)
+      (!expectedUrl || normalizeUrl(webhook.url) === normalizeUrl(expectedUrl))
     const isOk = isConnected && webhookOk
 
     const notifBody = !isConnected
@@ -522,6 +524,18 @@ export async function getEvolutionApiConnectionState() {
       ),
     }
   }
+}
+
+export async function getEvolutionWebhookUrlWarning(): Promise<string | null> {
+  const url = process.env.APP_BASE_URL ?? ''
+  if (!url) return null
+  const isLocal =
+    url.includes('localhost') ||
+    url.includes('127.0.0.1') ||
+    url.includes('ngrok') ||
+    url.startsWith('http://')
+  if (!isLocal) return null
+  return `Ambiente local detectado. O webhook será registrado com a URL "${url}/api/webhooks/evolution". Mensagens de produção deixarão de chegar se essa URL não estiver acessível publicamente. Continuar mesmo assim?`
 }
 
 export async function createEvolutionApiInstance() {

@@ -301,11 +301,14 @@ export class EvolutionApiClient {
       throw new Error('Informe o nome da instância da Evolution API.')
     }
     try {
-      const result = await this.request<{ enabled?: boolean; url?: string }>(
-        `/webhook/find/${encodeURIComponent(this.instanceName)}`,
-        { method: 'GET' },
-      )
-      return { enabled: result?.enabled ?? false, url: result?.url ?? null }
+      const result = await this.request<{
+        enabled?: boolean
+        url?: string
+        webhook?: { enabled?: boolean; url?: string }
+      }>(`/webhook/find/${encodeURIComponent(this.instanceName)}`, { method: 'GET' })
+      // Evolution API v2 may return the fields nested under "webhook"
+      const data = result?.webhook ?? result
+      return { enabled: data?.enabled ?? false, url: data?.url ?? null }
     } catch {
       return { enabled: false, url: null }
     }

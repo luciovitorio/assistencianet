@@ -31,6 +31,7 @@ import {
   createEvolutionApiInstance,
   deleteEvolutionApiInstance,
   getEvolutionApiConnectionState,
+  getEvolutionWebhookUrlWarning,
   logoutEvolutionApiInstance,
   saveWhatsAppAutomationSettings,
   validateEvolutionApiSettings,
@@ -811,6 +812,11 @@ export function WhatsAppAutomationForm({
     setEvolutionOperation('create')
     startEvolutionOperationTransition(async () => {
       try {
+        const warning = await getEvolutionWebhookUrlWarning()
+        if (warning && !window.confirm(warning)) {
+          return
+        }
+
         const createResult = await createEvolutionApiInstance()
 
         if (hasActionError(createResult)) {
