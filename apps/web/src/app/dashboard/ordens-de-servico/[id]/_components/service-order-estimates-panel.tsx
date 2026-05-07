@@ -787,6 +787,7 @@ export function ServiceOrderEstimatesPanel({
                       type="number"
                       min="0"
                       step="1"
+                      className="h-8"
                       {...register('warranty_days', { valueAsNumber: true })}
                     />
                     {errors.warranty_days && (
@@ -924,6 +925,7 @@ export function ServiceOrderEstimatesPanel({
                                 <Input
                                   id={`items.${index}.description`}
                                   placeholder="Ex: Taxa de visita, ajuste avulso"
+                                  className="h-8"
                                   {...register(`items.${index}.description`)}
                                 />
                               )}
@@ -949,6 +951,7 @@ export function ServiceOrderEstimatesPanel({
                                 min={watchedItemType === 'peca' ? '1' : '0.01'}
                                 step={watchedItemType === 'peca' ? '1' : '0.01'}
                                 inputMode={watchedItemType === 'peca' ? 'numeric' : 'decimal'}
+                                className="h-8"
                                 onFocus={(e) => e.target.select()}
                                 {...register(`items.${index}.quantity`)}
                               />
@@ -981,6 +984,7 @@ export function ServiceOrderEstimatesPanel({
                                     mask="money"
                                     label="Valor unitario"
                                     placeholder="R$ 0,00"
+                                    className="h-8"
                                     error={errors.items?.[index]?.unit_price?.message}
                                     {...field}
                                     value={field.value == null ? '' : String(field.value)}
