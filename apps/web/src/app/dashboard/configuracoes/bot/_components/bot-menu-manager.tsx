@@ -231,16 +231,22 @@ export function BotMenuManager({ initialItems }: Props) {
   }
 
   const moveRoot = (index: number, direction: 'up' | 'down') => {
+    const prev = [...items]
     const next = [...items]
     const target = direction === 'up' ? index - 1 : index + 1
     ;[next[index], next[target]] = [next[target], next[index]]
     setItems(next)
     startTransition(async () => {
-      await reorderBotMenuItems(next.map((r) => r.id))
+      const result = await reorderBotMenuItems(next.map((r) => r.id))
+      if ('error' in result) {
+        toast.error(result.error)
+        setItems(prev)
+      }
     })
   }
 
   const moveChild = (parentId: string, index: number, direction: 'up' | 'down') => {
+    const prevItems = items
     setItems((prev) =>
       prev.map((r) => {
         if (r.id !== parentId) return r
@@ -248,7 +254,11 @@ export function BotMenuManager({ initialItems }: Props) {
         const target = direction === 'up' ? index - 1 : index + 1
         ;[next[index], next[target]] = [next[target], next[index]]
         startTransition(async () => {
-          await reorderBotMenuItems(next.map((c) => c.id))
+          const result = await reorderBotMenuItems(next.map((c) => c.id))
+          if ('error' in result) {
+            toast.error(result.error)
+            setItems(prevItems)
+          }
         })
         return { ...r, children: next }
       }),

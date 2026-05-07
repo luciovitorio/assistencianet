@@ -205,7 +205,7 @@ export async function reorderBotMenuItems(
     const { companyId, supabase } = await getBotContext()
     if (ids.length === 0) return { success: true }
 
-    await Promise.all(
+    const results = await Promise.all(
       ids.map((id, index) =>
         supabase
           .from('whatsapp_menu_items')
@@ -214,6 +214,9 @@ export async function reorderBotMenuItems(
           .eq('company_id', companyId),
       ),
     )
+
+    const failed = results.find((r) => r.error)
+    if (failed) throw new Error(failed.error?.message ?? 'Erro ao salvar posição')
 
     REVALIDATE()
     return { success: true }
