@@ -407,9 +407,11 @@ export async function releaseServiceOrder(id: string) {
       return { error: 'Apenas o técnico responsável ou um administrador pode liberar esta OS.' }
     }
 
+    const statusAfterRelease = os.status === 'em_analise' ? 'aberta' : os.status
+
     const { error } = await supabase
       .from('service_orders')
-      .update({ technician_id: null })
+      .update({ technician_id: null, status: statusAfterRelease })
       .eq('id', id)
       .eq('company_id', companyId)
 
@@ -421,7 +423,7 @@ export async function releaseServiceOrder(id: string) {
         company_id: companyId,
         employee_id: employee.id,
         action: 'liberou',
-        os_status_at_action: os.status,
+        os_status_at_action: statusAfterRelease,
       })
     }
 
@@ -430,8 +432,8 @@ export async function releaseServiceOrder(id: string) {
       entityType: 'service_order',
       entityId: os.id,
       companyId,
-      summary: `OS #${os.number}: técnico liberou a OS (sem responsável).`,
-      metadata: { released_by: user.id, os_status: os.status },
+      summary: `OS #${os.number}: técnico liberou a OS (status revertido para ${statusAfterRelease}).`,
+      metadata: { released_by: user.id, previous_status: os.status, os_status: statusAfterRelease },
     })
 
     revalidateServiceOrdersPage()
