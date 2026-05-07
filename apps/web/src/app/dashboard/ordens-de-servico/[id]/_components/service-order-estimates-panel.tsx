@@ -975,14 +975,14 @@ export function ServiceOrderEstimatesPanel({
                                 )}
                             </div>
 
-                            <div className="xl:col-span-2">
+                            <div className="space-y-1.5 xl:col-span-2">
+                              <Label>Valor unitario</Label>
                               <Controller
                                 control={control}
                                 name={`items.${index}.unit_price`}
                                 render={({ field }) => (
                                   <MaskedInputField
                                     mask="money"
-                                    label="Valor unitario"
                                     placeholder="R$ 0,00"
                                     className="h-8"
                                     error={errors.items?.[index]?.unit_price?.message}
