@@ -178,7 +178,7 @@ export function ClientesRecorrentesReport({ initialData, initialStart, initialEn
               </Select>
               <Select
                 value={minOs}
-                onValueChange={(v) => { setMinOs(v); setCurrentPage(1) }}
+                onValueChange={(v) => { setMinOs(v ?? '1'); setCurrentPage(1) }}
                 disabled={isPending}
               >
                 <SelectTrigger className="h-9 w-full lg:w-44">
