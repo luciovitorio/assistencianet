@@ -199,7 +199,7 @@ export function OrcamentosReport({ initialData, initialStart, initialEnd }: Prop
               />
               <Select
                 value={branchFilter}
-                onValueChange={(v) => { setBranchFilter(v); loadReport(startDate, endDate, v) }}
+                onValueChange={(v) => { const val = v ?? 'all'; setBranchFilter(val); loadReport(startDate, endDate, val) }}
                 disabled={isPending}
               >
                 <SelectTrigger className="h-9 w-full lg:w-48">

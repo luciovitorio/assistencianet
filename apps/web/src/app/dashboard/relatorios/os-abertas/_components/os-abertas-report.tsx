@@ -90,8 +90,8 @@ export function OsAbertasReport({ initialData }: Props) {
 
   const overdueCount = filtered.filter((r) => r.is_overdue).length
 
-  const handleBranchChange = (value: string) => {
-    setBranchFilter(value)
+  const handleBranchChange = (value: string | null) => {
+    setBranchFilter(value ?? 'all')
     setCurrentPage(1)
     startTransition(async () => {
       const result = await getOpenOsReport({ branchId: value === 'all' ? undefined : value })
