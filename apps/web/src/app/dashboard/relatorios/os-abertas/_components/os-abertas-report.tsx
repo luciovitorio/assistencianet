@@ -95,7 +95,7 @@ export function OsAbertasReport({ initialData }: Props) {
     setBranchFilter(value ?? 'all')
     setCurrentPage(1)
     startTransition(async () => {
-      const result = await getOpenOsReport({ branchId: value === 'all' ? undefined : value })
+      const result = await getOpenOsReport({ branchId: value === 'all' || value == null ? undefined : value })
       if (result.error || !result.data) {
         toast.error(result.error ?? 'Erro ao carregar relatório.')
         return
