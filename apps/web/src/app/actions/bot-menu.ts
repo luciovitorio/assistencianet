@@ -205,18 +205,25 @@ export async function reorderBotMenuItems(
     const { companyId, supabase } = await getBotContext()
     if (ids.length === 0) return { success: true }
 
-    const results = await Promise.all(
-      ids.map((id, index) =>
-        supabase
-          .from('whatsapp_menu_items')
-          .update({ position: index + 1 })
-          .eq('id', id)
-          .eq('company_id', companyId),
-      ),
-    )
+    // Passo 1: mover para posições temporárias altas para evitar conflito de unique constraint
+    for (let i = 0; i < ids.length; i++) {
+      const { error } = await supabase
+        .from('whatsapp_menu_items')
+        .update({ position: 10000 + i })
+        .eq('id', ids[i])
+        .eq('company_id', companyId)
+      if (error) throw new Error(error.message)
+    }
 
-    const failed = results.find((r) => r.error)
-    if (failed) throw new Error(failed.error?.message ?? 'Erro ao salvar posição')
+    // Passo 2: atribuir posições finais
+    for (let i = 0; i < ids.length; i++) {
+      const { error } = await supabase
+        .from('whatsapp_menu_items')
+        .update({ position: i + 1 })
+        .eq('id', ids[i])
+        .eq('company_id', companyId)
+      if (error) throw new Error(error.message)
+    }
 
     REVALIDATE()
     return { success: true }
