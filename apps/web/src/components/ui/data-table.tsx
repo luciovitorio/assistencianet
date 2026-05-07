@@ -224,7 +224,7 @@ function DataTablePagination({
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="flex items-center gap-2 text-sm">
-          <span className="text-muted-foreground">Linhas por pagina</span>
+          <span className="text-muted-foreground whitespace-nowrap">Linhas por pagina</span>
           <Select
             value={String(rowsPerPage)}
             onValueChange={(value) => onRowsPerPageChange(Number(value ?? String(rowsPerPageOptions[0] ?? 10)))}
