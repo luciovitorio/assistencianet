@@ -15,8 +15,8 @@ import {
   Wrench,
   Truck,
   User,
-  UserCheck,
-  UserMinus,
+  ClipboardCheck,
+  LogOut,
   Calendar,
   Mail,
   MessageCircle,
@@ -934,7 +934,7 @@ export function ServiceOrderList({
                                     {isActionPending ? (
                                       <Loader2 className="size-4 animate-spin" />
                                     ) : (
-                                      <UserCheck className="size-4 text-emerald-600" />
+                                      <ClipboardCheck className="size-4" />
                                     )}
                                     Pegar OS
                                   </DropdownMenuItem>
@@ -942,6 +942,7 @@ export function ServiceOrderList({
                                 {canRelease && (
                                   <DropdownMenuItem
                                     disabled={isActionPending}
+                                    className="text-muted-foreground"
                                     onClick={(e) => {
                                       e.preventDefault()
                                       handleRelease(order.id, order.number)
@@ -950,7 +951,7 @@ export function ServiceOrderList({
                                     {isActionPending ? (
                                       <Loader2 className="size-4 animate-spin" />
                                     ) : (
-                                      <UserMinus className="size-4 text-amber-600" />
+                                      <LogOut className="size-4" />
                                     )}
                                     Liberar OS
                                   </DropdownMenuItem>
