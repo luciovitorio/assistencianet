@@ -34,6 +34,7 @@ interface DashboardShellProps {
   companyName: string
   userEmail: string
   currentDate: string
+  branchName: string | null
   isAdmin: boolean
   initialIsExpanded: boolean
   canAccessFinancial: boolean
@@ -332,11 +333,13 @@ function getRouteHeaderConfig(pathname: string): HeaderConfig | null {
 function DashboardTopbar({
   isAdmin,
   currentDate,
+  branchName,
   isExpanded,
   pathname,
 }: {
   isAdmin: boolean
   currentDate: string
+  branchName: string | null
   isExpanded: boolean
   pathname: string
 }) {
@@ -362,9 +365,16 @@ function DashboardTopbar({
       </div>
 
       <div className="flex items-center space-x-4">
-        <span className="text-muted-foreground text-sm font-medium tracking-tight hidden lg:block">
-          {currentDate}
-        </span>
+        <div className="hidden lg:flex flex-col items-end leading-tight">
+          <span className="text-muted-foreground text-sm font-medium tracking-tight">
+            {currentDate}
+          </span>
+          {branchName && (
+            <span className="text-muted-foreground/70 text-xs font-normal">
+              {branchName}
+            </span>
+          )}
+        </div>
         <button className="p-2 text-muted-foreground hover:text-primary transition-colors cursor-pointer">
           <Search className="size-5" />
         </button>
@@ -384,6 +394,7 @@ export function DashboardShell({
   companyName,
   userEmail,
   currentDate,
+  branchName,
   isAdmin,
   initialIsExpanded,
   canAccessFinancial,
@@ -718,6 +729,7 @@ export function DashboardShell({
         <DashboardTopbar
           isAdmin={isAdmin}
           currentDate={currentDate}
+          branchName={branchName}
           isExpanded={isExpanded}
           pathname={pathname}
         />

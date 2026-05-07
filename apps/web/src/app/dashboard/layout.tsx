@@ -17,12 +17,16 @@ export default async function DashboardLayout({ children }: { children: React.Re
   let canAccessWhatsApp = true
   let canAccessReports = true
   let canManageSubscription = false
+  let branchName: string | null = null
 
   try {
     const context = await getCompanyContext()
-    const [companyResult, billingAccess] = await Promise.all([
+    const [companyResult, billingAccess, branchResult] = await Promise.all([
       supabase.from('companies').select('id, name, owner_id').eq('id', context.companyId).maybeSingle(),
       getCompanySubscriptionAccess(supabase, context.companyId),
+      context.currentBranchId
+        ? supabase.from('branches').select('name').eq('id', context.currentBranchId).maybeSingle()
+        : Promise.resolve(null),
     ])
 
     company = companyResult.data
@@ -32,6 +36,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     canAccessFinancial = billingAccess.active && billingAccess.hasFinancialModule
     canAccessWhatsApp = billingAccess.active && billingAccess.hasWhatsAppBot
     canAccessReports = billingAccess.active && billingAccess.hasAdvancedReports
+    branchName = branchResult?.data?.name ?? null
   } catch (error) {
     if (error instanceof Error && error.message === 'Usuário não autenticado') {
       redirect('/login')
@@ -54,6 +59,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       companyName={company?.name || 'Assistência'}
       userEmail={userEmail}
       currentDate={currentDate}
+      branchName={branchName}
       isAdmin={isAdmin}
       initialIsExpanded={initialIsExpanded}
       canAccessFinancial={canAccessFinancial}
