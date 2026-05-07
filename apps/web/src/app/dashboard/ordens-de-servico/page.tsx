@@ -46,12 +46,23 @@ export default async function OrdensDeServicoPage() {
   let companyId: string
   let currentBranchId: string | null
   let isAdmin: boolean
+  let currentEmployeeId: string | null = null
 
   try {
     const context = await getCompanyContext()
     companyId = context.companyId
     currentBranchId = context.currentBranchId
     isAdmin = context.isAdmin
+
+    const { data: currentEmployee } = await supabase
+      .from('employees')
+      .select('id')
+      .eq('user_id', context.user.id)
+      .eq('company_id', companyId)
+      .is('deleted_at', null)
+      .maybeSingle()
+
+    currentEmployeeId = currentEmployee?.id ?? null
   } catch {
     redirect('/dashboard')
   }
@@ -118,6 +129,7 @@ export default async function OrdensDeServicoPage() {
         employees={employees || []}
         thirdParties={activeThirdParties || []}
         currentBranchId={currentBranchId}
+        currentEmployeeId={currentEmployeeId}
         initialColumnVisibility={columnVisibility}
         isAdmin={isAdmin}
       />

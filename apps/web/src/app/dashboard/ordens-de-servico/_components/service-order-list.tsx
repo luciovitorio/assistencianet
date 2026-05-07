@@ -15,6 +15,8 @@ import {
   Wrench,
   Truck,
   User,
+  UserCheck,
+  UserMinus,
   Calendar,
   Mail,
   MessageCircle,
@@ -30,6 +32,8 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import { sendEstimate } from '@/app/actions/service-order-estimates'
 import {
+  claimServiceOrder,
+  releaseServiceOrder,
   registerClientResponse,
   registerManualClientResponse,
   updateServiceOrderStatus,
@@ -133,6 +137,7 @@ interface ServiceOrderListProps {
   employees: EmployeeOption[]
   thirdParties: ThirdPartyOption[]
   currentBranchId: string | null
+  currentEmployeeId: string | null
   initialColumnVisibility: Record<string, boolean> | null
   isAdmin: boolean
 }
@@ -169,6 +174,7 @@ export function ServiceOrderList({
   employees,
   thirdParties,
   initialColumnVisibility,
+  currentEmployeeId,
   isAdmin,
 }: ServiceOrderListProps) {
   const router = useRouter()
@@ -441,6 +447,40 @@ export function ServiceOrderList({
     router.refresh()
   }
 
+  const handleClaim = (serviceOrderId: string, serviceOrderNumber: number) => {
+    setActionOrderId(serviceOrderId)
+    React.startTransition(async () => {
+      try {
+        const result = await claimServiceOrder(serviceOrderId)
+        if (result?.error) {
+          toast.error(result.error)
+        } else {
+          toast.success(`OS #${serviceOrderNumber}: você assumiu esta OS.`)
+          router.refresh()
+        }
+      } finally {
+        setActionOrderId(null)
+      }
+    })
+  }
+
+  const handleRelease = (serviceOrderId: string, serviceOrderNumber: number) => {
+    setActionOrderId(serviceOrderId)
+    React.startTransition(async () => {
+      try {
+        const result = await releaseServiceOrder(serviceOrderId)
+        if (result?.error) {
+          toast.error(result.error)
+        } else {
+          toast.success(`OS #${serviceOrderNumber}: OS liberada.`)
+          router.refresh()
+        }
+      } finally {
+        setActionOrderId(null)
+      }
+    })
+  }
+
   const formatDate = (dateStr: string) =>
     new Date(dateStr).toLocaleDateString('pt-BR', {
       day: '2-digit',
@@ -695,6 +735,8 @@ export function ServiceOrderList({
                   const branchName = order.branch_id ? branchMap[order.branch_id] : null
                   const status = order.status as ServiceOrderStatus
                   const isActionPending = actionOrderId === order.id
+                  const canClaim = !order.technician_id
+                  const canRelease = !!order.technician_id && order.technician_id === currentEmployeeId
                   const canRegisterManualResponse = canRegisterManualClientResponse(order, client)
                   const deviceName = order.device_type || order.device_model || '—'
                   const deviceDetails = [
@@ -880,6 +922,40 @@ export function ServiceOrderList({
                                   <ArrowRight className="size-4" />
                                   Abrir OS
                                 </DropdownMenuItem>
+                                {(canClaim || canRelease) && <DropdownMenuSeparator />}
+                                {canClaim && (
+                                  <DropdownMenuItem
+                                    disabled={isActionPending}
+                                    onClick={(e) => {
+                                      e.preventDefault()
+                                      handleClaim(order.id, order.number)
+                                    }}
+                                  >
+                                    {isActionPending ? (
+                                      <Loader2 className="size-4 animate-spin" />
+                                    ) : (
+                                      <UserCheck className="size-4 text-emerald-600" />
+                                    )}
+                                    Pegar OS
+                                  </DropdownMenuItem>
+                                )}
+                                {canRelease && (
+                                  <DropdownMenuItem
+                                    disabled={isActionPending}
+                                    onClick={(e) => {
+                                      e.preventDefault()
+                                      handleRelease(order.id, order.number)
+                                    }}
+                                  >
+                                    {isActionPending ? (
+                                      <Loader2 className="size-4 animate-spin" />
+                                    ) : (
+                                      <UserMinus className="size-4 text-amber-600" />
+                                    )}
+                                    Liberar OS
+                                  </DropdownMenuItem>
+                                )}
+                                {(canClaim || canRelease) && <DropdownMenuSeparator />}
                                 <DropdownMenuItem
                                   onClick={(e) => {
                                     e.preventDefault()
