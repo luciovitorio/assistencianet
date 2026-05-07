@@ -216,7 +216,7 @@ export function EquipamentosReport({ initialData, initialStart, initialEnd }: Pr
                   <EquipmentRow
                     key={row.key}
                     row={row}
-                    rank={(page - 1) * ROWS_PER_PAGE + idx + 1}
+                    rank={(page - 1) * rowsPerPage + idx + 1}
                     isTop={idx === 0 && page === 1}
                   />
                 ))

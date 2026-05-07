@@ -236,7 +236,7 @@ export function ClientesRecorrentesReport({ initialData, initialStart, initialEn
                   <ClientRow
                     key={row.client_id}
                     row={row}
-                    rank={(page - 1) * ROWS_PER_PAGE + idx + 1}
+                    rank={(page - 1) * rowsPerPage + idx + 1}
                   />
                 ))
               )}
