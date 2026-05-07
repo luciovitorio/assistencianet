@@ -149,7 +149,7 @@ export function EstimatesModal({
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="flex max-h-[90vh] flex-col overflow-hidden p-0 sm:max-w-[min(96vw,88rem)]">
-          <DialogHeader className="border-b px-6 py-4">
+          <DialogHeader className="mx-0 mt-0 border-b px-6 py-4">
             <DialogTitle>Histórico de orçamentos</DialogTitle>
             <DialogDescription>
               OS #{serviceOrderNumber}. Consulte versões, status e itens já enviados ao cliente.

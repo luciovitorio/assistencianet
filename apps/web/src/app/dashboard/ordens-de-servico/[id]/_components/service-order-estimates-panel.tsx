@@ -12,6 +12,7 @@ import {
   ChevronDown,
   FileText,
   Plus,
+  Printer,
   Send,
   ThumbsDown,
   ThumbsUp,
@@ -475,6 +476,242 @@ export function ServiceOrderEstimatesPanel({
     router.refresh()
   }
 
+  const renderEstimateCards = () => {
+    if (initialEstimates.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-10 text-center">
+          <FileText className="mb-3 size-10 text-muted-foreground/40" />
+          <h3 className="text-base font-medium">Nenhum orcamento emitido</h3>
+          <p className="mt-1 max-w-md text-sm text-muted-foreground">
+            Crie o primeiro orcamento desta OS para registrar a proposta comercial e o historico de
+            aprovacao do cliente.
+          </p>
+        </div>
+      )
+    }
+
+    return initialEstimates.map((estimate) => {
+      const isExpired = isServiceOrderEstimateExpired(estimate.valid_until, estimate.status)
+      return (
+        <div key={estimate.id} className="rounded-xl border p-4">
+          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-semibold">Orcamento v{estimate.version}</h3>
+                <span
+                  className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider ${
+                    SERVICE_ORDER_ESTIMATE_STATUS_COLORS[
+                      estimate.status as keyof typeof SERVICE_ORDER_ESTIMATE_STATUS_COLORS
+                    ] ?? 'bg-muted text-muted-foreground'
+                  }`}
+                >
+                  {SERVICE_ORDER_ESTIMATE_STATUS_LABELS[
+                    estimate.status as keyof typeof SERVICE_ORDER_ESTIMATE_STATUS_LABELS
+                  ] ?? estimate.status}
+                </span>
+                {isExpired && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-rose-700">
+                    <AlertTriangle className="size-3" />
+                    Vencido
+                  </span>
+                )}
+              </div>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Criado em {dateFormatter.format(new Date(estimate.created_at))}
+              </p>
+              <div className="mt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() =>
+                    window.open(
+                      `/recibos/orcamento/${estimate.id}?autoPrint=1`,
+                      '_blank',
+                      'noopener,noreferrer',
+                    )
+                  }
+                >
+                  <Printer className="size-3.5" />
+                  Imprimir
+                </Button>
+              </div>
+              {estimate.status === 'rascunho' && (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {mode !== 'history' && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5"
+                      onClick={() => setResendEstimate(estimate)}
+                      disabled={!canManageEstimates}
+                    >
+                      <Send className="size-3.5" />
+                      Enviar ao cliente
+                    </Button>
+                  )}
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700"
+                    onClick={() => handleManualClientResponse('aprovado')}
+                    disabled={isPending || !canManageEstimates}
+                  >
+                    <ThumbsUp className="size-3.5" />
+                    Aceite manual
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 border-rose-200 text-rose-700 hover:bg-rose-50"
+                    onClick={() => handleManualClientResponse('reprovado')}
+                    disabled={isPending || !canManageEstimates}
+                  >
+                    <ThumbsDown className="size-3.5" />
+                    Recusa manual
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-3 gap-3 text-sm md:min-w-80">
+              <div className="rounded-lg bg-muted/50 p-3">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">Subtotal</p>
+                <p className="mt-1 font-semibold">
+                  {currencyFormatter.format(estimate.subtotal_amount)}
+                </p>
+              </div>
+              <div className="rounded-lg bg-muted/50 p-3">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">Desconto</p>
+                <p className="mt-1 font-semibold">
+                  {currencyFormatter.format(estimate.discount_amount)}
+                </p>
+              </div>
+              <div className="rounded-lg bg-primary/5 p-3">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">Total</p>
+                <p className="mt-1 font-semibold text-primary">
+                  {currencyFormatter.format(estimate.total_amount)}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {(estimate.valid_until ||
+            estimate.notes ||
+            estimate.sent_at ||
+            estimate.approved_at ||
+            estimate.rejected_at) && (
+            <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              {estimate.valid_until && (
+                <div className="text-sm">
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground">Validade</p>
+                  <p className={isExpired ? 'font-semibold text-rose-700' : undefined}>
+                    {new Date(`${estimate.valid_until}T12:00:00`).toLocaleDateString('pt-BR')}
+                  </p>
+                </div>
+              )}
+              {estimate.warranty_days !== null && (
+                <div className="text-sm">
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground">Garantia</p>
+                  <p>{estimate.warranty_days} dias</p>
+                </div>
+              )}
+              {estimate.sent_at && (
+                <div className="text-sm">
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                    Enviado em
+                  </p>
+                  <p>{dateFormatter.format(new Date(estimate.sent_at))}</p>
+                </div>
+              )}
+              {estimate.approved_at && (
+                <div className="text-sm">
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                    Aprovado em
+                  </p>
+                  <p>{dateFormatter.format(new Date(estimate.approved_at))}</p>
+                </div>
+              )}
+              {estimate.rejected_at && (
+                <div className="text-sm">
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                    Recusado em
+                  </p>
+                  <p>{dateFormatter.format(new Date(estimate.rejected_at))}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {estimate.notes && (
+            <div className="mt-4 rounded-lg bg-muted/40 p-3 text-sm text-muted-foreground">
+              {estimate.notes}
+            </div>
+          )}
+
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="px-3 py-2 text-left font-medium text-muted-foreground">Tipo</th>
+                  <th className="px-3 py-2 text-left font-medium text-muted-foreground">
+                    Descricao
+                  </th>
+                  <th className="px-3 py-2 text-right font-medium text-muted-foreground">Qtd.</th>
+                  <th className="px-3 py-2 text-right font-medium text-muted-foreground">
+                    Unitario
+                  </th>
+                  <th className="px-3 py-2 text-right font-medium text-muted-foreground">Total</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {estimate.items.map((item) => (
+                  <tr key={item.id}>
+                    <td className="px-3 py-2 text-muted-foreground">
+                      {ESTIMATE_ITEM_TYPE_LABELS[
+                        item.item_type as keyof typeof ESTIMATE_ITEM_TYPE_LABELS
+                      ] ?? item.item_type}
+                    </td>
+                    <td className="px-3 py-2">
+                      <div>{item.description}</div>
+                      {item.notes && (
+                        <div className="text-xs text-muted-foreground">{item.notes}</div>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-right">{item.quantity}</td>
+                    <td className="px-3 py-2 text-right">
+                      {currencyFormatter.format(item.unit_price)}
+                    </td>
+                    <td className="px-3 py-2 text-right font-medium">
+                      {currencyFormatter.format(item.line_total)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )
+    })
+  }
+
+  const renderHistory = () => {
+    if (mode === 'history') {
+      return <div className="space-y-4">{renderEstimateCards()}</div>
+    }
+    return (
+      <Card>
+        <CardHeader className="px-6">
+          <CardTitle>Histórico de orçamentos</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4 px-6 pb-6">{renderEstimateCards()}</CardContent>
+      </Card>
+    )
+  }
+
   return (
     <>
       {pendingSend && (
@@ -511,240 +748,7 @@ export function ServiceOrderEstimatesPanel({
         />
       )}
       <div className="space-y-6">
-        {showHistory ? (
-          <Card>
-            <CardHeader className="px-6">
-              <CardTitle>Histórico de orçamentos</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 px-6 pb-6">
-              {initialEstimates.length === 0 ? (
-                <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-10 text-center">
-                  <FileText className="mb-3 size-10 text-muted-foreground/40" />
-                  <h3 className="text-base font-medium">Nenhum orcamento emitido</h3>
-                  <p className="mt-1 max-w-md text-sm text-muted-foreground">
-                    Crie o primeiro orcamento desta OS para registrar a proposta comercial e o
-                    historico de aprovacao do cliente.
-                  </p>
-                </div>
-              ) : (
-                initialEstimates.map((estimate) => {
-                  const isExpired = isServiceOrderEstimateExpired(
-                    estimate.valid_until,
-                    estimate.status
-                  )
-
-                  return (
-                    <div key={estimate.id} className="rounded-xl border p-4">
-                      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h3 className="text-base font-semibold">
-                              Orcamento v{estimate.version}
-                            </h3>
-                            <span
-                              className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider ${
-                                SERVICE_ORDER_ESTIMATE_STATUS_COLORS[
-                                  estimate.status as keyof typeof SERVICE_ORDER_ESTIMATE_STATUS_COLORS
-                                ] ?? 'bg-muted text-muted-foreground'
-                              }`}
-                            >
-                              {SERVICE_ORDER_ESTIMATE_STATUS_LABELS[
-                                estimate.status as keyof typeof SERVICE_ORDER_ESTIMATE_STATUS_LABELS
-                              ] ?? estimate.status}
-                            </span>
-                            {isExpired && (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-rose-700">
-                                <AlertTriangle className="size-3" />
-                                Vencido
-                              </span>
-                            )}
-                          </div>
-                          <p className="mt-1 text-sm text-muted-foreground">
-                            Criado em {dateFormatter.format(new Date(estimate.created_at))}
-                          </p>
-                          {estimate.status === 'rascunho' && (
-                            <div className="mt-2 flex flex-wrap gap-2">
-                              {mode !== 'history' && (
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  className="gap-1.5"
-                                  onClick={() => setResendEstimate(estimate)}
-                                  disabled={!canManageEstimates}
-                                >
-                                  <Send className="size-3.5" />
-                                  Enviar ao cliente
-                                </Button>
-                              )}
-                              <Button
-                                type="button"
-                                size="sm"
-                                className="gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700"
-                                onClick={() => handleManualClientResponse('aprovado')}
-                                disabled={isPending || !canManageEstimates}
-                              >
-                                <ThumbsUp className="size-3.5" />
-                                Aceite manual
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                className="gap-1.5 border-rose-200 text-rose-700 hover:bg-rose-50"
-                                onClick={() => handleManualClientResponse('reprovado')}
-                                disabled={isPending || !canManageEstimates}
-                              >
-                                <ThumbsDown className="size-3.5" />
-                                Recusa manual
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="grid grid-cols-3 gap-3 text-sm md:min-w-80">
-                          <div className="rounded-lg bg-muted/50 p-3">
-                            <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                              Subtotal
-                            </p>
-                            <p className="mt-1 font-semibold">
-                              {currencyFormatter.format(estimate.subtotal_amount)}
-                            </p>
-                          </div>
-                          <div className="rounded-lg bg-muted/50 p-3">
-                            <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                              Desconto
-                            </p>
-                            <p className="mt-1 font-semibold">
-                              {currencyFormatter.format(estimate.discount_amount)}
-                            </p>
-                          </div>
-                          <div className="rounded-lg bg-primary/5 p-3">
-                            <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                              Total
-                            </p>
-                            <p className="mt-1 font-semibold text-primary">
-                              {currencyFormatter.format(estimate.total_amount)}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {(estimate.valid_until ||
-                        estimate.notes ||
-                        estimate.sent_at ||
-                        estimate.approved_at ||
-                        estimate.rejected_at) && (
-                        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                          {estimate.valid_until && (
-                            <div className="text-sm">
-                              <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                                Validade
-                              </p>
-                              <p className={isExpired ? 'font-semibold text-rose-700' : undefined}>
-                                {new Date(`${estimate.valid_until}T12:00:00`).toLocaleDateString(
-                                  'pt-BR'
-                                )}
-                              </p>
-                            </div>
-                          )}
-                          {estimate.warranty_days !== null && (
-                            <div className="text-sm">
-                              <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                                Garantia
-                              </p>
-                              <p>{estimate.warranty_days} dias</p>
-                            </div>
-                          )}
-                          {estimate.sent_at && (
-                            <div className="text-sm">
-                              <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                                Enviado em
-                              </p>
-                              <p>{dateFormatter.format(new Date(estimate.sent_at))}</p>
-                            </div>
-                          )}
-                          {estimate.approved_at && (
-                            <div className="text-sm">
-                              <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                                Aprovado em
-                              </p>
-                              <p>{dateFormatter.format(new Date(estimate.approved_at))}</p>
-                            </div>
-                          )}
-                          {estimate.rejected_at && (
-                            <div className="text-sm">
-                              <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                                Recusado em
-                              </p>
-                              <p>{dateFormatter.format(new Date(estimate.rejected_at))}</p>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {estimate.notes && (
-                        <div className="mt-4 rounded-lg bg-muted/40 p-3 text-sm text-muted-foreground">
-                          {estimate.notes}
-                        </div>
-                      )}
-
-                      <div className="mt-4 overflow-x-auto">
-                        <table className="w-full text-sm">
-                          <thead>
-                            <tr className="border-b border-border">
-                              <th className="px-3 py-2 text-left font-medium text-muted-foreground">
-                                Tipo
-                              </th>
-                              <th className="px-3 py-2 text-left font-medium text-muted-foreground">
-                                Descricao
-                              </th>
-                              <th className="px-3 py-2 text-right font-medium text-muted-foreground">
-                                Qtd.
-                              </th>
-                              <th className="px-3 py-2 text-right font-medium text-muted-foreground">
-                                Unitario
-                              </th>
-                              <th className="px-3 py-2 text-right font-medium text-muted-foreground">
-                                Total
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-border">
-                            {estimate.items.map((item) => (
-                              <tr key={item.id}>
-                                <td className="px-3 py-2 text-muted-foreground">
-                                  {ESTIMATE_ITEM_TYPE_LABELS[
-                                    item.item_type as keyof typeof ESTIMATE_ITEM_TYPE_LABELS
-                                  ] ?? item.item_type}
-                                </td>
-                                <td className="px-3 py-2">
-                                  <div>{item.description}</div>
-                                  {item.notes && (
-                                    <div className="text-xs text-muted-foreground">
-                                      {item.notes}
-                                    </div>
-                                  )}
-                                </td>
-                                <td className="px-3 py-2 text-right">{item.quantity}</td>
-                                <td className="px-3 py-2 text-right">
-                                  {currencyFormatter.format(item.unit_price)}
-                                </td>
-                                <td className="px-3 py-2 text-right font-medium">
-                                  {currencyFormatter.format(item.line_total)}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  )
-                })
-              )}
-            </CardContent>
-          </Card>
-        ) : null}
+        {showHistory ? renderHistory() : null}
 
         {showCreateForm ? (
           <Card>
@@ -1068,14 +1072,19 @@ export function ServiceOrderEstimatesPanel({
                           />
                         </div>
                       ) : (
-                        <button
-                          type="button"
-                          onClick={() => setShowDiscount(true)}
-                          className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
-                        >
-                          <Plus className="size-3" />
-                          Adicionar desconto
-                        </button>
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground">Desconto</span>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-7 gap-1.5 text-xs"
+                            onClick={() => setShowDiscount(true)}
+                          >
+                            <Plus className="size-3" />
+                            Adicionar desconto
+                          </Button>
+                        </div>
                       )}
 
                       <div className="flex items-center justify-between border-t pt-3 text-base font-semibold">

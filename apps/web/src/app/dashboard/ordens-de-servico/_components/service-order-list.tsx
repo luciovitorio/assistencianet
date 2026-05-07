@@ -51,6 +51,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
+import { useRealtimeRefresh } from '@/hooks/use-realtime-refresh'
 import {
   DataTableCard,
   DataTableColumnToggle,
@@ -179,6 +180,7 @@ export function ServiceOrderList({
 }: ServiceOrderListProps) {
   const router = useRouter()
   const { navigate } = useRouteTransition()
+  useRealtimeRefresh('service_orders')
   const [orders, setOrders] = React.useState(initialOrders)
   const [dialog, setDialog] = React.useState<DialogState>({ type: 'none' })
   const [sendingId, setSendingId] = React.useState<string | null>(null)

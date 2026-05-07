@@ -21,6 +21,7 @@ import {
   type ServiceOrderStatus,
 } from '@/lib/validations/service-order'
 import { cn } from '@/lib/utils'
+import { useRealtimeRefresh } from '@/hooks/use-realtime-refresh'
 import { ServiceOrderPickupSheet } from '../../_components/service-order-pickup-sheet'
 import {
   DispatchToThirdPartyDialog,
@@ -65,6 +66,7 @@ export function ServiceOrderActions({
 }: ServiceOrderActionsProps) {
   const router = useRouter()
   const { navigate } = useRouteTransition()
+  useRealtimeRefresh('service_orders', `id=eq.${serviceOrderId}`)
   const [isPending, startTransition] = React.useTransition()
   const [pickupSheetOpen, setPickupSheetOpen] = React.useState(false)
   const [dispatchOpen, setDispatchOpen] = React.useState(false)
