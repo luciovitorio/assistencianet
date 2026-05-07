@@ -1,0 +1,160 @@
+=== DADOS PARA TESTE MANUAL E MULTI-FILIAIS - SALÃO DE BELEZA ===
+
+1. EMPRESA E FILIAIS
+--------------------------------------------------
+MATRIZ
+Telefone: (21) 99394-0772
+CEP: 26266-070
+Endereço: Rua Castor, 66, Sala 01 - Nova Iguaçu/RJ
+
+FILIAL 01
+Telefone: (21) 3103-1368
+CEP: 26266-060
+Endereço: Rua Rebeca Fernandes, 484, LojaB - Nova Iguaçu/RJ
+
+
+2. FUNCIONÁRIOS (Usuários do sistema)
+--------------------------------------------------
+  Senha padrão 12345678
+  
+- Gerente (Acesso Total)
+  Nome: Carlos Gerente / Email: carlos@email.com.br / Cargo: Administrador / Lotação: Administrador Geral
+
+- Matriz (3 Técnicos - Atuarão também como Atendentes/Recepção)
+  Nome: Ana Atendimento / Email: ana@email.com.br / Cargo: Atendente / Lotação: Matriz
+  Nome: Roberto Técnico / Email: roberto@email.com.br / Cargo: Técnico / Lotação: Matriz
+  Nome: Caio Técnico / Email: caio@email.com.br / Cargo: Técnico / Lotação: Matriz
+  Nome: Lucas Técnico / Email: lucas@email.com.br / Cargo: Técnico / Lotação: Matriz
+
+- Filial 01 (2 Técnicos - Atuarão também como Atendentes/Recepção)
+  Nome: Marcos Técnico / Email: marcos.f1@email.com.br / Cargo: Técnico / Lotação: Filial 01
+  Nome: Felipe Técnico / Email: felipe.f1@email.com.br / Cargo: Técnico / Lotação: Filial 01
+
+
+3. CLIENTES
+--------------------------------------------------
+>> MATRIZ (5 Clientes)
+M1. Ana Paula (PF) | CPF: 111.111.111-11 | (21) 98888-1111 
+    Endereço: Rua Margarida, 10 - Nova Iguaçu/RJ
+
+M2. João Carlos (PF) | CPF: 222.222.222-22 | (21) 98888-2222
+    Endereço: Rua Rosa, 20 - Nova Iguaçu/RJ
+
+M3. Studio Beleza LTDA (PJ) | CNPJ: 33.333.333/0001-33 | (21) 98888-3333
+    Endereço: Av. Principal, 300 - Nova Iguaçu/RJ
+
+M4. Maria Oliveira (PF) | CPF: 444.444.444-44 | (21) 98888-4444
+    Endereço: Rua Jasmin, 40 - Nova Iguaçu/RJ
+
+M5. Roberta Silva (PF) | CPF: 555.555.555-55 | (21) 98888-5555
+    Endereço: Rua Lírio, 50 - Nova Iguaçu/RJ
+
+>> FILIAL 01 (5 Clientes)
+F1. Carlos Eduardo (PF) | CPF: 666.666.666-66 | (21) 97777-6666
+    Endereço: Rua Violeta, 60 - Nova Iguaçu/RJ
+
+F2. Salão da Luiza ME (PJ) | CNPJ: 77.777.777/0001-77 | (21) 97777-7777
+    Endereço: Av. Comercial, 700 - Nova Iguaçu/RJ
+
+F3. Fernanda Costa (PF) | CPF: 888.888.888-88 | (21) 97777-8888
+    Endereço: Rua Orquídea, 80 - Nova Iguaçu/RJ
+
+F4. Juliana Martins (PF) | CPF: 999.999.999-99 | (21) 97777-9999
+    Endereço: Rua Hortênsia, 90 - Nova Iguaçu/RJ
+
+F5. Letícia Cardoso (PF) | CPF: 000.000.000-00 | (21) 97777-0000
+    Endereço: Rua das Flores, 100 - Nova Iguaçu/RJ
+
+
+4. MARCAS (Para Equipamentos de Salão)
+--------------------------------------------------
+- Taiff
+- Wahl
+- MQ Professional
+- Gama Italy
+- Babyliss Pro
+- Beltec (Motores de Unha)
+- Santa Clara
+
+
+5. CATEGORIAS DE PEÇAS / PRODUTOS
+--------------------------------------------------
+- Elétrica e Fiação (Cabos, Placas, Termostatos)
+- Aquecimento (Resistências)
+- Motores e Ventoinhas
+- Corte e Desbaste (Lâminas, Lixas)
+- Acessórios e Carcaças
+
+
+6. PEÇAS / PRODUTOS (Para Estoque)
+--------------------------------------------------
+- Peça 01: Resistência Secador Taiff Fox | SKU: RES-TAIFF | Custo: R$ 30,00 | Venda: R$ 80,00
+- Peça 02: Motor Secador 220v | SKU: MOT-220V | Custo: R$ 40,00 | Venda: R$ 100,00
+- Peça 03: Cabo de Força PP 3 metros | SKU: CABO-PP3 | Custo: R$ 15,00 | Venda: R$ 35,00
+- Peça 04: Lâmina de Corte Wahl Magic Clip | SKU: LAM-WAHL | Custo: R$ 60,00 | Venda: R$ 120,00
+- Peça 05: Termostato Prancha MQ | SKU: TER-MQ | Custo: R$ 20,00 | Venda: R$ 60,00
+
+
+7. SERVIÇOS (Mão de Obra)
+--------------------------------------------------
+- S1: Troca de Resistência (Secadores / Estufas) | Valor Padrão: R$ 50,00 | Tempo: 1 hora
+- S2: Manutenção Preventiva + Limpeza Interna | Valor Padrão: R$ 70,00 | Tempo: 2 horas
+- S3: Substituição de Cabo de Energia (Mau Contato) | Valor Padrão: R$ 40,00 | Tempo: 1 hora
+- S4: Lubrificação e Afiação/Alinhamento de Lâmina | Valor Padrão: R$ 60,00 | Tempo: 2 horas
+- S5: Conserto em Placa Principal (Termocera/Prancha) | Valor Padrão: R$ 100,00 | Tempo: 24 horas
+
+
+8. DISTRIBUIÇÃO DE ESTOQUE SUGERIDA
+--------------------------------------------------
+MATRIZ:
+- Resistência Secador Taiff: 10 unidades
+- Motor Secador 220v: 5 unidades
+- Cabo de Força: 15 unidades
+- Lâmina Wahl: 8 unidades
+- Termostato Prancha: 10 unidades
+
+FILIAL 01:
+- Resistência Secador Taiff: 5 unidades
+- Motor Secador 220v: 2 unidades
+- Cabo de Força: 8 unidades
+- Lâmina Wahl: 4 unidades
+- Termostato Prancha: 5 unidades
+
+
+9. ORDENS DE SERVIÇOS TOTAIS: 20 (2 por Cliente)
+--------------------------------------------------
+
+>> NA MATRIZ (5 Clientes -> 10 OS) 
+* Alternar login/criação entre os 3 técnicos da Matriz:
+OS 01 (M1-Ana Paula): Secador Taiff Fox 3. Defeito: Não esquenta (Só sai vento frio).
+OS 02 (M1-Ana Paula): Prancha Gama Italy. Defeito: Cabo com mau contato, desligando ao mover.
+OS 03 (M2-João Carlos): Máquina Wahl Magic Clip. Defeito: Barulho alto e puxando cabelo.
+OS 04 (M2-João Carlos): Secador Taiff Vulcan. Defeito: Cheiro de queimado e parou.
+OS 05 (M3-Studio Beleza): Autoclave Odontobrás. Defeito: Não atinge a temperatura.
+OS 06 (M3-Studio Beleza): 2 Secadores Taiff Turbo. Defeito: Manutenção preventiva geral.
+OS 07 (M4-Maria Oliveira): Motor de Unha Beltec. Defeito: Caneta trepidando muito (rolamento).
+OS 08 (M4-Maria Oliveira): Secador Gama. Defeito: Quebrou pino do fio na tomada.
+OS 09 (M5-Roberta Silva): Termocera Mega Bell. Defeito: Derreteu a cuba internamente.
+OS 10 (M5-Roberta Silva): Prancha MQ Pro 480. Defeito: Painel piscando erro, não aquece.
+
+>> NA FILIAL 01 (5 Clientes -> 10 OS)
+* Alternar login/criação entre os 2 técnicos da Filial 01:
+OS 11 (F1-Carlos Eduardo): Máquina Wahl Super Taper. Defeito: Lâmina cega.
+OS 12 (F1-Carlos Eduardo): Secador Taiff Tourmaline. Defeito: Ventoinha travada, cheiro de pêlo queimado.
+OS 13 (F2-Salão Luiza): Estufa Santa Clara. Defeito: Desligando sozinha antes do tempo.
+OS 14 (F2-Salão Luiza): Secador Parlux. Defeito: Botão do frio travado para dentro.
+OS 15 (F3-Fernanda Costa): Prancha Babyliss Pro. Defeito: Quebrou ao meio na carcaça.
+OS 16 (F3-Fernanda Costa): Motor de Unha Marathon. Defeito: Caneta não prende broca (mandril bambo).
+OS 17 (F4-Juliana Martins): Máquina de Acabamento Andis. Defeito: Bateria não segura carga.
+OS 18 (F4-Juliana Martins): Secador Taiff Energy 220v. Defeito: Ligado em 110v por engano, fraco, não esquenta.
+OS 19 (F5-Letícia Cardoso): Termocera Santa Clara. Defeito: Termostato travado no máximo (fervendo a cera).
+OS 20 (F5-Letícia Cardoso): Prancha Titanium. Defeito: Cabo estourado na base giratória.
+
+
+10. ROTEIRO DE VERIFICAÇÃO PARA OS TESTES MANUAIS
+--------------------------------------------------
+[ ] Verificar se um Técnico consegue usar a tela e criar uma OS do início ao fim caso ele atue na recepção.
+[ ] O sistema previne bem ou facilita a vida quando o usuário técnico for dar "recebimento" de um equipamento com suas avarias de entrada?
+[ ] Ao tentar cadastrar uma OS para o cliente F2 com o técnico "Caio (Matriz)", o sistema previne/alerta que o cliente não tem vínculo na Matriz?
+[ ] Ao orçar a OS 01 (Secador, Matriz), cobrar [Resistência + S1] e validar no estoque da Matriz se reduziu de 10 para 9.
+[ ] Autenticando com o login de Marcos (Filial 01), verifique se as atividades, clientes e OS abertas na Matriz desaparecem da visão da loja dele.

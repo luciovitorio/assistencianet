@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+const isDev = process.env.NODE_ENV === "development";
+
 const securityHeaders = [
   {
     key: "Content-Security-Policy",
@@ -13,7 +15,9 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https:",
       "font-src 'self' data:",
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
+      isDev
+        ? "connect-src 'self' ws://localhost:* wss://localhost:* https://*.supabase.co wss://*.supabase.co"
+        : "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
       "upgrade-insecure-requests",
     ].join("; "),
   },

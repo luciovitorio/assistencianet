@@ -511,17 +511,39 @@ export async function createServiceOrderEstimate(
 
     const supabase = await createClient()
 
-    const { data: serviceOrder, error: serviceOrderError } = await supabase
-      .from('service_orders')
-      .select('id, number, status, branch_id, technician_id')
-      .eq('id', serviceOrderId)
-      .eq('company_id', companyId)
-      .is('deleted_at', null)
-      .single()
+    const [
+      { data: serviceOrder, error: serviceOrderError },
+      { data: previousEstimates, error: previousEstimatesError },
+      { data: creatorEmployee },
+    ] = await Promise.all([
+      supabase
+        .from('service_orders')
+        .select('id, number, status, branch_id, technician_id')
+        .eq('id', serviceOrderId)
+        .eq('company_id', companyId)
+        .is('deleted_at', null)
+        .single(),
+      supabase
+        .from('service_order_estimates')
+        .select('id, version, status')
+        .eq('service_order_id', serviceOrderId)
+        .eq('company_id', companyId)
+        .is('deleted_at', null)
+        .order('version', { ascending: false }),
+      supabase
+        .from('employees')
+        .select('id')
+        .eq('company_id', companyId)
+        .eq('user_id', user.id)
+        .is('deleted_at', null)
+        .maybeSingle(),
+    ])
 
     if (serviceOrderError || !serviceOrder) {
       throw new Error('Ordem de servico nao encontrada.')
     }
+
+    if (previousEstimatesError) throw previousEstimatesError
 
     if (serviceOrder.status === 'cancelado') {
       return { error: 'Nao e possivel criar orcamento para uma OS cancelada.' }
@@ -546,16 +568,6 @@ export async function createServiceOrderEstimate(
 
       return { error: 'Nao e possivel criar novo orcamento no status atual da OS.' }
     }
-
-    const { data: previousEstimates, error: previousEstimatesError } = await supabase
-      .from('service_order_estimates')
-      .select('id, version, status')
-      .eq('service_order_id', serviceOrderId)
-      .eq('company_id', companyId)
-      .is('deleted_at', null)
-      .order('version', { ascending: false })
-
-    if (previousEstimatesError) throw previousEstimatesError
 
     const currentVersion = previousEstimates?.[0]?.version ?? 0
     const nextVersion = currentVersion + 1
@@ -613,15 +625,6 @@ export async function createServiceOrderEstimate(
 
     if (itemsError) throw itemsError
 
-    // Atualiza OS: status → aguardando_envio + atribui técnico responsável (quem criou o orçamento)
-    const { data: creatorEmployee } = await supabase
-      .from('employees')
-      .select('id')
-      .eq('company_id', companyId)
-      .eq('user_id', user.id)
-      .is('deleted_at', null)
-      .maybeSingle()
-
     const TERMINAL_STATUSES = ['aguardando_aprovacao', 'aprovado', 'aguardando_peca', 'enviado_terceiro', 'em_reparo', 'pronto', 'finalizado', 'cancelado']
     const osUpdates: Record<string, unknown> = {}
 
@@ -633,28 +636,35 @@ export async function createServiceOrderEstimate(
       osUpdates.technician_id = creatorEmployee.id
     }
 
-    if (Object.keys(osUpdates).length > 0) {
-      const { error: osUpdateError } = await supabase
-        .from('service_orders')
-        .update(osUpdates)
-        .eq('id', serviceOrderId)
-        .eq('company_id', companyId)
-
-      if (osUpdateError) throw osUpdateError
+    const auditActor = {
+      userId: user.id,
+      name: typeof user.user_metadata?.name === 'string' ? user.user_metadata.name : null,
+      email: user.email ?? null,
     }
 
-    await createAuditLog({
-      action: 'create',
-      entityType: 'service_order_estimate',
-      entityId: createdEstimate.id,
-      companyId,
-      summary: `Orcamento v${createdEstimate.version} (rascunho) criado para OS #${serviceOrder.number}.`,
-      metadata: {
-        service_order_id: serviceOrderId,
-        version: createdEstimate.version,
-        total_amount: createdEstimate.total_amount,
-      },
-    })
+    await Promise.all([
+      Object.keys(osUpdates).length > 0
+        ? supabase
+            .from('service_orders')
+            .update(osUpdates)
+            .eq('id', serviceOrderId)
+            .eq('company_id', companyId)
+            .then(({ error }) => { if (error) throw error })
+        : Promise.resolve(),
+      createAuditLog({
+        action: 'create',
+        entityType: 'service_order_estimate',
+        entityId: createdEstimate.id,
+        companyId,
+        summary: `Orcamento v${createdEstimate.version} (rascunho) criado para OS #${serviceOrder.number}.`,
+        metadata: {
+          service_order_id: serviceOrderId,
+          version: createdEstimate.version,
+          total_amount: createdEstimate.total_amount,
+        },
+        actor: auditActor,
+      }),
+    ])
 
     revalidatePaths(serviceOrderId)
     return {
@@ -675,7 +685,7 @@ export async function updateServiceOrderEstimateDraft(
   data: ServiceOrderEstimateSchema,
 ) {
   try {
-    const { companyId } = await getCompanyContext()
+    const { companyId, user } = await getCompanyContext()
     const normalizedPayload = normalizeEstimateDraftPayload(data)
 
     if ('error' in normalizedPayload) {
@@ -684,13 +694,25 @@ export async function updateServiceOrderEstimateDraft(
 
     const supabase = await createClient()
 
-    const { data: serviceOrder, error: serviceOrderError } = await supabase
-      .from('service_orders')
-      .select('id, number, status')
-      .eq('id', serviceOrderId)
-      .eq('company_id', companyId)
-      .is('deleted_at', null)
-      .single()
+    const [
+      { data: serviceOrder, error: serviceOrderError },
+      { data: estimate, error: estimateError },
+    ] = await Promise.all([
+      supabase
+        .from('service_orders')
+        .select('id, number, status')
+        .eq('id', serviceOrderId)
+        .eq('company_id', companyId)
+        .is('deleted_at', null)
+        .single(),
+      supabase
+        .from('service_order_estimates')
+        .select('id, service_order_id, version, status')
+        .eq('id', estimateId)
+        .eq('company_id', companyId)
+        .is('deleted_at', null)
+        .single(),
+    ])
 
     if (serviceOrderError || !serviceOrder) {
       throw new Error('Ordem de servico nao encontrada.')
@@ -720,14 +742,6 @@ export async function updateServiceOrderEstimateDraft(
       return { error: 'Nao e possivel editar orcamento no status atual da OS.' }
     }
 
-    const { data: estimate, error: estimateError } = await supabase
-      .from('service_order_estimates')
-      .select('id, service_order_id, version, status')
-      .eq('id', estimateId)
-      .eq('company_id', companyId)
-      .is('deleted_at', null)
-      .single()
-
     if (estimateError || !estimate || estimate.service_order_id !== serviceOrderId) {
       throw new Error('Orcamento nao encontrado.')
     }
@@ -736,27 +750,27 @@ export async function updateServiceOrderEstimateDraft(
       return { error: 'Somente orcamentos em rascunho podem ser editados.' }
     }
 
-    const { error: updateEstimateError } = await supabase
-      .from('service_order_estimates')
-      .update({
-        subtotal_amount: normalizedPayload.subtotalAmount,
-        discount_amount: normalizedPayload.discountAmount,
-        total_amount: normalizedPayload.totalAmount,
-        valid_until: normalizeOptional(normalizedPayload.parsedData.valid_until) || null,
-        warranty_days: normalizedPayload.parsedData.warranty_days,
-        notes: normalizeOptional(normalizedPayload.parsedData.notes),
-      })
-      .eq('id', estimateId)
-      .eq('company_id', companyId)
+    const [{ error: updateEstimateError }, { error: deleteItemsError }] = await Promise.all([
+      supabase
+        .from('service_order_estimates')
+        .update({
+          subtotal_amount: normalizedPayload.subtotalAmount,
+          discount_amount: normalizedPayload.discountAmount,
+          total_amount: normalizedPayload.totalAmount,
+          valid_until: normalizeOptional(normalizedPayload.parsedData.valid_until) || null,
+          warranty_days: normalizedPayload.parsedData.warranty_days,
+          notes: normalizeOptional(normalizedPayload.parsedData.notes),
+        })
+        .eq('id', estimateId)
+        .eq('company_id', companyId),
+      supabase
+        .from('service_order_estimate_items')
+        .delete()
+        .eq('estimate_id', estimateId)
+        .eq('company_id', companyId),
+    ])
 
     if (updateEstimateError) throw updateEstimateError
-
-    const { error: deleteItemsError } = await supabase
-      .from('service_order_estimate_items')
-      .delete()
-      .eq('estimate_id', estimateId)
-      .eq('company_id', companyId)
-
     if (deleteItemsError) throw deleteItemsError
 
     const { error: insertItemsError } = await supabase
@@ -788,6 +802,11 @@ export async function updateServiceOrderEstimateDraft(
         service_order_id: serviceOrderId,
         version: estimate.version,
         total_amount: normalizedPayload.totalAmount,
+      },
+      actor: {
+        userId: user.id,
+        name: typeof user.user_metadata?.name === 'string' ? user.user_metadata.name : null,
+        email: user.email ?? null,
       },
     })
 

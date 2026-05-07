@@ -43,6 +43,11 @@ interface CreateAuditLogInput {
   summary: string
   metadata?: Json
   companyId?: string | null
+  actor?: {
+    userId: string | null
+    name: string | null
+    email: string | null
+  }
 }
 
 const getActorAuditContext = async (): Promise<AuditActorContext> => {
@@ -101,10 +106,13 @@ export const createAuditLog = async ({
   summary,
   metadata = {},
   companyId,
+  actor: prefilledActor,
 }: CreateAuditLogInput) => {
   try {
     const supabase = await createClient()
-    const actor = await getActorAuditContext()
+    const actor = prefilledActor
+      ? { companyId: companyId ?? null, actorUserId: prefilledActor.userId, actorName: prefilledActor.name, actorEmail: prefilledActor.email }
+      : await getActorAuditContext()
     const resolvedCompanyId = companyId ?? actor.companyId
 
     if (!resolvedCompanyId) {
