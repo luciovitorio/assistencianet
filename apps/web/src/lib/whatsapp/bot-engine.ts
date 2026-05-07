@@ -122,8 +122,7 @@ const buildBranchListText = (
 
 // ── Envio + persistência ─────────────────────────────────────
 
-/** 800 ms base + 30 ms por caractere, limitado a 3 500 ms. */
-const typingDelay = (text: string) => Math.min(800 + text.length * 30, 3500)
+const typingDelay = (_text: string) => 0
 
 const sendAndSave = async (
   supabase: SupabaseClient,
