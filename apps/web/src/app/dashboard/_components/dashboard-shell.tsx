@@ -464,7 +464,7 @@ export function DashboardShell({
       <div className="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased min-h-screen">
       {/* SIDEBAR */}
       <aside
-        className={`fixed left-0 top-0 h-screen bg-[#0F1B3D] border-r border-white/10 py-4 flex flex-col space-y-4 z-50 transition-all duration-300 ease-in-out ${
+        className={`print:hidden fixed left-0 top-0 h-screen bg-[#0F1B3D] border-r border-white/10 py-4 flex flex-col space-y-4 z-50 transition-all duration-300 ease-in-out ${
           isExpanded ? 'w-64' : 'w-20'
         }`}
       >
@@ -724,18 +724,20 @@ export function DashboardShell({
 
       {/* MAIN CONTENT WRAPPER */}
       <div
-        className={`transition-all duration-300 min-h-screen ${isExpanded ? 'ml-64' : 'ml-20'}`}
+        className={`transition-all duration-300 min-h-screen print:ml-0 ${isExpanded ? 'ml-64' : 'ml-20'}`}
       >
-        <DashboardTopbar
-          isAdmin={isAdmin}
-          currentDate={currentDate}
-          branchName={branchName}
-          isExpanded={isExpanded}
-          pathname={pathname}
-        />
+        <div className="print:hidden">
+          <DashboardTopbar
+            isAdmin={isAdmin}
+            currentDate={currentDate}
+            branchName={branchName}
+            isExpanded={isExpanded}
+            pathname={pathname}
+          />
+        </div>
 
         {/* PAGE CONTENT */}
-        <main className="pt-24 pb-12 px-8 w-full max-w-none space-y-10">
+        <main className="pt-24 pb-12 px-8 w-full max-w-none space-y-10 print:pt-6 print:px-6 print:pb-0">
           {children}
         </main>
       </div>
