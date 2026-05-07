@@ -13,7 +13,8 @@ import {
   Wrench,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button-variants'
+import { cn } from '@/lib/utils'
 
 type ReportCard = {
   title: string
@@ -109,6 +110,8 @@ const CATEGORY_COLORS: Record<string, string> = {
   Estoque: 'bg-orange-50 text-orange-700 border-orange-200',
 }
 
+const linkButtonCn = cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'w-full')
+
 export function ReportsHub() {
   const grouped = CATEGORY_ORDER.reduce<Record<string, ReportCard[]>>((acc, category) => {
     acc[category] = REPORT_CARDS.filter((c) => c.category === category)
@@ -153,9 +156,9 @@ export function ReportsHub() {
                       <h3 className="mb-1 font-semibold">{card.title}</h3>
                       <p className="mb-4 flex-1 text-sm text-muted-foreground">{card.description}</p>
                       {card.available ? (
-                        <Button asChild size="sm" variant="outline" className="w-full">
-                          <Link href={card.href}>Ver relatório</Link>
-                        </Button>
+                        <Link href={card.href} className={linkButtonCn}>
+                          Ver relatório
+                        </Link>
                       ) : (
                         <Badge variant="secondary" className="w-full justify-center py-1 text-xs">
                           Em breve
@@ -175,20 +178,20 @@ export function ReportsHub() {
           Visão Consolidada
         </h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <div className="flex flex-col rounded-xl border bg-card p-5 hover:shadow-md transition-shadow">
-          <div className="mb-4 flex items-start justify-between">
-            <div className="flex size-10 items-center justify-center rounded-lg bg-muted">
-              <BarChart3 className="size-5 text-muted-foreground" />
+          <div className="flex flex-col rounded-xl border bg-card p-5 hover:shadow-md transition-shadow">
+            <div className="mb-4 flex items-start justify-between">
+              <div className="flex size-10 items-center justify-center rounded-lg bg-muted">
+                <BarChart3 className="size-5 text-muted-foreground" />
+              </div>
             </div>
+            <h3 className="mb-1 font-semibold">Painel BI — Visão Geral</h3>
+            <p className="mb-4 flex-1 text-sm text-muted-foreground">
+              Resumo executivo com KPIs de OS, financeiro e estoque em um único painel.
+            </p>
+            <Link href="/dashboard/relatorios/visao-geral" className={linkButtonCn}>
+              Ver painel
+            </Link>
           </div>
-          <h3 className="mb-1 font-semibold">Painel BI — Visão Geral</h3>
-          <p className="mb-4 flex-1 text-sm text-muted-foreground">
-            Resumo executivo com KPIs de OS, financeiro e estoque em um único painel.
-          </p>
-          <Button asChild size="sm" variant="outline" className="w-full">
-            <Link href="/dashboard/relatorios/visao-geral">Ver painel</Link>
-          </Button>
-        </div>
         </div>
       </section>
     </div>
