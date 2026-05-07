@@ -124,7 +124,7 @@ export function BotMenuItemForm({ parentId, nextPosition, editing, onSuccess, on
               }}
             >
               <SelectTrigger className={CTRL}>
-                <SelectValue />
+                <SelectValue>{HANDLER_TYPE_LABELS[field.value] ?? field.value}</SelectValue>
               </SelectTrigger>
               <SelectContent className="min-w-55">
                 {HANDLER_TYPES.map((t) => (
