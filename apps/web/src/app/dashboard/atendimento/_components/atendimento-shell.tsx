@@ -200,6 +200,9 @@ export function AtendimentoShell({
   const [branchFilter, setBranchFilter] = React.useState<string>('all')
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false)
   const [currentEmployeeId, setCurrentEmployeeId] = React.useState<string | null>(null)
+  const [assuming, setAssuming] = React.useState(false)
+  const [resolving, setResolving] = React.useState(false)
+  const [reopening, setReopening] = React.useState(false)
 
   const selectedIdRef = React.useRef(selectedId)
   const messagesEndRef = React.useRef<HTMLDivElement>(null)
@@ -327,8 +330,10 @@ export function AtendimentoShell({
 
   // Ações de status
   const handleAssume = async () => {
-    if (!selectedId) return
+    if (!selectedId || assuming) return
+    setAssuming(true)
     const result = await assumeConversation(selectedId)
+    setAssuming(false)
     if (result.error) { toast.error(result.error); return }
     setConversations((prev) =>
       prev.map((c) =>
@@ -341,8 +346,10 @@ export function AtendimentoShell({
   }
 
   const handleResolve = async () => {
-    if (!selectedId) return
+    if (!selectedId || resolving) return
+    setResolving(true)
     const result = await resolveConversation(selectedId)
+    setResolving(false)
     if (result.error) { toast.error(result.error); return }
     setConversations((prev) =>
       prev.map((c) =>
@@ -355,8 +362,10 @@ export function AtendimentoShell({
   }
 
   const handleReopen = async () => {
-    if (!selectedId) return
+    if (!selectedId || reopening) return
+    setReopening(true)
     const result = await reopenConversation(selectedId)
+    setReopening(false)
     if (result.error) { toast.error(result.error); return }
     setConversations((prev) =>
       prev.map((c) =>
@@ -556,22 +565,22 @@ export function AtendimentoShell({
               {/* Ações */}
               <div className="flex items-center gap-2 flex-none">
                 {selectedConversation.status === 'waiting' && !selectedConversation.assigned_to && (
-                  <Button size="sm" variant="outline" onClick={handleAssume} className="gap-1.5">
-                    <UserCheck className="size-3.5" />
-                    Assumir
+                  <Button size="sm" variant="outline" onClick={handleAssume} disabled={assuming} className="gap-1.5">
+                    <UserCheck className={cn('size-3.5', assuming && 'animate-spin')} />
+                    {assuming ? 'Assumindo…' : 'Assumir'}
                   </Button>
                 )}
                 {selectedConversation.status === 'in_progress' &&
                   selectedConversation.assigned_to === currentEmployeeId && (
-                    <Button size="sm" variant="outline" onClick={handleResolve} className="gap-1.5">
-                      <CheckCheck className="size-3.5" />
-                      Resolver
+                    <Button size="sm" variant="outline" onClick={handleResolve} disabled={resolving} className="gap-1.5">
+                      <CheckCheck className={cn('size-3.5', resolving && 'animate-spin')} />
+                      {resolving ? 'Resolvendo…' : 'Resolver'}
                     </Button>
                   )}
                 {selectedConversation.status === 'resolved' && (
-                  <Button size="sm" variant="outline" onClick={handleReopen} className="gap-1.5">
-                    <RefreshCw className="size-3.5" />
-                    Reabrir
+                  <Button size="sm" variant="outline" onClick={handleReopen} disabled={reopening} className="gap-1.5">
+                    <RefreshCw className={cn('size-3.5', reopening && 'animate-spin')} />
+                    {reopening ? 'Reabrindo…' : 'Reabrir'}
                   </Button>
                 )}
                 {isAdmin && (
