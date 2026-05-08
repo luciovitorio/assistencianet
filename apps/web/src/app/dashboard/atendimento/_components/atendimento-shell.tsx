@@ -4,6 +4,7 @@ import * as React from 'react'
 import { toast } from 'sonner'
 import {
   CheckCheck,
+  Loader2,
   MessageSquare,
   Phone,
   RefreshCw,
@@ -566,14 +567,14 @@ export function AtendimentoShell({
               <div className="flex items-center gap-2 flex-none">
                 {selectedConversation.status === 'waiting' && !selectedConversation.assigned_to && (
                   <Button size="sm" variant="outline" onClick={handleAssume} disabled={assuming} className="gap-1.5">
-                    <UserCheck className={cn('size-3.5', assuming && 'animate-spin')} />
+                    {assuming ? <Loader2 className="size-3.5 animate-spin" /> : <UserCheck className="size-3.5" />}
                     {assuming ? 'Assumindo…' : 'Assumir'}
                   </Button>
                 )}
                 {selectedConversation.status === 'in_progress' &&
                   selectedConversation.assigned_to === currentEmployeeId && (
                     <Button size="sm" variant="outline" onClick={handleResolve} disabled={resolving} className="gap-1.5">
-                      <CheckCheck className={cn('size-3.5', resolving && 'animate-spin')} />
+                      {resolving ? <Loader2 className="size-3.5 animate-spin" /> : <CheckCheck className="size-3.5" />}
                       {resolving ? 'Resolvendo…' : 'Resolver'}
                     </Button>
                   )}
