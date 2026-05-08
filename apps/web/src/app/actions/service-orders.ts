@@ -2,10 +2,17 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient as createSupabaseClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { createAuditLog } from '@/lib/audit/audit-log'
 import { getAdminContext } from '@/lib/auth/admin-context'
 import { getCompanyContext } from '@/lib/auth/company-context'
 import { assertCanCreateServiceOrder } from '@/lib/billing/entitlements'
+import { createEvolutionApiClient } from '@/lib/whatsapp/evolution-client'
+import {
+  renderWhatsAppMessageTemplate,
+  resolveWhatsAppMessageTemplate,
+  DEFAULT_WHATSAPP_MESSAGES,
+} from '@/lib/whatsapp/message-templates'
 import { calculatePickupPayment } from '@/lib/service-orders/pickup-payment'
 import { reserveEstimatePartsIfAvailable } from '@/lib/service-orders/reserve-estimate-parts'
 import { applyEstimateClientResponse } from '@/lib/service-orders/apply-estimate-response'
@@ -29,6 +36,94 @@ import {
   returnFromThirdPartySchema,
   type ReturnFromThirdPartySchema,
 } from '@/lib/validations/third-party'
+
+// ── Helpers ──────────────────────────────────────────────────
+
+const normalizePhone = (phone: string | null, countryCode: string | null): string | null => {
+  const digits = phone?.replace(/\D/g, '') ?? ''
+  if (!digits) return null
+  const cc = countryCode?.replace(/\D/g, '') || '55'
+  return digits.startsWith(cc) ? digits : `${cc}${digits}`
+}
+
+/** Envia notificação WhatsApp de OS criada (fire-and-forget — nunca bloqueia a action). */
+async function sendOsCreatedWhatsApp(companyId: string, osId: string): Promise<void> {
+  try {
+    const adminSupabase = createAdminClient()
+
+    const [{ data: settings }, { data: os }] = await Promise.all([
+      adminSupabase
+        .from('whatsapp_automation_settings')
+        .select(
+          'enabled, provider, notify_os_created, message_os_created, evolution_base_url, evolution_api_key, evolution_instance_name, default_country_code',
+        )
+        .eq('company_id', companyId)
+        .maybeSingle<{
+          enabled: boolean
+          provider: string
+          notify_os_created: boolean
+          message_os_created: string | null
+          evolution_base_url: string
+          evolution_api_key: string | null
+          evolution_instance_name: string | null
+          default_country_code: string | null
+        }>(),
+      adminSupabase
+        .from('service_orders')
+        .select('number, device_type, device_brand, device_model, clients(name, phone), companies(name)')
+        .eq('id', osId)
+        .maybeSingle<{
+          number: number
+          device_type: string | null
+          device_brand: string | null
+          device_model: string | null
+          clients: { name: string; phone: string | null } | null
+          companies: { name: string } | null
+        }>(),
+    ])
+
+    if (
+      !settings?.enabled ||
+      !settings.notify_os_created ||
+      settings.provider !== 'evolution_api' ||
+      !settings.evolution_api_key ||
+      !settings.evolution_instance_name
+    ) return
+
+    if (!os) return
+
+    const recipient = normalizePhone(os.clients?.phone ?? null, settings.default_country_code)
+    if (!recipient) return
+
+    const equipment = [os.device_type, os.device_brand, os.device_model]
+      .filter(Boolean)
+      .join(' ') || 'equipamento'
+
+    const message = renderWhatsAppMessageTemplate(
+      resolveWhatsAppMessageTemplate(settings.message_os_created, DEFAULT_WHATSAPP_MESSAGES.osCreated),
+      {
+        empresa_nome: os.companies?.name ?? 'Assistência',
+        cliente_nome: os.clients?.name ?? 'cliente',
+        os_numero: String(os.number),
+        equipamento: equipment,
+        telefone_cliente: os.clients?.phone ?? '',
+        valor_orcamento: '',
+        marcas_autorizadas: '',
+        instancia_nome: settings.evolution_instance_name,
+      },
+    )
+
+    const evolutionClient = createEvolutionApiClient({
+      baseUrl: settings.evolution_base_url,
+      apiKey: settings.evolution_api_key,
+      instanceName: settings.evolution_instance_name,
+    })
+
+    await evolutionClient.sendText({ number: recipient, text: message })
+  } catch {
+    // Silencioso — falha no WhatsApp não pode derrubar a criação da OS
+  }
+}
 
 // Transições manuais permitidas via botões de ação (excluindo as gerenciadas por actions específicas)
 const ALLOWED_MANUAL_TRANSITIONS: Partial<Record<ServiceOrderStatus, ServiceOrderStatus[]>> = {
@@ -954,6 +1049,9 @@ export async function createServiceOrder(data: ServiceOrderSchema) {
 
     revalidateServiceOrdersPage()
     revalidateServiceOrderDetailPage(created.id)
+
+    void sendOsCreatedWhatsApp(companyId, created.id)
+
     return { success: true, id: created.id, number: created.number }
   } catch (error: unknown) {
     if (error instanceof Error) {
