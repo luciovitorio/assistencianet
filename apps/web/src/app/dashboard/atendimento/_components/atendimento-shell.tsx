@@ -351,7 +351,6 @@ export function AtendimentoShell({
           : c,
       ),
     )
-    setSelectedId(null)
     toast.success('Conversa encerrada.')
   }
 
@@ -390,11 +389,8 @@ export function AtendimentoShell({
 
   const filteredConversations = React.useMemo(() => {
     // Conversas no bot não aparecem — a lista é para atendimento humano.
-    // Resolvidas ficam ocultas por padrão; visíveis apenas via filtro explícito.
     let list = conversations.filter((c) => c.status !== 'bot')
-    if (statusFilter === 'all') {
-      list = list.filter((c) => c.status !== 'resolved')
-    } else {
+    if (statusFilter !== 'all') {
       list = list.filter((c) => c.status === statusFilter)
     }
     if (branchFilter !== 'all') {
