@@ -367,7 +367,7 @@ export async function resolveConversation(
       .from('whatsapp_conversations')
       .update({
         status: 'resolved',
-        bot_enabled: surveyEnabled,
+        bot_enabled: true,
         bot_state: surveyEnabled ? 'awaiting_rating_consent' : null,
         attempts: 0,
         assigned_to: null,
