@@ -1,11 +1,11 @@
 'use client'
 
 import * as React from 'react'
-import { Controller, useForm } from 'react-hook-form'
+import { Controller, useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { InputField } from '@/components/ui/input-field'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -13,6 +13,7 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { botTriggersSchema, type BotTriggersSchema } from '@/lib/validations/bot-triggers'
 import { saveBotTriggers, type BotTriggerSettings } from '@/app/actions/bot-triggers'
+import { BotTriggersPreview } from './bot-chat-preview'
 
 // ── BooleanField (toggle com checkbox) ──────────────────────
 
@@ -115,6 +116,8 @@ export function BotTriggersForm({ initialSettings }: Props) {
     },
   })
 
+  const watchedValues = useWatch({ control }) as BotTriggersSchema
+
   const onSubmit = async (data: BotTriggersSchema) => {
     const result = await saveBotTriggers(data)
     if ('error' in result) toast.error(result.error)
@@ -143,111 +146,117 @@ export function BotTriggersForm({ initialSettings }: Props) {
         </Button>
       </div>
 
-      {/* Bot ativo */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Bot</CardTitle>
-          <CardDescription>
-            Controla se o bot responde automaticamente às mensagens recebidas.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Controller
-            control={control}
-            name="notify_inbound_message"
-            render={({ field }) => (
-              <TriggerToggle
-                checked={field.value}
-                label="Bot ativo"
-                description="Quando ativado, o bot responde automaticamente quem mandar mensagem no WhatsApp."
-                onCheckedChange={field.onChange}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* Coluna esquerda: cards de configuração */}
+        <div className="space-y-4">
+          {/* Bot ativo */}
+          <Card>
+            <CardContent className="pt-6">
+              <Controller
+                control={control}
+                name="notify_inbound_message"
+                render={({ field }) => (
+                  <TriggerToggle
+                    checked={field.value}
+                    label="Bot ativo"
+                    description="Quando ativado, o bot responde automaticamente quem mandar mensagem no WhatsApp."
+                    onCheckedChange={field.onChange}
+                  />
+                )}
               />
-            )}
-          />
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
 
-      {/* Gatilhos por evento */}
-      {([
-        {
-          notify: 'notify_os_created' as const,
-          label: 'OS aberta',
-          description: 'Enviar confirmação quando a OS for registrada no sistema.',
-          msgField: 'message_os_created' as const,
-          tplField: 'template_os_created' as const,
-          tplPlaceholder: 'os_aberta',
-          msgLabel: 'Mensagem — OS aberta',
-          tplLabel: 'Template Meta — OS aberta',
-        },
-        {
-          notify: 'notify_estimate_ready' as const,
-          label: 'Orçamento pronto',
-          description: 'Avisar quando o orçamento estiver disponível para aprovação.',
-          msgField: 'message_estimate_ready' as const,
-          tplField: 'template_estimate_ready' as const,
-          tplPlaceholder: 'orcamento_pronto',
-          msgLabel: 'Mensagem — Orçamento pronto',
-          tplLabel: 'Template Meta — Orçamento',
-          extraVars: '{{valor_orcamento}}',
-        },
-        {
-          notify: 'notify_service_completed' as const,
-          label: 'Serviço concluído',
-          description: 'Avisar quando o equipamento estiver pronto para retirada.',
-          msgField: 'message_service_completed' as const,
-          tplField: 'template_service_completed' as const,
-          tplPlaceholder: 'servico_concluido',
-          msgLabel: 'Mensagem — Serviço concluído',
-          tplLabel: 'Template Meta — Conclusão',
-        },
-        {
-          notify: 'notify_satisfaction_survey' as const,
-          label: 'Pesquisa de satisfação',
-          description: 'Enviar pesquisa de avaliação após a conclusão da OS.',
-          msgField: 'message_satisfaction_survey' as const,
-          tplField: 'template_satisfaction_survey' as const,
-          tplPlaceholder: 'pesquisa_satisfacao',
-          msgLabel: 'Mensagem — Pesquisa',
-          tplLabel: 'Template Meta — Satisfação',
-        },
-      ] as const).map((trigger) => (
-        <Card key={trigger.notify}>
-          <CardContent className="grid gap-4 pt-6 md:grid-cols-2">
-            <Controller
-              control={control}
-              name={trigger.notify}
-              render={({ field }) => (
-                <TriggerToggle
-                  checked={field.value}
-                  label={trigger.label}
-                  description={trigger.description}
-                  onCheckedChange={field.onChange}
+          {/* Gatilhos por evento */}
+          {([
+            {
+              notify: 'notify_os_created' as const,
+              label: 'OS aberta',
+              description: 'Enviar confirmação quando a OS for registrada no sistema.',
+              msgField: 'message_os_created' as const,
+              tplField: 'template_os_created' as const,
+              tplPlaceholder: 'os_aberta',
+              msgLabel: 'Mensagem — OS aberta',
+              tplLabel: 'Template Meta — OS aberta',
+            },
+            {
+              notify: 'notify_estimate_ready' as const,
+              label: 'Orçamento pronto',
+              description: 'Avisar quando o orçamento estiver disponível para aprovação.',
+              msgField: 'message_estimate_ready' as const,
+              tplField: 'template_estimate_ready' as const,
+              tplPlaceholder: 'orcamento_pronto',
+              msgLabel: 'Mensagem — Orçamento pronto',
+              tplLabel: 'Template Meta — Orçamento',
+              extraVars: '{{valor_orcamento}}',
+            },
+            {
+              notify: 'notify_service_completed' as const,
+              label: 'Serviço concluído',
+              description: 'Avisar quando o equipamento estiver pronto para retirada.',
+              msgField: 'message_service_completed' as const,
+              tplField: 'template_service_completed' as const,
+              tplPlaceholder: 'servico_concluido',
+              msgLabel: 'Mensagem — Serviço concluído',
+              tplLabel: 'Template Meta — Conclusão',
+            },
+            {
+              notify: 'notify_satisfaction_survey' as const,
+              label: 'Pesquisa de satisfação',
+              description: 'Enviar pesquisa de avaliação após a conclusão da OS.',
+              msgField: 'message_satisfaction_survey' as const,
+              tplField: 'template_satisfaction_survey' as const,
+              tplPlaceholder: 'pesquisa_satisfacao',
+              msgLabel: 'Mensagem — Pesquisa',
+              tplLabel: 'Template Meta — Satisfação',
+            },
+          ] as const).map((trigger) => (
+            <Card key={trigger.notify}>
+              <CardContent className="grid gap-4 pt-6 md:grid-cols-2">
+                <Controller
+                  control={control}
+                  name={trigger.notify}
+                  render={({ field }) => (
+                    <TriggerToggle
+                      checked={field.value}
+                      label={trigger.label}
+                      description={trigger.description}
+                      onCheckedChange={field.onChange}
+                    />
+                  )}
                 />
-              )}
-            />
-            <MessageField
-              isEvolution={isEvolution}
-              label={trigger.msgLabel}
-              extraVars={'extraVars' in trigger ? trigger.extraVars : undefined}
-              evolutionField={
-                <Textarea
-                  rows={3}
-                  className="resize-y font-mono text-sm"
-                  {...register(trigger.msgField)}
+                <MessageField
+                  isEvolution={isEvolution}
+                  label={trigger.msgLabel}
+                  extraVars={'extraVars' in trigger ? trigger.extraVars : undefined}
+                  evolutionField={
+                    <Textarea
+                      rows={3}
+                      className="resize-y font-mono text-sm"
+                      {...register(trigger.msgField)}
+                    />
+                  }
+                  metaField={
+                    <InputField
+                      label={trigger.tplLabel}
+                      placeholder={trigger.tplPlaceholder}
+                      className={CONTROL_CLASS}
+                      {...register(trigger.tplField)}
+                    />
+                  }
                 />
-              }
-              metaField={
-                <InputField
-                  label={trigger.tplLabel}
-                  placeholder={trigger.tplPlaceholder}
-                  className={CONTROL_CLASS}
-                  {...register(trigger.tplField)}
-                />
-              }
-            />
-          </CardContent>
-        </Card>
-      ))}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Coluna direita: preview ao vivo */}
+        <div className="hidden lg:block">
+          <div className="sticky top-4" style={{ height: '560px' }}>
+            <BotTriggersPreview triggers={watchedValues} />
+          </div>
+        </div>
+      </div>
 
       <div className="flex justify-end">
         <Button type="submit" disabled={!isDirty || isSubmitting}>

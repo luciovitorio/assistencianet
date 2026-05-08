@@ -3,18 +3,26 @@
 import * as React from 'react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { type BotMessages } from '@/lib/whatsapp/bot-messages'
+import { type BotTriggersSchema } from '@/lib/validations/bot-triggers'
+import {
+  DEFAULT_WHATSAPP_MESSAGES,
+} from '@/lib/whatsapp/message-templates'
 
 // ── Variáveis de exemplo para o preview ─────────────────────
 
 const VARS: Record<string, string> = {
   '{{cliente.nome}}': 'João Silva',
+  '{{cliente_nome}}': 'João Silva',
   '{{empresa.nome}}': 'ORQUÍDIA Assistência',
+  '{{empresa_nome}}': 'ORQUÍDIA Assistência',
   '{{filial.nome}}': 'Filial Centro',
   '{{os_numero}}': '20260001',
   '{{os_dispositivo}}': 'Babyliss Prancha',
   '{{os_status}}': 'Finalizado',
   '{{os_data}}': '05/05/2026',
   '{{os_data_finalizacao}}': '07/05/2026',
+  '{{equipamento}}': 'Babyliss Prancha',
+  '{{valor_orcamento}}': 'R$ 250,00',
 }
 
 const resolveVars = (text: string): string =>
@@ -181,6 +189,89 @@ export function BotChatPreview({ messages, section }: Props) {
             ))
           )}
         </div>
+      </ScrollArea>
+
+      <div className="border-t bg-white px-3 py-2 text-center text-[10px] text-muted-foreground">
+        Preview com dados de exemplo
+      </div>
+    </div>
+  )
+}
+
+// ── Preview de gatilhos ──────────────────────────────────────
+
+const TRIGGER_EVENTS = [
+  {
+    key: 'notify_os_created' as const,
+    msgKey: 'message_os_created' as const,
+    label: 'OS aberta',
+    fallback: DEFAULT_WHATSAPP_MESSAGES.osCreated,
+  },
+  {
+    key: 'notify_estimate_ready' as const,
+    msgKey: 'message_estimate_ready' as const,
+    label: 'Orçamento pronto',
+    fallback: DEFAULT_WHATSAPP_MESSAGES.estimateReady,
+  },
+  {
+    key: 'notify_service_completed' as const,
+    msgKey: 'message_service_completed' as const,
+    label: 'Serviço concluído',
+    fallback: DEFAULT_WHATSAPP_MESSAGES.serviceCompleted,
+  },
+  {
+    key: 'notify_satisfaction_survey' as const,
+    msgKey: 'message_satisfaction_survey' as const,
+    label: 'Pesquisa de satisfação',
+    fallback: DEFAULT_WHATSAPP_MESSAGES.satisfactionSurvey,
+  },
+]
+
+type TriggerPreviewProps = {
+  triggers: BotTriggersSchema
+}
+
+export function BotTriggersPreview({ triggers }: TriggerPreviewProps) {
+  const active = TRIGGER_EVENTS.filter((e) => triggers[e.key])
+  const botEnabled = triggers.notify_inbound_message
+
+  return (
+    <div className="flex h-full flex-col overflow-hidden rounded-xl border bg-white shadow-sm">
+      <div className="flex items-center gap-3 bg-[#075E54] px-4 py-3">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-xs font-bold text-white">
+          B
+        </div>
+        <div>
+          <p className="text-sm font-medium text-white">Bot</p>
+          <p className="text-xs text-white/70">{botEnabled ? 'online' : 'desativado'}</p>
+        </div>
+      </div>
+
+      <ScrollArea className="flex-1 bg-[#efeae2] px-3 py-3">
+        {active.length === 0 ? (
+          <p className="py-8 text-center text-xs text-gray-400">
+            Nenhum gatilho ativo. Ative um gatilho para ver o preview.
+          </p>
+        ) : (
+          <div className="space-y-4">
+            {active.map((event) => {
+              const raw = triggers[event.msgKey]
+              const text = resolveVars(raw && raw.trim() ? raw : event.fallback)
+              return (
+                <div key={event.key}>
+                  <p className="mb-1 px-1 text-[10px] font-medium text-gray-500 uppercase tracking-wide">
+                    {event.label}
+                  </p>
+                  <div className="flex justify-start">
+                    <div className="max-w-[85%] rounded-lg bg-[#d9fdd3] px-3 py-2 text-xs shadow-sm text-gray-900">
+                      <RichText text={text} />
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </ScrollArea>
 
       <div className="border-t bg-white px-3 py-2 text-center text-[10px] text-muted-foreground">
