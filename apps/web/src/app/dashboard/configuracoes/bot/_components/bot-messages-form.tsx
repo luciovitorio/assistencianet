@@ -88,8 +88,8 @@ const SECTIONS: SectionDef[] = [
       },
       {
         key: 'more_help',
-        label: 'Mais ajuda (após consultar OS)',
-        hint: 'Exibido após o cliente consultar uma OS, antes de mostrar o menu novamente.',
+        label: 'Reexibição do menu (mid-sessão)',
+        hint: 'Exibido antes do menu quando o bot reapresenta as opções no meio de uma conversa (ex: após resposta informativa ou consulta de OS).',
       },
     ],
   },

@@ -157,7 +157,7 @@ const sendMenuAfterResponse = async (
   // Mid-session: sem saudação. Sub-menu mantém o "0 - Menu principal".
   const text = currentParentId !== null
     ? `${botMessages.submenu_header}\n\n${options}\n0 - Menu principal\n\n${botMessages.submenu_footer}`
-    : `${botMessages.menu_question}\n\n${options}\n\n${botMessages.menu_footer}`
+    : `${botMessages.more_help}\n\n${options}\n\n${botMessages.menu_footer}`
 
   await sendAndSave(supabase, evolutionClient, conversation, text)
 }
