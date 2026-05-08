@@ -7,15 +7,12 @@ import {
   Controller,
   useForm,
   useWatch,
-  type Control,
-  type FieldErrors,
-  type UseFormRegister,
 } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
-  Bot,
   CheckCircle2,
   Clock,
+  Globe,
   KeyRound,
   MessageSquareText,
   PlugZap,
@@ -1025,28 +1022,6 @@ export function WhatsAppAutomationForm({
             </Card>
           ) : null}
 
-        </div>
-
-        <div className="space-y-6">
-          {provider === 'evolution_api' && (
-            <EvolutionConnectionPanel
-              connectedPhone={evolutionConnectedPhone}
-              connectionState={evolutionConnectionState}
-              instanceName={evolutionInstanceName}
-              instanceReady={evolutionInstanceReady}
-              isPending={isEvolutionOperationPending}
-              operation={evolutionOperation}
-              qrCodeCount={evolutionQrCodeCount}
-              qrCodeImage={evolutionQrCodeImage}
-              onCreateInstance={handleCreateEvolutionInstance}
-              webhookOk={evolutionWebhookOk}
-              onDelete={handleDeleteEvolution}
-              onGenerateQrCode={handleGenerateQrCode}
-              onLogout={handleLogoutEvolution}
-              onRefreshStatus={handleRefreshEvolutionStatus}
-            />
-          )}
-
           <Card className="border border-slate-200 shadow-sm shadow-slate-950/5">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-slate-900">
@@ -1088,6 +1063,58 @@ export function WhatsAppAutomationForm({
               </div>
             </CardContent>
           </Card>
+
+          <Card className="border border-slate-200 shadow-sm shadow-slate-950/5">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-slate-900">
+                <Globe className="size-4 text-emerald-700" />
+                Configurações gerais
+              </CardTitle>
+              <CardDescription>
+                DDI padrão, idioma dos templates e marcas autorizadas pelo bot.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 pt-2">
+              <InputField
+                label="DDI padrão"
+                type="text"
+                helper="Código do país sem + ou zeros à esquerda. Ex: 55 para Brasil."
+                className={CONTROL}
+                error={errors.default_country_code?.message}
+                {...register('default_country_code')}
+              />
+              <InputField
+                label="Idioma dos templates"
+                type="text"
+                helper="Código de idioma no formato pt_BR, en_US, es_ES."
+                className={CONTROL}
+                error={errors.templates_language?.message}
+                {...register('templates_language')}
+              />
+            </CardContent>
+          </Card>
+
+        </div>
+
+        <div className="space-y-6">
+          {provider === 'evolution_api' && (
+            <EvolutionConnectionPanel
+              connectedPhone={evolutionConnectedPhone}
+              connectionState={evolutionConnectionState}
+              instanceName={evolutionInstanceName}
+              instanceReady={evolutionInstanceReady}
+              isPending={isEvolutionOperationPending}
+              operation={evolutionOperation}
+              qrCodeCount={evolutionQrCodeCount}
+              qrCodeImage={evolutionQrCodeImage}
+              onCreateInstance={handleCreateEvolutionInstance}
+              webhookOk={evolutionWebhookOk}
+              onDelete={handleDeleteEvolution}
+              onGenerateQrCode={handleGenerateQrCode}
+              onLogout={handleLogoutEvolution}
+              onRefreshStatus={handleRefreshEvolutionStatus}
+            />
+          )}
 
           <Card className="border border-slate-200 shadow-sm shadow-slate-950/5">
             <CardHeader>
