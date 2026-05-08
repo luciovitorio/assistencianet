@@ -5,7 +5,7 @@ import { createAuditLog } from '@/lib/audit/audit-log'
 import { reserveEstimatePartsIfAvailable } from './reserve-estimate-parts'
 
 export type EstimateResponseOutcome =
-  | { success: true; message: string; osNumber: number }
+  | { success: true; message: string; osNumber: number; nextStatus?: string }
   | { error: string }
 
 /**
@@ -58,6 +58,7 @@ export const applyEstimateClientResponse = async (params: {
     .maybeSingle()
 
   let outcomeMessage: string
+  let resolvedNextStatus: string | undefined
 
   if (response === 'aprovado') {
     let nextStatus: 'aprovado' | 'aguardando_peca' | 'enviado_terceiro'
@@ -87,6 +88,8 @@ export const applyEstimateClientResponse = async (params: {
             'cliente aprovou o orçamento, mas a OS ficou aguardando peça'
         }
       }
+
+      resolvedNextStatus = nextStatus
 
       const { error: osUpdateError } = await supabase
         .from('service_orders')
@@ -191,5 +194,5 @@ export const applyEstimateClientResponse = async (params: {
   revalidatePath('/dashboard/ordens-de-servico')
   revalidatePath(`/dashboard/ordens-de-servico/${serviceOrderId}`)
 
-  return { success: true, message: outcomeMessage, osNumber: os.number }
+  return { success: true, message: outcomeMessage, osNumber: os.number, nextStatus: resolvedNextStatus }
 }

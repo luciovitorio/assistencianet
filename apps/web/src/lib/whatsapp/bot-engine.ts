@@ -490,7 +490,7 @@ const handleAwaitingEstimateResponse = async (params: BotEngineParams) => {
 
     await sendAndSave(supabase, evolutionClient, conversation, confirmation)
     await updateConversation(supabase, conversation.id, {
-      bot_state: 'awaiting_menu',
+      bot_state: result.nextStatus === 'aguardando_peca' ? null : 'awaiting_menu',
       attempts: 0,
       context: {},
     })
