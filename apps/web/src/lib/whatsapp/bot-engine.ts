@@ -633,8 +633,18 @@ export const runBotEngine = async (params: BotEngineParams): Promise<void> => {
     return
   }
 
+  // Esses estados representam ações de longa duração iniciadas pelo sistema
+  // (aguardo de aprovação de orçamento, pesquisa de satisfação). O TTL de
+  // sessão não se aplica — o cliente pode responder horas ou dias depois.
+  const PERSISTENT_STATES = new Set<WhatsAppConversation['bot_state']>([
+    'awaiting_estimate_response',
+    'awaiting_rating_consent',
+    'awaiting_rating',
+  ])
+
   const isNew = !conversation.bot_state
-  const isExpired = isSessionExpired(conversation)
+  const isExpired =
+    !PERSISTENT_STATES.has(conversation.bot_state) && isSessionExpired(conversation)
 
   if (isNew || isExpired) {
     await handleNewSession(params)
