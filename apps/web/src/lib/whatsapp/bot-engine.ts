@@ -73,7 +73,7 @@ const buildMenuText = (
     .join('\n')
 
   if (isSubmenu) {
-    return `${msgs.submenu_header}\n\n${options}\n0 - Menu principal\n\n${msgs.submenu_footer}`
+    return `${msgs.submenu_header}\n\n${options}\n0️⃣ Menu principal\n\n${msgs.submenu_footer}`
   }
 
   const greeting = resolveVars(msgs.menu_greeting, { clientName, companyName, branchName: null })
@@ -117,7 +117,7 @@ const buildBranchListText = (
     .map((b, i) => `${NUMBER_EMOJIS[i]} ${b.name}`)
     .join('\n')
 
-  return `${msgs.ask_branch}\n\n${options}\n0 - Voltar ao menu\n\n${msgs.ask_branch_footer}`
+  return `${msgs.ask_branch}\n\n${options}\n0️⃣ Voltar ao menu\n\n${msgs.ask_branch_footer}`
 }
 
 // ── Envio + persistência ─────────────────────────────────────
@@ -154,9 +154,9 @@ const sendMenuAfterResponse = async (
 
   const options = items.map((item) => `${item.emoji ?? `${item.position}.`} ${item.label}`).join('\n')
 
-  // Mid-session: sem saudação. Sub-menu mantém o "0 - Menu principal".
+  // Mid-session: sem saudação. Sub-menu mantém o "0️⃣ Menu principal".
   const text = currentParentId !== null
-    ? `${botMessages.submenu_header}\n\n${options}\n0 - Menu principal\n\n${botMessages.submenu_footer}`
+    ? `${botMessages.submenu_header}\n\n${options}\n0️⃣ Menu principal\n\n${botMessages.submenu_footer}`
     : `${botMessages.more_help}\n\n${options}\n\n${botMessages.menu_footer}`
 
   await sendAndSave(supabase, evolutionClient, conversation, text)
