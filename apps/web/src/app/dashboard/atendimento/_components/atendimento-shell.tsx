@@ -239,6 +239,10 @@ export function AtendimentoShell({
             setConversations((prev) => [payload.new as ConversationRow, ...prev])
           } else if (payload.eventType === 'UPDATE') {
             const updated = payload.new as ConversationRow
+            // Se voltou para o bot, deseleciona para não deixar painel órfão
+            if (updated.status === 'bot') {
+              setSelectedId((prev) => (prev === updated.id ? null : prev))
+            }
             setConversations((prev) =>
               prev
                 .map((c) => (c.id === updated.id ? { ...c, ...updated } : c))
@@ -343,10 +347,11 @@ export function AtendimentoShell({
     setConversations((prev) =>
       prev.map((c) =>
         c.id === selectedId
-          ? { ...c, status: 'resolved' as const, bot_enabled: false, assigned_to: null }
+          ? { ...c, status: 'resolved' as const, bot_enabled: true, assigned_to: null }
           : c,
       ),
     )
+    setSelectedId(null)
     toast.success('Conversa encerrada.')
   }
 
@@ -384,10 +389,12 @@ export function AtendimentoShell({
   }
 
   const filteredConversations = React.useMemo(() => {
-    // Conversas ainda no bot (sem solicitação de atendimento humano) não aparecem aqui —
-    // a lista é para o técnico atender clientes que pediram atendimento.
+    // Conversas no bot não aparecem — a lista é para atendimento humano.
+    // Resolvidas ficam ocultas por padrão; visíveis apenas via filtro explícito.
     let list = conversations.filter((c) => c.status !== 'bot')
-    if (statusFilter !== 'all') {
+    if (statusFilter === 'all') {
+      list = list.filter((c) => c.status !== 'resolved')
+    } else {
       list = list.filter((c) => c.status === statusFilter)
     }
     if (branchFilter !== 'all') {
