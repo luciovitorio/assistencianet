@@ -327,23 +327,34 @@ export async function resolveConversation(
 
     if (!conversation) return { error: 'Conversa não encontrada.' }
 
-    // Envia mensagem de agradecimento + pedido de avaliação
+    // Verifica se pesquisa de satisfação está habilitada nos gatilhos
+    const { data: automationSettings } = await adminSupabase
+      .from('whatsapp_automation_settings')
+      .select('notify_satisfaction_survey')
+      .eq('company_id', companyId)
+      .maybeSingle<{ notify_satisfaction_survey: boolean }>()
+
+    const surveyEnabled = automationSettings?.notify_satisfaction_survey ?? false
+
     const evolutionClient = await getEvolutionClient(companyId)
-    const askRating =
-      'Seu atendimento foi finalizado. Obrigado pelo contato! 😊\n' +
-      'Estamos sempre por aqui quando precisar.\n\n' +
-      'Gostaria de avaliar o atendimento?\n\n' +
-      '1️⃣ Sim\n' +
-      '2️⃣ Não'
+
+    const closingMessage = surveyEnabled
+      ? 'Seu atendimento foi finalizado. Obrigado pelo contato! 😊\n' +
+        'Estamos sempre por aqui quando precisar.\n\n' +
+        'Gostaria de avaliar o atendimento?\n\n' +
+        '1️⃣ Sim\n' +
+        '2️⃣ Não'
+      : 'Seu atendimento foi finalizado. Obrigado pelo contato! 😊\n' +
+        'Estamos sempre por aqui quando precisar.'
 
     if (evolutionClient) {
       try {
-        await evolutionClient.sendText({ number: conversation.phone_number, text: askRating })
+        await evolutionClient.sendText({ number: conversation.phone_number, text: closingMessage })
         await adminSupabase.from('whatsapp_messages').insert({
           conversation_id: conversationId,
           company_id: companyId,
           direction: 'outbound',
-          content: askRating,
+          content: closingMessage,
           sent_by_bot: true,
           status: 'sent',
         })
@@ -356,11 +367,11 @@ export async function resolveConversation(
       .from('whatsapp_conversations')
       .update({
         status: 'resolved',
-        bot_enabled: true,
-        bot_state: 'awaiting_rating_consent',
+        bot_enabled: surveyEnabled,
+        bot_state: surveyEnabled ? 'awaiting_rating_consent' : null,
         attempts: 0,
         assigned_to: null,
-        context: { rated_assigned_to: conversation.assigned_to },
+        context: surveyEnabled ? { rated_assigned_to: conversation.assigned_to } : {},
         last_message_at: new Date().toISOString(),
         last_message_preview: 'Seu atendimento foi finalizado…',
       })
