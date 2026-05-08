@@ -11,6 +11,7 @@ import {
   type BotMenuItemRow,
 } from '@/app/actions/bot-menu'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { InputField } from '@/components/ui/input-field'
 import { Label } from '@/components/ui/label'
 import {
@@ -201,6 +202,24 @@ export function BotMenuItemForm({ parentId, nextPosition, editing, onSuccess, on
         <p className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
           Após salvar, adicione os itens filhos diretamente neste sub-menu.
         </p>
+      )}
+
+      {(handlerType === 'info' || handlerType === 'url') && (
+        <div className="flex items-center gap-2.5">
+          <Checkbox
+            id="show_menu_after"
+            checked={!!(watch('handler_config') as Record<string, unknown>)?.show_menu_after}
+            onCheckedChange={(checked) =>
+              setValue('handler_config', {
+                ...(watch('handler_config') as Record<string, unknown>),
+                show_menu_after: !!checked,
+              })
+            }
+          />
+          <Label htmlFor="show_menu_after" className="cursor-pointer font-normal">
+            Reexibir menu após enviar esta resposta
+          </Label>
+        </div>
       )}
 
       {/* Posição */}

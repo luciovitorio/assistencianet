@@ -142,6 +142,27 @@ const sendAndSave = async (
   })
 }
 
+// ── Re-exibição de menu após resposta informativa ────────────
+
+const sendMenuAfterResponse = async (
+  params: BotEngineParams,
+  currentParentId: string | null,
+) => {
+  const { supabase, conversation, companyName, authorizedBrands, botMessages, evolutionClient } = params
+  const items = await getMenuItems(supabase, conversation.company_id, currentParentId)
+  if (items.length === 0) return
+  const isSubmenu = currentParentId !== null
+  const text = buildMenuText(
+    items,
+    companyName,
+    conversation.contact_name,
+    isSubmenu ? null : authorizedBrands,
+    botMessages,
+    isSubmenu,
+  )
+  await sendAndSave(supabase, evolutionClient, conversation, text)
+}
+
 // ── Handlers de estado ───────────────────────────────────────
 
 /** Início de sessão: identifica o cliente e exibe o menu raiz. */
@@ -211,6 +232,9 @@ const handleAwaitingMenu = async (params: BotEngineParams) => {
         branchName,
       })
       await sendAndSave(supabase, evolutionClient, conversation, msg)
+      if (selected.handler_config.show_menu_after === true) {
+        await sendMenuAfterResponse(params, currentParentId)
+      }
       await updateConversation(supabase, conversation.id, {
         bot_state: 'awaiting_menu',
         attempts: 0,
@@ -225,6 +249,9 @@ const handleAwaitingMenu = async (params: BotEngineParams) => {
       const label = String(selected.handler_config.label ?? selected.label)
       const msg = url ? `${label}:\n${url}` : label
       await sendAndSave(supabase, evolutionClient, conversation, msg)
+      if (selected.handler_config.show_menu_after === true) {
+        await sendMenuAfterResponse(params, currentParentId)
+      }
       await updateConversation(supabase, conversation.id, {
         bot_state: 'awaiting_menu',
         attempts: 0,
