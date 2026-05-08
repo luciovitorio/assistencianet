@@ -15,6 +15,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import {
   Bot,
   CheckCircle2,
+  Clock,
   KeyRound,
   MessageSquareText,
   PlugZap,
@@ -47,6 +48,8 @@ import {
 } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { InputField } from '@/components/ui/input-field'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 
 import type {
   ResolvedWhatsAppAutomationSettings,
@@ -530,6 +533,8 @@ export function WhatsAppAutomationForm({
       message_satisfaction_survey: initialSettings.messageSatisfactionSurvey,
       authorized_brands: initialSettings.authorizedBrands ?? '',
       session_timeout_minutes: initialSettings.sessionTimeoutMinutes,
+      session_expiry_warning_minutes: initialSettings.sessionExpiryWarningMinutes ?? '',
+      session_expiry_warning_message: initialSettings.sessionExpiryWarningMessage ?? '',
     },
   })
 
@@ -1041,6 +1046,48 @@ export function WhatsAppAutomationForm({
               onRefreshStatus={handleRefreshEvolutionStatus}
             />
           )}
+
+          <Card className="border border-slate-200 shadow-sm shadow-slate-950/5">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-slate-900">
+                <Clock className="size-4 text-emerald-700" />
+                Sessão do bot
+              </CardTitle>
+              <CardDescription>
+                Tempo de inatividade antes de encerrar a sessão e aviso antecipado ao cliente.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 pt-2">
+              <InputField
+                label="Tempo de sessão (minutos)"
+                type="number"
+                helper="Inatividade máxima antes de resetar a conversa. Mín: 5, Máx: 1440."
+                className={CONTROL}
+                error={errors.session_timeout_minutes?.message}
+                {...register('session_timeout_minutes')}
+              />
+              <InputField
+                label="Avisar cliente X minutos antes de expirar"
+                type="number"
+                helper="Deixe vazio para não enviar aviso. Deve ser menor que o tempo de sessão."
+                className={CONTROL}
+                error={errors.session_expiry_warning_minutes?.message}
+                {...register('session_expiry_warning_minutes')}
+              />
+              <div className="space-y-1.5">
+                <Label>Mensagem de aviso de sessão</Label>
+                <Textarea
+                  rows={3}
+                  placeholder="⏳ Sua sessão está encerrando por inatividade. Responda para continuar ou, ao retornar, envie qualquer mensagem para começar novamente."
+                  className="resize-y text-sm"
+                  {...register('session_expiry_warning_message')}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Mensagem enviada quando o tempo de aviso chegar. Se vazia, usa o texto padrão acima.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
 
           <Card className="border border-slate-200 shadow-sm shadow-slate-950/5">
             <CardHeader>

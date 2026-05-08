@@ -48,7 +48,9 @@ const WHATSAPP_SETTINGS_SELECT = `
   message_service_completed,
   message_satisfaction_survey,
   authorized_brands,
-  session_timeout_minutes
+  session_timeout_minutes,
+  session_expiry_warning_minutes,
+  session_expiry_warning_message
 `
 
 type PersistedWhatsAppSettings = {
@@ -85,6 +87,8 @@ type PersistedWhatsAppSettings = {
   message_satisfaction_survey: string | null
   authorized_brands: string | null
   session_timeout_minutes: number
+  session_expiry_warning_minutes: number | null
+  session_expiry_warning_message: string | null
 }
 
 const revalidateWhatsAppAutomationPaths = () => {
@@ -156,6 +160,8 @@ const toAuditSnapshot = (settings: PersistedWhatsAppSettings | null) => {
     message_satisfaction_survey: settings.message_satisfaction_survey,
     authorized_brands: settings.authorized_brands,
     session_timeout_minutes: settings.session_timeout_minutes,
+    session_expiry_warning_minutes: settings.session_expiry_warning_minutes,
+    session_expiry_warning_message: settings.session_expiry_warning_message,
   }
 }
 
@@ -380,6 +386,8 @@ export async function saveWhatsAppAutomationSettings(
       message_satisfaction_survey: parsed.data.message_satisfaction_survey,
       authorized_brands: parsed.data.authorized_brands,
       session_timeout_minutes: parsed.data.session_timeout_minutes,
+      session_expiry_warning_minutes: parsed.data.session_expiry_warning_minutes,
+      session_expiry_warning_message: parsed.data.session_expiry_warning_message,
     }
 
     const { data: savedSettings, error } = await supabase

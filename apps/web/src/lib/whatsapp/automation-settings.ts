@@ -35,6 +35,8 @@ type WhatsAppAutomationSettingsRow = Pick<
   | 'message_satisfaction_survey'
   | 'authorized_brands'
   | 'session_timeout_minutes'
+  | 'session_expiry_warning_minutes'
+  | 'session_expiry_warning_message'
 >
 
 export type WhatsAppAutomationProvider = 'whatsapp_cloud_api' | 'evolution_api'
@@ -72,6 +74,8 @@ export interface ResolvedWhatsAppAutomationSettings {
   messageSatisfactionSurvey: string
   authorizedBrands: string | null
   sessionTimeoutMinutes: number
+  sessionExpiryWarningMinutes: number | null
+  sessionExpiryWarningMessage: string | null
 }
 
 export const WHATSAPP_AUTOMATION_DEFAULTS: ResolvedWhatsAppAutomationSettings = {
@@ -107,6 +111,8 @@ export const WHATSAPP_AUTOMATION_DEFAULTS: ResolvedWhatsAppAutomationSettings = 
   messageSatisfactionSurvey: DEFAULT_WHATSAPP_MESSAGES.satisfactionSurvey,
   authorizedBrands: null,
   sessionTimeoutMinutes: 240,
+  sessionExpiryWarningMinutes: null,
+  sessionExpiryWarningMessage: null,
 }
 
 const cleanNullableText = (value: string | null | undefined) => {
@@ -171,6 +177,9 @@ export const resolveWhatsAppAutomationSettings = (
   authorizedBrands: cleanNullableText(settings?.authorized_brands) ?? null,
   sessionTimeoutMinutes:
     settings?.session_timeout_minutes ?? WHATSAPP_AUTOMATION_DEFAULTS.sessionTimeoutMinutes,
+  sessionExpiryWarningMinutes: settings?.session_expiry_warning_minutes ?? null,
+  sessionExpiryWarningMessage:
+    cleanNullableText(settings?.session_expiry_warning_message) ?? null,
 })
 
 export const maskSecretState = (value: string | null | undefined) =>

@@ -110,6 +110,18 @@ export const whatsappAutomationSettingsSchema = z.object({
     .int('O tempo de sessão deve ser um número inteiro.')
     .min(5, 'O tempo mínimo de sessão é 5 minutos.')
     .max(1440, 'O tempo máximo de sessão é 1440 minutos (24 horas).'),
+  session_expiry_warning_minutes: z.preprocess(
+    (v) => {
+      if (v === '' || v === null || v === undefined) return null
+      const n = Number(v)
+      return isNaN(n) ? null : n
+    },
+    z.number().int().min(1).max(1439).nullable(),
+  ),
+  session_expiry_warning_message: nullableTrimmedString(
+    2000,
+    'A mensagem de aviso deve ter no máximo 2000 caracteres.',
+  ),
 })
 
 export type WhatsAppAutomationSettingsSchema = z.input<

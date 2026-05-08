@@ -32,6 +32,7 @@ export type WhatsAppConversation = {
   last_message_at: string | null
   last_message_preview: string | null
   expires_at: string | null
+  expiry_warning_sent_at: string | null
 }
 
 export type ServiceOrderSummary = {
@@ -169,6 +170,7 @@ export const updateConversation = async (
       | 'last_message_at'
       | 'last_message_preview'
       | 'expires_at'
+      | 'expiry_warning_sent_at'
     >
   >,
 ) => {
@@ -192,6 +194,7 @@ export const touchConversation = async (
     last_message_at: new Date().toISOString(),
     last_message_preview: truncate(messageText, 80),
     expires_at: inMinutes(timeoutMinutes),
+    expiry_warning_sent_at: null,
   })
 }
 

@@ -50,7 +50,9 @@ export default async function ConfiguracoesAutomacaoPage() {
         message_service_completed,
         message_satisfaction_survey,
         authorized_brands,
-        session_timeout_minutes
+        session_timeout_minutes,
+        session_expiry_warning_minutes,
+        session_expiry_warning_message
       `,
     )
     .eq('company_id', companyId)

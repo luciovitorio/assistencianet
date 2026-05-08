@@ -1989,6 +1989,8 @@ export type Database = {
           notify_service_completed: boolean
           phone_number_id: string | null
           provider: string
+          session_expiry_warning_message: string | null
+          session_expiry_warning_minutes: number | null
           session_timeout_minutes: number
           template_estimate_ready: string | null
           template_os_created: string | null
@@ -2030,6 +2032,8 @@ export type Database = {
           notify_service_completed?: boolean
           phone_number_id?: string | null
           provider?: string
+          session_expiry_warning_message?: string | null
+          session_expiry_warning_minutes?: number | null
           session_timeout_minutes?: number
           template_estimate_ready?: string | null
           template_os_created?: string | null
@@ -2071,6 +2075,8 @@ export type Database = {
           notify_service_completed?: boolean
           phone_number_id?: string | null
           provider?: string
+          session_expiry_warning_message?: string | null
+          session_expiry_warning_minutes?: number | null
           session_timeout_minutes?: number
           template_estimate_ready?: string | null
           template_os_created?: string | null
@@ -2103,6 +2109,7 @@ export type Database = {
           context: Json
           created_at: string
           expires_at: string | null
+          expiry_warning_sent_at: string | null
           id: string
           last_message_at: string | null
           last_message_preview: string | null
@@ -2123,6 +2130,7 @@ export type Database = {
           context?: Json
           created_at?: string
           expires_at?: string | null
+          expiry_warning_sent_at?: string | null
           id?: string
           last_message_at?: string | null
           last_message_preview?: string | null
@@ -2143,6 +2151,7 @@ export type Database = {
           context?: Json
           created_at?: string
           expires_at?: string | null
+          expiry_warning_sent_at?: string | null
           id?: string
           last_message_at?: string | null
           last_message_preview?: string | null
@@ -2451,6 +2460,7 @@ export type Database = {
         Args: { p_company_id: string }
         Returns: string
       }
+      get_current_user_company_id: { Args: never; Returns: string }
       is_active_company_admin: {
         Args: { p_company_id: string }
         Returns: boolean
