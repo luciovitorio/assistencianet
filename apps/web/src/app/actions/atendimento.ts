@@ -320,12 +320,13 @@ export async function resolveConversation(
     // Pega quem estava atendendo para atrelar à avaliação
     const { data: conversation } = await supabase
       .from('whatsapp_conversations')
-      .select('id, phone_number, assigned_to')
+      .select('id, phone_number, assigned_to, status')
       .eq('id', conversationId)
       .eq('company_id', companyId)
-      .maybeSingle<{ id: string; phone_number: string; assigned_to: string | null }>()
+      .maybeSingle<{ id: string; phone_number: string; assigned_to: string | null; status: string }>()
 
     if (!conversation) return { error: 'Conversa não encontrada.' }
+    if (conversation.status === 'resolved') return {}
 
     // Verifica se pesquisa de satisfação está habilitada nos gatilhos
     const { data: automationSettings } = await adminSupabase

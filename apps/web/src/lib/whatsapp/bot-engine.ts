@@ -175,6 +175,7 @@ const handleNewSession = async (params: BotEngineParams) => {
   void _dropped
 
   const updates: Parameters<typeof updateConversation>[2] = {
+    status: 'bot',
     bot_state: 'awaiting_menu',
     attempts: 0,
     client_id: client?.id ?? conversation.client_id ?? null,
