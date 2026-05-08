@@ -47,6 +47,8 @@ import {
 } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { InputField } from '@/components/ui/input-field'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import type {
   ResolvedWhatsAppAutomationSettings,
   WhatsAppAutomationProvider,
@@ -151,6 +153,8 @@ function ProviderTabs({
 }
 
 
+const TRIGGER_MSG_VARS = 'Variáveis: {{cliente_nome}}, {{empresa_nome}}, {{os_numero}}, {{equipamento}}'
+
 function TriggerFields({
   control,
   errors,
@@ -160,6 +164,9 @@ function TriggerFields({
   errors: FieldErrors<WhatsAppAutomationSettingsSchema>
   register: UseFormRegister<WhatsAppAutomationSettingsSchema>
 }) {
+  const provider = useWatch({ control, name: 'provider' })
+  const isEvolution = provider === 'evolution_api'
+
   return (
     <Card className="border border-slate-200 shadow-sm shadow-slate-950/5">
       <CardHeader className="border-b border-slate-100">
@@ -227,13 +234,25 @@ function TriggerFields({
               />
             )}
           />
-          <InputField
-            label="Template Meta para OS aberta"
-            placeholder="os_aberta"
-            className={CONTROL}
-            error={errors.template_os_created?.message}
-            {...register('template_os_created')}
-          />
+          {isEvolution ? (
+            <div className="space-y-1.5">
+              <Label>Mensagem — OS aberta</Label>
+              <Textarea
+                rows={3}
+                className="resize-y font-mono text-sm"
+                {...register('message_os_created')}
+              />
+              <p className="text-xs text-muted-foreground">{TRIGGER_MSG_VARS}</p>
+            </div>
+          ) : (
+            <InputField
+              label="Template Meta para OS aberta"
+              placeholder="os_aberta"
+              className={CONTROL}
+              error={errors.template_os_created?.message}
+              {...register('template_os_created')}
+            />
+          )}
 
           <Controller
             control={control}
@@ -247,13 +266,25 @@ function TriggerFields({
               />
             )}
           />
-          <InputField
-            label="Template Meta para orçamento"
-            placeholder="orcamento_pronto"
-            className={CONTROL}
-            error={errors.template_estimate_ready?.message}
-            {...register('template_estimate_ready')}
-          />
+          {isEvolution ? (
+            <div className="space-y-1.5">
+              <Label>Mensagem — Orçamento pronto</Label>
+              <Textarea
+                rows={3}
+                className="resize-y font-mono text-sm"
+                {...register('message_estimate_ready')}
+              />
+              <p className="text-xs text-muted-foreground">{TRIGGER_MSG_VARS}, {'{{valor_orcamento}}'}</p>
+            </div>
+          ) : (
+            <InputField
+              label="Template Meta para orçamento"
+              placeholder="orcamento_pronto"
+              className={CONTROL}
+              error={errors.template_estimate_ready?.message}
+              {...register('template_estimate_ready')}
+            />
+          )}
 
           <Controller
             control={control}
@@ -267,13 +298,25 @@ function TriggerFields({
               />
             )}
           />
-          <InputField
-            label="Template Meta para conclusão"
-            placeholder="servico_concluido"
-            className={CONTROL}
-            error={errors.template_service_completed?.message}
-            {...register('template_service_completed')}
-          />
+          {isEvolution ? (
+            <div className="space-y-1.5">
+              <Label>Mensagem — Serviço concluído</Label>
+              <Textarea
+                rows={3}
+                className="resize-y font-mono text-sm"
+                {...register('message_service_completed')}
+              />
+              <p className="text-xs text-muted-foreground">{TRIGGER_MSG_VARS}</p>
+            </div>
+          ) : (
+            <InputField
+              label="Template Meta para conclusão"
+              placeholder="servico_concluido"
+              className={CONTROL}
+              error={errors.template_service_completed?.message}
+              {...register('template_service_completed')}
+            />
+          )}
 
           <Controller
             control={control}
@@ -287,13 +330,25 @@ function TriggerFields({
               />
             )}
           />
-          <InputField
-            label="Template Meta para satisfação"
-            placeholder="pesquisa_satisfacao"
-            className={CONTROL}
-            error={errors.template_satisfaction_survey?.message}
-            {...register('template_satisfaction_survey')}
-          />
+          {isEvolution ? (
+            <div className="space-y-1.5">
+              <Label>Mensagem — Pesquisa de satisfação</Label>
+              <Textarea
+                rows={3}
+                className="resize-y font-mono text-sm"
+                {...register('message_satisfaction_survey')}
+              />
+              <p className="text-xs text-muted-foreground">{TRIGGER_MSG_VARS}</p>
+            </div>
+          ) : (
+            <InputField
+              label="Template Meta para satisfação"
+              placeholder="pesquisa_satisfacao"
+              className={CONTROL}
+              error={errors.template_satisfaction_survey?.message}
+              {...register('template_satisfaction_survey')}
+            />
+          )}
         </div>
       </CardContent>
     </Card>
