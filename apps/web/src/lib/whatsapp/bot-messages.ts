@@ -10,6 +10,8 @@ export type BotMessages = {
   client_not_found: string
   no_open_orders: string
   os_not_found: string
+  os_list_header: string
+  os_list_item: string
   os_list_more_footer: string
   os_list_footer: string
   more_help: string
@@ -47,6 +49,9 @@ export const BOT_MESSAGES_DEFAULTS: BotMessages = {
     'Não encontrei nenhuma OS em aberto para o seu número. Se tiver o número da OS, pode me informar que consulto para você:',
   os_not_found:
     'Não encontrei a OS *#{{os_numero}}* no sistema. Verifique o número e tente novamente, ou envie *0* para voltar ao menu.',
+  os_list_header: 'Aqui estão suas ordens de serviço:',
+  os_list_item:
+    '*OS #{{os_numero}}* — {{os_dispositivo}}\nStatus: {{os_status}}\nAbertura: {{os_data}}\nFinalização: {{os_data_finalizacao}}',
   os_list_more_footer:
     'Sua OS não está na lista? Informe o *número da OS* e consulto para você.',
   os_list_footer: 'Deseja consultar outra OS? Informe o *número da OS*.',

@@ -1,16 +1,18 @@
 'use client'
 
 import * as React from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { toast } from 'sonner'
 import { saveBotMessages } from '@/app/actions/bot-messages'
 import { type BotMessages } from '@/lib/whatsapp/bot-messages'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
+import { BotChatPreview } from './bot-chat-preview'
 
-// ── Tipos e helpers ──────────────────────────────────────────
+// ── Definição das seções e campos ────────────────────────────
 
 type FieldDef = {
   key: keyof BotMessages
@@ -20,23 +22,23 @@ type FieldDef = {
 
 type SectionDef = {
   title: string
+  tabLabel: string
   description: string
   fields: FieldDef[]
 }
 
-const VARS_HINT = 'Variáveis: {{cliente.nome}}, {{empresa.nome}}, {{filial.nome}}'
 const OS_VARS_HINT = 'Variáveis: {{os_numero}}'
+const OS_ITEM_VARS_HINT =
+  'Variáveis: {{os_numero}}, {{os_dispositivo}}, {{os_status}}, {{os_data}}, {{os_data_finalizacao}} (vazio se não finalizada)'
+const CLIENT_VARS_HINT = 'Variáveis: {{cliente.nome}}, {{empresa.nome}}, {{filial.nome}}'
 
 const SECTIONS: SectionDef[] = [
   {
     title: 'Menu principal',
+    tabLabel: 'Menu',
     description: 'Mensagens exibidas quando o cliente inicia ou retorna ao menu.',
     fields: [
-      {
-        key: 'menu_greeting',
-        label: 'Saudação',
-        hint: VARS_HINT,
-      },
+      { key: 'menu_greeting', label: 'Saudação', hint: CLIENT_VARS_HINT },
       {
         key: 'menu_question',
         label: 'Pergunta do menu',
@@ -50,12 +52,13 @@ const SECTIONS: SectionDef[] = [
       {
         key: 'more_help',
         label: 'Reexibição do menu (mid-sessão)',
-        hint: 'Exibido antes das opções quando o bot reapresenta o menu no meio de uma conversa (ex: após resposta informativa ou consulta de OS).',
+        hint: 'Exibido antes das opções quando o bot reapresenta o menu no meio de uma conversa.',
       },
     ],
   },
   {
     title: 'Submenus',
+    tabLabel: 'Submenu',
     description: 'Usados quando um item do menu abre um nível interno de opções.',
     fields: [
       { key: 'submenu_header', label: 'Cabeçalho do submenu' },
@@ -64,6 +67,7 @@ const SECTIONS: SectionDef[] = [
   },
   {
     title: 'Consulta de OS',
+    tabLabel: 'OS',
     description: 'Mensagens do fluxo de consulta de ordens de serviço.',
     fields: [
       {
@@ -82,6 +86,16 @@ const SECTIONS: SectionDef[] = [
         hint: `Quando o número digitado não corresponde a nenhuma OS. ${OS_VARS_HINT}`,
       },
       {
+        key: 'os_list_header',
+        label: 'Cabeçalho da lista',
+        hint: 'Texto enviado antes de listar as OSs do cliente.',
+      },
+      {
+        key: 'os_list_item',
+        label: 'Formato de cada OS',
+        hint: `Template aplicado a cada OS na lista. ${OS_ITEM_VARS_HINT}`,
+      },
+      {
         key: 'os_list_more_footer',
         label: 'Rodapé da lista (com mais OSs)',
         hint: 'Exibido quando há mais OSs do que o limite mostrado.',
@@ -95,6 +109,7 @@ const SECTIONS: SectionDef[] = [
   },
   {
     title: 'Atendimento humano',
+    tabLabel: 'Atendimento',
     description: 'Mensagens usadas quando o cliente solicita falar com um atendente.',
     fields: [
       {
@@ -112,18 +127,11 @@ const SECTIONS: SectionDef[] = [
   },
   {
     title: 'Orçamento',
+    tabLabel: 'Orçamento',
     description: 'Mensagens do fluxo de aprovação ou recusa de orçamento.',
     fields: [
-      {
-        key: 'estimate_approved',
-        label: 'Orçamento aprovado',
-        hint: OS_VARS_HINT,
-      },
-      {
-        key: 'estimate_rejected',
-        label: 'Orçamento recusado',
-        hint: OS_VARS_HINT,
-      },
+      { key: 'estimate_approved', label: 'Orçamento aprovado', hint: OS_VARS_HINT },
+      { key: 'estimate_rejected', label: 'Orçamento recusado', hint: OS_VARS_HINT },
       {
         key: 'estimate_error',
         label: 'Erro ao registrar resposta',
@@ -133,6 +141,7 @@ const SECTIONS: SectionDef[] = [
   },
   {
     title: 'Avaliação',
+    tabLabel: 'Avaliação',
     description: 'Mensagens da pesquisa de satisfação pós-atendimento.',
     fields: [
       {
@@ -146,6 +155,7 @@ const SECTIONS: SectionDef[] = [
   },
   {
     title: 'Respostas inválidas',
+    tabLabel: 'Erros',
     description:
       'Mensagens enviadas quando o cliente digita algo fora das opções esperadas. Após 3 tentativas, o bot transfere automaticamente para um atendente.',
     fields: [
@@ -171,9 +181,16 @@ type Props = {
 }
 
 export function BotMessagesForm({ initialMessages }: Props) {
-  const { register, handleSubmit, formState: { isDirty, isSubmitting } } = useForm<BotMessages>({
-    defaultValues: initialMessages,
-  })
+  const [activeSection, setActiveSection] = React.useState(SECTIONS[0].title)
+
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { isDirty, isSubmitting },
+  } = useForm<BotMessages>({ defaultValues: initialMessages })
+
+  const watchedValues = useWatch({ control }) as BotMessages
 
   const onSubmit = async (data: BotMessages) => {
     const result = await saveBotMessages(data)
@@ -185,7 +202,7 @@ export function BotMessagesForm({ initialMessages }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold">Mensagens do bot</h2>
@@ -198,30 +215,52 @@ export function BotMessagesForm({ initialMessages }: Props) {
         </Button>
       </div>
 
-      {SECTIONS.map((section) => (
-        <Card key={section.title}>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">{section.title}</CardTitle>
-            <CardDescription>{section.description}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            {section.fields.map((field) => (
-              <div key={field.key} className="space-y-1.5">
-                <Label htmlFor={field.key}>{field.label}</Label>
-                <Textarea
-                  id={field.key}
-                  rows={3}
-                  className="resize-y font-mono text-sm"
-                  {...register(field.key)}
-                />
-                {field.hint && (
-                  <p className="text-xs text-muted-foreground">{field.hint}</p>
-                )}
-              </div>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* Painel esquerdo: tabs + campos */}
+        <Tabs value={activeSection} onValueChange={setActiveSection}>
+          <TabsList className="mb-4 h-auto flex-wrap gap-1">
+            {SECTIONS.map((s) => (
+              <TabsTrigger key={s.title} value={s.title} className="text-xs">
+                {s.tabLabel}
+              </TabsTrigger>
             ))}
-          </CardContent>
-        </Card>
-      ))}
+          </TabsList>
+
+          {SECTIONS.map((section) => (
+            <TabsContent key={section.title} value={section.title} className="mt-0">
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">{section.title}</CardTitle>
+                  <CardDescription>{section.description}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-5">
+                  {section.fields.map((field) => (
+                    <div key={field.key} className="space-y-1.5">
+                      <Label htmlFor={field.key}>{field.label}</Label>
+                      <Textarea
+                        id={field.key}
+                        rows={3}
+                        className="resize-y font-mono text-sm"
+                        {...register(field.key)}
+                      />
+                      {field.hint && (
+                        <p className="text-xs text-muted-foreground">{field.hint}</p>
+                      )}
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          ))}
+        </Tabs>
+
+        {/* Painel direito: preview ao vivo */}
+        <div className="hidden lg:block">
+          <div className="sticky top-4" style={{ height: '560px' }}>
+            <BotChatPreview messages={watchedValues} section={activeSection} />
+          </div>
+        </div>
+      </div>
 
       <div className="flex justify-end">
         <Button type="submit" disabled={!isDirty || isSubmitting}>

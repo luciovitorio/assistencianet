@@ -91,11 +91,19 @@ const buildOsListText = (
 ): string => {
   const lines = orders.map((os) => {
     const device = [os.device_brand, os.device_model, os.device_type].filter(Boolean).join(' ')
-    return (
-      `*OS #${os.number}* — ${device}\n` +
-      `Status: ${formatOsStatus(os.status)}\n` +
-      `Abertura: ${formatOsDate(os.created_at)}`
-    )
+    const completedValue = os.completed_at ? formatOsDate(os.completed_at) : null
+    return msgs.os_list_item
+      .replace(/\{\{os_numero\}\}/g, String(os.number))
+      .replace(/\{\{os_dispositivo\}\}/g, device)
+      .replace(/\{\{os_status\}\}/g, formatOsStatus(os.status))
+      .replace(/\{\{os_data\}\}/g, formatOsDate(os.created_at))
+      // Quando não há data de finalização, remove a linha inteira para não deixar "Finalização: " vazio
+      .replace(
+        completedValue
+          ? /\{\{os_data_finalizacao\}\}/g
+          : /[^\n]*\{\{os_data_finalizacao\}\}[^\n]*(\r?\n|$)/g,
+        completedValue ?? '',
+      )
   })
 
   const list = lines.join('\n\n')
@@ -103,7 +111,7 @@ const buildOsListText = (
     ? `\n\n${msgs.os_list_more_footer}`
     : `\n\n${msgs.os_list_footer}`
 
-  return `Aqui estão suas ordens de serviço:\n\n${list}${footer}`
+  return `${msgs.os_list_header}\n\n${list}${footer}`
 }
 
 const NUMBER_EMOJIS = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣']

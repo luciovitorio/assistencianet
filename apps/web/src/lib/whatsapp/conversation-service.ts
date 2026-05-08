@@ -43,6 +43,7 @@ export type ServiceOrderSummary = {
   status: string
   branch_id: string | null
   created_at: string
+  completed_at: string | null
 }
 
 export type BranchOption = {
@@ -293,7 +294,7 @@ export const getClientServiceOrders = async (
 ): Promise<ServiceOrderSummary[]> => {
   const { data } = await supabase
     .from('service_orders')
-    .select('id, number, device_type, device_brand, device_model, status, branch_id, created_at')
+    .select('id, number, device_type, device_brand, device_model, status, branch_id, created_at, completed_at')
     .eq('company_id', companyId)
     .eq('client_id', clientId)
     .not('status', 'in', '("entregue","cancelada")')
@@ -321,7 +322,7 @@ export const getServiceOrderByNumber = async (
   if (callerPhone) {
     const { data } = await supabase
       .from('service_orders')
-      .select('id, number, device_type, device_brand, device_model, status, branch_id, created_at, clients(phone)')
+      .select('id, number, device_type, device_brand, device_model, status, branch_id, created_at, completed_at, clients(phone)')
       .eq('company_id', companyId)
       .eq('number', osNumber)
       .is('deleted_at', null)
@@ -339,7 +340,7 @@ export const getServiceOrderByNumber = async (
 
   const { data } = await supabase
     .from('service_orders')
-    .select('id, number, device_type, device_brand, device_model, status, branch_id, created_at')
+    .select('id, number, device_type, device_brand, device_model, status, branch_id, created_at, completed_at')
     .eq('company_id', companyId)
     .eq('number', osNumber)
     .is('deleted_at', null)
