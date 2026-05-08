@@ -148,18 +148,17 @@ const sendMenuAfterResponse = async (
   params: BotEngineParams,
   currentParentId: string | null,
 ) => {
-  const { supabase, conversation, companyName, authorizedBrands, botMessages, evolutionClient } = params
+  const { supabase, conversation, companyName, botMessages, evolutionClient } = params
   const items = await getMenuItems(supabase, conversation.company_id, currentParentId)
   if (items.length === 0) return
-  const isSubmenu = currentParentId !== null
-  const text = buildMenuText(
-    items,
-    companyName,
-    conversation.contact_name,
-    isSubmenu ? null : authorizedBrands,
-    botMessages,
-    isSubmenu,
-  )
+
+  const options = items.map((item) => `${item.emoji ?? `${item.position}.`} ${item.label}`).join('\n')
+
+  // Mid-session: sem saudação. Sub-menu mantém o "0 - Menu principal".
+  const text = currentParentId !== null
+    ? `${botMessages.submenu_header}\n\n${options}\n0 - Menu principal\n\n${botMessages.submenu_footer}`
+    : `${botMessages.menu_question}\n\n${options}\n\n${botMessages.menu_footer}`
+
   await sendAndSave(supabase, evolutionClient, conversation, text)
 }
 
