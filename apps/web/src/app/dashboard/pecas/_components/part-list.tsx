@@ -137,32 +137,32 @@ export function PartList({ initialParts, suppliers }: PartListProps) {
     if (currentPage > totalPages) setCurrentPage(totalPages)
   }, [currentPage, totalPages])
 
-  const closeDialog = () => setDialog({ type: 'none' })
+  const closeDialog = React.useCallback(() => setDialog({ type: 'none' }), [])
 
-  const resetFilters = () => {
+  const resetFilters = React.useCallback(() => {
     setSearch('')
     setCategoryFilter([])
     setSupplierFilter([])
-  }
+  }, [])
 
-  const toggleCategoryFilter = (value: string) => {
+  const toggleCategoryFilter = React.useCallback((value: string) => {
     setCategoryFilter((prev) =>
       prev.includes(value as PartCategory)
         ? prev.filter((item) => item !== value)
         : [...prev, value as PartCategory],
     )
-  }
+  }, [])
 
-  const toggleSupplierFilter = (value: string) => {
+  const toggleSupplierFilter = React.useCallback((value: string) => {
     setSupplierFilter((prev) =>
       prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value],
     )
-  }
+  }, [])
 
-  const handleDeleteSuccess = (deletedId: string) => {
+  const handleDeleteSuccess = React.useCallback((deletedId: string) => {
     setParts((prev) => prev.filter((p) => p.id !== deletedId))
     router.refresh()
-  }
+  }, [router])
 
   return (
     <>

@@ -34,7 +34,9 @@ const roleColors: Record<EmployeeRole, string> = {
   tecnico: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
 }
 
-export function EmployeeCard({ employee, branchName, isAdmin, onEdit, onDelete }: EmployeeCardProps) {
+const laborRateFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
+
+export const EmployeeCard = React.memo(function EmployeeCard({ employee, branchName, isAdmin, onEdit, onDelete }: EmployeeCardProps) {
   const roleLabel = ROLE_LABELS[employee.role as EmployeeRole] ?? employee.role
   const roleColor = roleColors[employee.role as EmployeeRole] ?? 'bg-muted text-muted-foreground'
 
@@ -84,7 +86,7 @@ export function EmployeeCard({ employee, branchName, isAdmin, onEdit, onDelete }
           <div className="flex items-center gap-2">
             <Wrench className="size-4 shrink-0" />
             <span>
-              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(employee.labor_rate)}
+              {laborRateFormatter.format(employee.labor_rate)}
               {' '}/ OS
             </span>
           </div>
@@ -120,4 +122,4 @@ export function EmployeeCard({ employee, branchName, isAdmin, onEdit, onDelete }
       )}
     </div>
   )
-}
+})

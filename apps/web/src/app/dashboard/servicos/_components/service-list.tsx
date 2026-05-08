@@ -118,25 +118,25 @@ export function ServiceList({ initialServices }: ServiceListProps) {
     if (currentPage > totalPages) setCurrentPage(totalPages)
   }, [currentPage, totalPages])
 
-  const closeDialog = () => setDialog({ type: 'none' })
+  const closeDialog = React.useCallback(() => setDialog({ type: 'none' }), [])
 
-  const resetFilters = () => {
+  const resetFilters = React.useCallback(() => {
     setSearch('')
     setCategoryFilter([])
-  }
+  }, [])
 
-  const toggleCategoryFilter = (value: string) => {
+  const toggleCategoryFilter = React.useCallback((value: string) => {
     setCategoryFilter((prev) =>
       prev.includes(value as ServiceCategory)
         ? prev.filter((item) => item !== value)
         : [...prev, value as ServiceCategory],
     )
-  }
+  }, [])
 
-  const handleDeleteSuccess = (deletedId: string) => {
+  const handleDeleteSuccess = React.useCallback((deletedId: string) => {
     setServices((prev) => prev.filter((s) => s.id !== deletedId))
     router.refresh()
-  }
+  }, [router])
 
   return (
     <>

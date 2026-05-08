@@ -197,41 +197,41 @@ export function ClientList({
     }
   }, [currentPage, totalPages])
 
-  const closeDialog = () => setDialog({ type: 'none' })
+  const closeDialog = React.useCallback(() => setDialog({ type: 'none' }), [])
 
-  const resetFilters = () => {
+  const resetFilters = React.useCallback(() => {
     setSearch('')
     setBranchFilter([])
     setStatusFilter([])
     setClassificationFilter([])
-  }
+  }, [])
 
-  const toggleBranchFilter = (value: string) => {
+  const toggleBranchFilter = React.useCallback((value: string) => {
     setBranchFilter((prev) =>
       prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value],
     )
-  }
+  }, [])
 
-  const toggleStatusFilter = (value: string) => {
+  const toggleStatusFilter = React.useCallback((value: string) => {
     setStatusFilter((prev) =>
       prev.includes(value as StatusFilter)
         ? prev.filter((item) => item !== value)
         : [...prev, value as StatusFilter],
     )
-  }
+  }, [])
 
-  const toggleClassificationFilter = (value: string) => {
+  const toggleClassificationFilter = React.useCallback((value: string) => {
     setClassificationFilter((prev) =>
       prev.includes(value as ClassificationFilter)
         ? prev.filter((item) => item !== value)
         : [...prev, value as ClassificationFilter],
     )
-  }
+  }, [])
 
-  const handleDeleteSuccess = (deletedId: string) => {
+  const handleDeleteSuccess = React.useCallback((deletedId: string) => {
     setClients((prev) => prev.filter((client) => client.id !== deletedId))
     router.refresh()
-  }
+  }, [router])
 
   return (
     <>

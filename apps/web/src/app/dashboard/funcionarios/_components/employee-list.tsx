@@ -185,55 +185,55 @@ export function EmployeeList({ initialEmployees, branches, isAdmin, employeeSeat
     }
   }, [currentPage, totalPages])
 
-  const closeDialog = () => setDialog({ type: 'none' })
+  const closeDialog = React.useCallback(() => setDialog({ type: 'none' }), [])
 
-  const resetFilters = () => {
+  const resetFilters = React.useCallback(() => {
     setSearch('')
     setRoleFilter([])
     setBranchFilter([])
     setAccessFilter([])
-  }
+  }, [])
 
-  const toggleRoleFilter = (value: string) => {
+  const toggleRoleFilter = React.useCallback((value: string) => {
     setRoleFilter((prev) =>
       prev.includes(value as EmployeeRole)
         ? prev.filter((item) => item !== value)
         : [...prev, value as EmployeeRole]
     )
-  }
+  }, [])
 
-  const toggleBranchFilter = (value: string) => {
+  const toggleBranchFilter = React.useCallback((value: string) => {
     setBranchFilter((prev) =>
       prev.includes(value)
         ? prev.filter((item) => item !== value)
         : [...prev, value]
     )
-  }
+  }, [])
 
-  const toggleAccessFilter = (value: string) => {
+  const toggleAccessFilter = React.useCallback((value: string) => {
     setAccessFilter((prev) =>
       prev.includes(value as AccessOption)
         ? prev.filter((item) => item !== value)
         : [...prev, value as AccessOption]
     )
-  }
+  }, [])
 
-  const handleDeleteSuccess = (deletedId: string) => {
+  const handleDeleteSuccess = React.useCallback((deletedId: string) => {
     setEmployees((prev) => prev.filter((e) => e.id !== deletedId))
     router.refresh()
-  }
+  }, [router])
 
-  const handleDirectAccessSuccess = () => {
+  const handleDirectAccessSuccess = React.useCallback(() => {
     router.refresh()
-  }
+  }, [router])
 
-  const handleInviteSuccess = () => {
+  const handleInviteSuccess = React.useCallback(() => {
     router.refresh()
-  }
+  }, [router])
 
-  const handleRevokeSuccess = () => {
+  const handleRevokeSuccess = React.useCallback(() => {
     router.refresh()
-  }
+  }, [router])
 
   return (
     <>

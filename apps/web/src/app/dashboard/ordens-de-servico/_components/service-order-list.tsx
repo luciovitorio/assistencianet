@@ -168,6 +168,74 @@ const SERVICE_ORDER_COLUMNS_ADMIN: DataTableColumnDef[] = [
   ...SERVICE_ORDER_COLUMNS_BASE.slice(7),
 ]
 
+const dateFormatter = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' })
+const currencyFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
+
+const formatDate = (dateStr: string) => dateFormatter.format(new Date(dateStr))
+
+const getLatestEstimate = (estimates: ServiceOrderData['service_order_estimates']) => {
+  if (!estimates || estimates.length === 0) return null
+  return estimates.reduce((best, curr) => (curr.version > best.version ? curr : best))
+}
+
+const getLatestApprovedEstimate = (order: ServiceOrderData) => {
+  const estimates = order.service_order_estimates ?? []
+  return estimates.filter((e) => e.status === 'aprovado').sort((a, b) => b.version - a.version)[0] ?? null
+}
+
+const canDeleteOrder = (order: ServiceOrderData) =>
+  order.status === 'aberta' && (order.service_order_estimates?.length ?? 0) === 0
+
+const canEditOrder = (order: ServiceOrderData) =>
+  order.status === 'aberta' ||
+  order.status === 'em_analise' ||
+  order.status === 'aguardando_envio' ||
+  order.status === 'reprovado'
+
+const canManageEstimatesForOrder = (order: ServiceOrderData) =>
+  order.status !== 'cancelado' && order.status !== 'finalizado'
+
+const canOpenEstimateEditor = (order: ServiceOrderData) =>
+  order.status === 'aberta' ||
+  order.status === 'em_analise' ||
+  order.status === 'aguardando_envio' ||
+  order.status === 'reprovado' ||
+  order.status === 'enviado_terceiro'
+
+const hasDraftEstimate = (order: ServiceOrderData) =>
+  order.service_order_estimates?.some((e) => e.status === 'rascunho') ?? false
+
+const hasClientDigitalContact = (client: ClientOption | null | undefined) =>
+  Boolean(client?.phone?.trim() || client?.email?.trim())
+
+const canRegisterManualClientResponse = (
+  order: ServiceOrderData,
+  client: ClientOption | null | undefined,
+) => {
+  const latestEstimate = getLatestEstimate(order.service_order_estimates)
+  return (
+    !hasClientDigitalContact(client) &&
+    latestEstimate?.status === 'rascunho' &&
+    ['aguardando', 'em_analise', 'reprovado', 'enviado_terceiro'].includes(order.status)
+  )
+}
+
+const canCancelOrder = (order: ServiceOrderData) =>
+  [
+    'aguardando',
+    'em_analise',
+    'aguardando_aprovacao',
+    'aprovado',
+    'aguardando_peca',
+    'reprovado',
+    'pronto',
+  ].includes(order.status)
+
+const getOrderRestrictionLabel = (order: ServiceOrderData) => {
+  if (canCancelOrder(order)) return 'Cancelar OS'
+  return 'Ação indisponível'
+}
+
 export function ServiceOrderList({
   initialOrders,
   branches,
@@ -248,14 +316,13 @@ export function ServiceOrderList({
   )
 
   const technicianOptions = React.useMemo<DataTableFilterOption[]>(() => {
-    const withTechnician = orders.filter((o) => o.technician_id !== null)
+    const countById = new Map<string, number>()
+    for (const o of orders) {
+      if (o.technician_id) countById.set(o.technician_id, (countById.get(o.technician_id) ?? 0) + 1)
+    }
     return employees
-      .filter((e) => withTechnician.some((o) => o.technician_id === e.id))
-      .map((e) => ({
-        value: e.id,
-        label: e.name,
-        count: orders.filter((o) => o.technician_id === e.id).length,
-      }))
+      .filter((e) => countById.has(e.id))
+      .map((e) => ({ value: e.id, label: e.name, count: countById.get(e.id)! }))
   }, [employees, orders])
 
   const filteredOrders = React.useMemo(() => {
@@ -481,82 +548,6 @@ export function ServiceOrderList({
         setActionOrderId(null)
       }
     })
-  }
-
-  const formatDate = (dateStr: string) =>
-    new Date(dateStr).toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: '2-digit',
-    })
-
-  const currencyFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
-
-  const getLatestEstimate = (estimates: ServiceOrderData['service_order_estimates']) => {
-    if (!estimates || estimates.length === 0) return null
-    return estimates.reduce((best, curr) => (curr.version > best.version ? curr : best))
-  }
-
-  const getLatestApprovedEstimate = (order: ServiceOrderData) => {
-    const estimates = order.service_order_estimates ?? []
-    return (
-      estimates
-        .filter((estimate) => estimate.status === 'aprovado')
-        .sort((a, b) => b.version - a.version)[0] ?? null
-    )
-  }
-
-  const canDeleteOrder = (order: ServiceOrderData) =>
-    order.status === 'aberta' && (order.service_order_estimates?.length ?? 0) === 0
-
-  const canEditOrder = (order: ServiceOrderData) =>
-    order.status === 'aberta' ||
-    order.status === 'em_analise' ||
-    order.status === 'aguardando_envio' ||
-    order.status === 'reprovado'
-
-  const canManageEstimatesForOrder = (order: ServiceOrderData) =>
-    order.status !== 'cancelado' && order.status !== 'finalizado'
-
-  const canOpenEstimateEditor = (order: ServiceOrderData) =>
-    order.status === 'aberta' ||
-    order.status === 'em_analise' ||
-    order.status === 'aguardando_envio' ||
-    order.status === 'reprovado' ||
-    order.status === 'enviado_terceiro'
-
-  const hasDraftEstimate = (order: ServiceOrderData) =>
-    order.service_order_estimates?.some((estimate) => estimate.status === 'rascunho') ?? false
-
-  const hasClientDigitalContact = (client: ClientOption | null | undefined) =>
-    Boolean(client?.phone?.trim() || client?.email?.trim())
-
-  const canRegisterManualClientResponse = (
-    order: ServiceOrderData,
-    client: ClientOption | null | undefined
-  ) => {
-    const latestEstimate = getLatestEstimate(order.service_order_estimates)
-    return (
-      !hasClientDigitalContact(client) &&
-      latestEstimate?.status === 'rascunho' &&
-      ['aguardando', 'em_analise', 'reprovado', 'enviado_terceiro'].includes(order.status)
-    )
-  }
-
-  const canCancelOrder = (order: ServiceOrderData) =>
-    [
-      'aguardando',
-      'em_analise',
-      'aguardando_aprovacao',
-      'aprovado',
-      'aguardando_peca',
-      'reprovado',
-      'pronto',
-    ].includes(order.status)
-
-  const getOrderRestrictionLabel = (order: ServiceOrderData) => {
-    if (canCancelOrder(order)) return 'Cancelar OS'
-    return 'Ação indisponível'
   }
 
   const dispatchOrder = dispatchOrderId
