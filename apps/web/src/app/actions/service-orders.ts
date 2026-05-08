@@ -571,34 +571,6 @@ export async function registerManualClientResponse(
   }
 }
 
-export async function markClientNotified(
-  id: string,
-  via: 'whatsapp' | 'email',
-) {
-  try {
-    const { companyId } = await getCompanyContext()
-    const supabase = await createSupabaseClient()
-
-    const { error } = await supabase
-      .from('service_orders')
-      .update({
-        client_notified_at: new Date().toISOString(),
-        client_notified_via: via,
-      })
-      .eq('id', id)
-      .eq('company_id', companyId)
-
-    if (error) throw error
-
-    revalidateServiceOrdersPage()
-    revalidateServiceOrderDetailPage(id)
-    return { success: true }
-  } catch (error: unknown) {
-    if (error instanceof Error) return { error: error.message }
-    return { error: 'Erro ao registrar notificação.' }
-  }
-}
-
 export async function updateServiceOrderPaymentStatus(
   id: string,
   paymentStatus: PaymentStatus,

@@ -2,14 +2,6 @@ export { Alert, AlertDescription, AlertTitle } from "./alert"
 export { AppLink } from "./app-link"
 export { Avatar, AvatarFallback, AvatarImage } from "./avatar"
 export { Badge } from "./badge"
-export {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "./breadcrumb"
 export { Button } from "./button"
 export { buttonVariants } from "./button-variants"
 export { Checkbox } from "./checkbox"
@@ -37,7 +29,6 @@ export { InputField } from "./input-field"
 export { MaskedInputField } from "./masked-input-field"
 export type { MaskType } from "./masked-input-field"
 export { Label } from "./label"
-export { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "./pagination"
 export { Popover, PopoverContent, PopoverTrigger } from "./popover"
 export { Progress } from "./progress"
 export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select"
