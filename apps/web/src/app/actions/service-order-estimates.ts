@@ -116,7 +116,22 @@ const buildEstimateWhatsAppMessage = ({
   )
 }
 
-const sendEstimateViaEvolution = async ({
+type EstimateWhatsAppCtx = {
+  adminSupabase: ReturnType<typeof createAdminClient>
+  companyId: string
+  serviceOrderId: string
+  estimateId: string
+  recipient: string
+  clientId: string
+  clientName: string
+  branchId: string | null
+  message: string
+  timeoutMinutes: number
+  evolutionClient: ReturnType<typeof createEvolutionApiClient>
+}
+
+// Phase 1 — validates config + data, builds message. Throws on any blocking error.
+const prepareEstimateWhatsApp = async ({
   companyId,
   serviceOrderId,
   estimateId,
@@ -124,27 +139,47 @@ const sendEstimateViaEvolution = async ({
   companyId: string
   serviceOrderId: string
   estimateId: string
-}) => {
+}): Promise<EstimateWhatsAppCtx> => {
   const adminSupabase = createAdminClient()
 
-  const { data: settings, error: settingsError } = await adminSupabase
-    .from('whatsapp_automation_settings')
-    .select(
-      `provider, enabled, evolution_base_url, evolution_api_key,
-       evolution_instance_name, default_country_code, message_estimate_ready,
-       session_timeout_minutes`,
-    )
-    .eq('company_id', companyId)
-    .maybeSingle<{
-      provider: string
-      enabled: boolean
-      evolution_base_url: string
-      evolution_api_key: string | null
-      evolution_instance_name: string | null
-      default_country_code: string
-      message_estimate_ready: string | null
-      session_timeout_minutes: number | null
-    }>()
+  const [
+    { data: settings, error: settingsError },
+    { data: serviceOrder, error: serviceOrderError },
+  ] = await Promise.all([
+    adminSupabase
+      .from('whatsapp_automation_settings')
+      .select(
+        `provider, enabled, evolution_base_url, evolution_api_key,
+         evolution_instance_name, default_country_code, message_estimate_ready,
+         session_timeout_minutes`,
+      )
+      .eq('company_id', companyId)
+      .maybeSingle<{
+        provider: string
+        enabled: boolean
+        evolution_base_url: string
+        evolution_api_key: string | null
+        evolution_instance_name: string | null
+        default_country_code: string
+        message_estimate_ready: string | null
+        session_timeout_minutes: number | null
+      }>(),
+    adminSupabase
+      .from('service_orders')
+      .select('id, number, device_type, device_brand, device_model, branch_id, client_id')
+      .eq('id', serviceOrderId)
+      .eq('company_id', companyId)
+      .is('deleted_at', null)
+      .single<{
+        id: string
+        number: number
+        device_type: string | null
+        device_brand: string | null
+        device_model: string | null
+        branch_id: string | null
+        client_id: string
+      }>(),
+  ])
 
   if (settingsError) throw settingsError
 
@@ -156,22 +191,6 @@ const sendEstimateViaEvolution = async ({
   ) {
     throw new Error('WhatsApp via Evolution API não está configurado para esta empresa.')
   }
-
-  const { data: serviceOrder, error: serviceOrderError } = await adminSupabase
-    .from('service_orders')
-    .select('id, number, device_type, device_brand, device_model, branch_id, client_id')
-    .eq('id', serviceOrderId)
-    .eq('company_id', companyId)
-    .is('deleted_at', null)
-    .single<{
-      id: string
-      number: number
-      device_type: string | null
-      device_brand: string | null
-      device_model: string | null
-      branch_id: string | null
-      client_id: string
-    }>()
 
   if (serviceOrderError || !serviceOrder) {
     throw new Error('OS não encontrada para envio pelo WhatsApp.')
@@ -205,18 +224,11 @@ const sendEstimateViaEvolution = async ({
         .single<{ name: string }>(),
     ])
 
-  if (estimateError || !estimate) {
-    throw new Error('Orçamento não encontrado para envio pelo WhatsApp.')
-  }
-
-  if (clientError || !client) {
-    throw new Error('Cliente não encontrado para envio pelo WhatsApp.')
-  }
+  if (estimateError || !estimate) throw new Error('Orçamento não encontrado para envio pelo WhatsApp.')
+  if (clientError || !client) throw new Error('Cliente não encontrado para envio pelo WhatsApp.')
 
   const recipient = normalizeRecipientPhone(client.phone, settings.default_country_code)
-  if (!recipient) {
-    throw new Error('Cliente sem WhatsApp/telefone cadastrado.')
-  }
+  if (!recipient) throw new Error('Cliente sem WhatsApp/telefone cadastrado.')
 
   const message = buildEstimateWhatsAppMessage({
     template: settings.message_estimate_ready,
@@ -235,44 +247,65 @@ const sendEstimateViaEvolution = async ({
     instanceName: settings.evolution_instance_name,
   })
 
-  await evolutionClient.sendText({ number: recipient, text: message })
-
   const timeoutMinutes =
     typeof settings.session_timeout_minutes === 'number' && settings.session_timeout_minutes > 0
       ? settings.session_timeout_minutes
       : FALLBACK_ESTIMATE_SESSION_TIMEOUT_MINUTES
 
-  const conversation = await findOrCreateConversation(
+  return {
     adminSupabase,
     companyId,
+    serviceOrderId,
+    estimateId,
     recipient,
-    client.name,
+    clientId: client.id,
+    clientName: client.name,
+    branchId: serviceOrder.branch_id,
+    message,
     timeoutMinutes,
-  )
+    evolutionClient,
+  }
+}
 
-  await updateConversation(adminSupabase, conversation.id, {
-    status: 'bot',
-    branch_id: serviceOrder.branch_id,
-    client_id: client.id,
-    bot_enabled: true,
-    bot_state: 'awaiting_estimate_response',
-    attempts: 0,
-    context: {
-      service_order_id: serviceOrder.id,
-      estimate_id: estimate.id,
-    },
-    last_message_at: new Date().toISOString(),
-    last_message_preview: truncatePreview(message),
-  })
+// Phase 2 — HTTP call + conversation bookkeeping. Always fire-and-forget.
+const dispatchEstimateWhatsApp = async (ctx: EstimateWhatsAppCtx) => {
+  try {
+    await ctx.evolutionClient.sendText({ number: ctx.recipient, text: ctx.message })
 
-  await saveMessage(adminSupabase, {
-    conversationId: conversation.id,
-    companyId,
-    direction: 'outbound',
-    content: message,
-    sentByBot: false,
-    senderName: 'Sistema',
-  })
+    const conversation = await findOrCreateConversation(
+      ctx.adminSupabase,
+      ctx.companyId,
+      ctx.recipient,
+      ctx.clientName,
+      ctx.timeoutMinutes,
+    )
+
+    await updateConversation(ctx.adminSupabase, conversation.id, {
+      status: 'bot',
+      branch_id: ctx.branchId,
+      client_id: ctx.clientId,
+      bot_enabled: true,
+      bot_state: 'awaiting_estimate_response',
+      attempts: 0,
+      context: {
+        service_order_id: ctx.serviceOrderId,
+        estimate_id: ctx.estimateId,
+      },
+      last_message_at: new Date().toISOString(),
+      last_message_preview: truncatePreview(ctx.message),
+    })
+
+    await saveMessage(ctx.adminSupabase, {
+      conversationId: conversation.id,
+      companyId: ctx.companyId,
+      direction: 'outbound',
+      content: ctx.message,
+      sentByBot: false,
+      senderName: 'Sistema',
+    })
+  } catch {
+    // silent — delivery failure never blocks the UI response
+  }
 }
 
 const normalizeEstimateDraftPayload = (data: ServiceOrderEstimateSchema) => {
@@ -853,7 +886,10 @@ export async function sendEstimate(
     const { serviceOrder, estimate } = validation
 
     if (via === 'whatsapp') {
-      await sendEstimateViaEvolution({ companyId, serviceOrderId, estimateId })
+      // Phase 1: validate + build message (throws on blocking errors)
+      const whatsappCtx = await prepareEstimateWhatsApp({ companyId, serviceOrderId, estimateId })
+      // Phase 2: HTTP send + conversation update (fire-and-forget — never blocks the response)
+      void dispatchEstimateWhatsApp(whatsappCtx)
     }
 
     const now = new Date().toISOString()
