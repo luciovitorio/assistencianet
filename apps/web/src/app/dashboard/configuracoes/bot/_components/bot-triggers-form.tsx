@@ -11,12 +11,8 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
-import {
-  botTriggersSchema,
-  saveBotTriggers,
-  type BotTriggerSettings,
-  type BotTriggersSchema,
-} from '@/app/actions/bot-triggers'
+import { botTriggersSchema, type BotTriggersSchema } from '@/lib/validations/bot-triggers'
+import { saveBotTriggers, type BotTriggerSettings } from '@/app/actions/bot-triggers'
 
 // ── BooleanField (toggle com checkbox) ──────────────────────
 
