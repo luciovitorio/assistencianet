@@ -223,7 +223,7 @@ export async function sendAtendimentoReply(
     }
 
     const whatsappText = `*${senderName}:*\n${text}`
-    await evolutionClient.sendText({ number: conversation.phone_number, text: whatsappText })
+    void evolutionClient.sendText({ number: conversation.phone_number, text: whatsappText }).catch(() => {})
 
     // Salva mensagem no banco
     const { data: saved, error } = await adminSupabase
@@ -349,19 +349,19 @@ export async function resolveConversation(
         'Estamos sempre por aqui quando precisar.'
 
     if (evolutionClient) {
-      try {
-        await evolutionClient.sendText({ number: conversation.phone_number, text: closingMessage })
-        await adminSupabase.from('whatsapp_messages').insert({
-          conversation_id: conversationId,
-          company_id: companyId,
-          direction: 'outbound',
-          content: closingMessage,
-          sent_by_bot: true,
-          status: 'sent',
-        })
-      } catch {
-        // Falha no envio não deve bloquear o resolve
-      }
+      void evolutionClient
+        .sendText({ number: conversation.phone_number, text: closingMessage })
+        .then(() =>
+          adminSupabase.from('whatsapp_messages').insert({
+            conversation_id: conversationId,
+            company_id: companyId,
+            direction: 'outbound',
+            content: closingMessage,
+            sent_by_bot: true,
+            status: 'sent',
+          }),
+        )
+        .catch(() => {})
     }
 
     await supabase
