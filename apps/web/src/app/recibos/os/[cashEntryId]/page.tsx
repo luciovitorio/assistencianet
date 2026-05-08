@@ -6,23 +6,17 @@ import {
   type PaymentMethod,
 } from '@/lib/validations/service-order'
 import { ReceiptPrintActions } from './receipt-print-actions'
+import { formatCurrency } from '@/lib/format'
 
 type ReceiptPageProps = {
   params: Promise<{ cashEntryId: string }>
 }
-
-const currencyFormatter = new Intl.NumberFormat('pt-BR', {
-  style: 'currency',
-  currency: 'BRL',
-})
 
 const dateTimeFormatter = new Intl.DateTimeFormat('pt-BR', {
   dateStyle: 'short',
   timeStyle: 'short',
   timeZone: 'America/Sao_Paulo',
 })
-
-const formatCurrency = (value: number) => currencyFormatter.format(value)
 
 export default async function ServiceOrderReceiptPage({ params }: ReceiptPageProps) {
   const { cashEntryId } = await params

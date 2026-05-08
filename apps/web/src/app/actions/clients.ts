@@ -8,34 +8,20 @@ import { getAdminContext } from '@/lib/auth/admin-context'
 import { getCompanyContext } from '@/lib/auth/company-context'
 import { buildArchivedUniqueFieldValue } from '@/lib/soft-delete/archive-unique-field'
 import { clientSchema, type ClientSchema } from '@/lib/validations/client'
+import {
+  normalizeOptionalValue,
+  buildAddress,
+  createUniqueIndexChecker,
+  extractActionError,
+} from '@/lib/server/utils'
 
-const DUPLICATE_CLIENT_DOCUMENT_ERROR = 'Já existe um cliente ativo com este CPF/CNPJ.'
-const CLIENTS_ACTIVE_DOCUMENT_UNIQUE_INDEX = 'clients_active_document_unique_idx'
+const checkDuplicateClientDocument = createUniqueIndexChecker(
+  'clients_active_document_unique_idx',
+  'Já existe um cliente ativo com este CPF/CNPJ.',
+)
 
-const normalizeOptionalValue = (value: string | null | undefined) => {
-  const normalized = value?.trim()
-  return normalized ? normalized : null
-}
-
-const buildAddress = ({
-  street,
-  number,
-  complement,
-  city,
-  state,
-  zip_code,
-}: Pick<ClientSchema, 'street' | 'number' | 'complement' | 'city' | 'state' | 'zip_code'>) => {
-  const line = [street?.trim(), number?.trim()].filter(Boolean).join(', ')
-  const location = [city?.trim(), state?.trim()].filter(Boolean).join(' - ')
-  const parts = [
-    line || null,
-    complement?.trim() || null,
-    location || null,
-    zip_code?.trim() || null,
-  ].filter(Boolean)
-
-  return parts.length > 0 ? parts.join(' | ') : null
-}
+const getActionErrorMessage = (error: unknown, fallback: string) =>
+  extractActionError(error, fallback, checkDuplicateClientDocument)
 
 const revalidateClientsPage = () => {
   revalidatePath('/dashboard/clientes')
@@ -47,27 +33,6 @@ const sanitizeSearchTerm = (value: string) =>
 const mergeClientSearchResults = (
   ...groups: Array<Array<{ id: string; name: string; phone: string | null; document: string | null }>>
 ) => Array.from(new Map(groups.flat().map((client) => [client.id, client])).values())
-
-const isDuplicateClientDocumentError = (error: unknown) =>
-  typeof error === 'object' &&
-  error !== null &&
-  'code' in error &&
-  error.code === '23505' &&
-  'message' in error &&
-  typeof error.message === 'string' &&
-  error.message.includes(CLIENTS_ACTIVE_DOCUMENT_UNIQUE_INDEX)
-
-const getActionErrorMessage = (error: unknown, fallback: string) => {
-  if (isDuplicateClientDocumentError(error)) {
-    return DUPLICATE_CLIENT_DOCUMENT_ERROR
-  }
-
-  if (error instanceof Error) {
-    return error.message
-  }
-
-  return fallback
-}
 
 export async function createClient(data: ClientSchema) {
   try {

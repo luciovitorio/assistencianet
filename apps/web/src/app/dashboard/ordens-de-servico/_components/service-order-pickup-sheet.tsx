@@ -27,6 +27,7 @@ import {
   PAYMENT_METHOD_LABELS,
   type PaymentMethod,
 } from '@/lib/validations/service-order'
+import { formatCurrency } from '@/lib/format'
 
 interface ServiceOrderPickupSheetProps {
   open: boolean
@@ -38,11 +39,6 @@ interface ServiceOrderPickupSheetProps {
   onSuccess?: () => void
 }
 
-const currencyFormatter = new Intl.NumberFormat('pt-BR', {
-  style: 'currency',
-  currency: 'BRL',
-})
-
 const PAYMENT_METHOD_OPTIONS: PaymentMethod[] = [
   'dinheiro',
   'pix',
@@ -51,8 +47,6 @@ const PAYMENT_METHOD_OPTIONS: PaymentMethod[] = [
   'transferencia',
   'isento',
 ]
-
-const formatCurrency = (value: number) => currencyFormatter.format(value)
 
 const parseMoneyValue = (value: string) => {
   if (!value) return 0

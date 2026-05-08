@@ -19,6 +19,7 @@ import {
 } from '@/lib/validations/service'
 import { ServiceDialog, type ServiceFormState } from './service-dialog'
 import { DeleteServiceDialog } from './delete-service-dialog'
+import { formatCurrency } from '@/lib/format'
 
 export interface ServiceData {
   id: string
@@ -49,10 +50,6 @@ const categoryColors: Record<ServiceCategory, string> = {
   outro: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400',
 }
 
-const formatCurrency = (value: number | null) => {
-  if (value == null) return '—'
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
-}
 
 const formatDuration = (minutes: number | null) => {
   if (minutes == null) return '—'

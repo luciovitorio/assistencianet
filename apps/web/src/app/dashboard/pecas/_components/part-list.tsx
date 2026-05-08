@@ -19,6 +19,7 @@ import {
 } from '@/lib/validations/part'
 import { PartDialog, type PartFormState } from './part-dialog'
 import { DeletePartDialog } from './delete-part-dialog'
+import { formatCurrency } from '@/lib/format'
 
 export interface PartData {
   id: string
@@ -55,10 +56,6 @@ const categoryColors: Record<PartCategory, string> = {
   outro: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400',
 }
 
-const formatCurrency = (value: number | null) => {
-  if (value == null) return '—'
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
-}
 
 export function PartList({ initialParts, suppliers }: PartListProps) {
   const router = useRouter()

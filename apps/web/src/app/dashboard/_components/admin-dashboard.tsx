@@ -12,9 +12,8 @@ import { getDashboardOverview, type DashboardBranchPerformanceRow, type Dashboar
 import { buttonVariants } from '@/components/ui/button-variants'
 import { cn } from '@/lib/utils'
 import { STATUS_COLORS, STATUS_LABELS, type ServiceOrderStatus } from '@/lib/validations/service-order'
+import { formatCurrency } from '@/lib/format'
 
-const formatCurrency = (value: number) =>
-  value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
 const formatNumber = (value: number) => value.toLocaleString('pt-BR')
 

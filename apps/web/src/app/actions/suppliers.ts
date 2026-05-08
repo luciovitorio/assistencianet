@@ -6,67 +6,23 @@ import { createAuditLog } from '@/lib/audit/audit-log'
 import { getAdminContext } from '@/lib/auth/admin-context'
 import { buildArchivedUniqueFieldValue } from '@/lib/soft-delete/archive-unique-field'
 import { supplierSchema, type SupplierSchema } from '@/lib/validations/supplier'
+import {
+  normalizeOptionalValue,
+  buildAddress,
+  createUniqueIndexChecker,
+  extractActionError,
+} from '@/lib/server/utils'
 
-const DUPLICATE_SUPPLIER_DOCUMENT_ERROR = 'Já existe um fornecedor ativo com este CPF/CNPJ.'
-const SUPPLIERS_ACTIVE_DOCUMENT_UNIQUE_INDEX = 'suppliers_active_document_unique_idx'
+const checkDuplicateSupplierDocument = createUniqueIndexChecker(
+  'suppliers_active_document_unique_idx',
+  'Já existe um fornecedor ativo com este CPF/CNPJ.',
+)
 
-const normalizeOptionalValue = (value: string | null | undefined) => {
-  const normalized = value?.trim()
-  return normalized ? normalized : null
-}
-
-const buildAddress = ({
-  street,
-  number,
-  complement,
-  city,
-  state,
-  zip_code,
-}: Pick<SupplierSchema, 'street' | 'number' | 'complement' | 'city' | 'state' | 'zip_code'>) => {
-  const line = [street?.trim(), number?.trim()].filter(Boolean).join(', ')
-  const location = [city?.trim(), state?.trim()].filter(Boolean).join(' - ')
-  const parts = [
-    line || null,
-    complement?.trim() || null,
-    location || null,
-    zip_code?.trim() || null,
-  ].filter(Boolean)
-
-  return parts.length > 0 ? parts.join(' | ') : null
-}
+const getActionErrorMessage = (error: unknown, fallback: string) =>
+  extractActionError(error, fallback, checkDuplicateSupplierDocument)
 
 const revalidateSuppliersPage = () => {
   revalidatePath('/dashboard/fornecedores')
-}
-
-const isDuplicateSupplierDocumentError = (error: unknown) =>
-  typeof error === 'object' &&
-  error !== null &&
-  'code' in error &&
-  error.code === '23505' &&
-  'message' in error &&
-  typeof error.message === 'string' &&
-  error.message.includes(SUPPLIERS_ACTIVE_DOCUMENT_UNIQUE_INDEX)
-
-const getActionErrorMessage = (error: unknown, fallback: string) => {
-  if (isDuplicateSupplierDocumentError(error)) {
-    return DUPLICATE_SUPPLIER_DOCUMENT_ERROR
-  }
-
-  if (
-    typeof error === 'object' &&
-    error !== null &&
-    'message' in error &&
-    typeof error.message === 'string'
-  ) {
-    return error.message
-  }
-
-  if (error instanceof Error) {
-    return error.message
-  }
-
-  return fallback
 }
 
 export async function createSupplier(data: SupplierSchema) {

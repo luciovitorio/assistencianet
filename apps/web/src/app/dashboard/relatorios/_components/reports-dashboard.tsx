@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { getBusinessReports, type BusinessReportsData, type ReportRankRow } from '@/app/actions/reports'
+import { formatCurrency } from '@/lib/format'
 
 type ReportsDashboardProps = {
   initialData: BusinessReportsData
@@ -37,8 +38,6 @@ type ReportQuery = {
   branchId: string
 }
 
-const formatCurrency = (value: number) =>
-  value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
 const formatNumber = (value: number) => value.toLocaleString('pt-BR')
 
