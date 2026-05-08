@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { AlertTriangle, Clock3, Mail, MessageCircle, Send } from 'lucide-react'
+import { AlertTriangle, Clock3, Loader2, Mail, MessageCircle, Send } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
@@ -257,11 +257,15 @@ export function SendEstimateDialog({
               type="button"
               onClick={handleWhatsAppSend}
               disabled={isSending}
-              className="flex items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+              className="flex items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-70"
             >
-              <MessageCircle className="size-4" />
-              Enviar pelo WhatsApp
-              <span className="ml-1 font-normal opacity-80">{clientPhone}</span>
+              {isSending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <MessageCircle className="size-4" />
+              )}
+              {isSending ? 'Enviando...' : 'Enviar pelo WhatsApp'}
+              {!isSending && <span className="ml-1 font-normal opacity-80">{clientPhone}</span>}
             </button>
             )}
 

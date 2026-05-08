@@ -46,6 +46,85 @@ const normalizePhone = (phone: string | null, countryCode: string | null): strin
   return digits.startsWith(cc) ? digits : `${cc}${digits}`
 }
 
+/** Envia notificação WhatsApp de serviço concluído (fire-and-forget — nunca bloqueia a action). */
+async function sendServiceCompletedWhatsApp(companyId: string, osId: string): Promise<void> {
+  try {
+    const adminSupabase = createAdminClient()
+
+    const [{ data: settings }, { data: os }] = await Promise.all([
+      adminSupabase
+        .from('whatsapp_automation_settings')
+        .select(
+          'enabled, provider, notify_service_completed, message_service_completed, evolution_base_url, evolution_api_key, evolution_instance_name, default_country_code',
+        )
+        .eq('company_id', companyId)
+        .maybeSingle<{
+          enabled: boolean
+          provider: string
+          notify_service_completed: boolean
+          message_service_completed: string | null
+          evolution_base_url: string
+          evolution_api_key: string | null
+          evolution_instance_name: string | null
+          default_country_code: string | null
+        }>(),
+      adminSupabase
+        .from('service_orders')
+        .select('number, device_type, device_brand, device_model, clients(name, phone), companies(name)')
+        .eq('id', osId)
+        .maybeSingle<{
+          number: number
+          device_type: string | null
+          device_brand: string | null
+          device_model: string | null
+          clients: { name: string; phone: string | null } | null
+          companies: { name: string } | null
+        }>(),
+    ])
+
+    if (
+      !settings?.enabled ||
+      !settings.notify_service_completed ||
+      settings.provider !== 'evolution_api' ||
+      !settings.evolution_api_key ||
+      !settings.evolution_instance_name
+    ) return
+
+    if (!os) return
+
+    const recipient = normalizePhone(os.clients?.phone ?? null, settings.default_country_code)
+    if (!recipient) return
+
+    const equipment = [os.device_type, os.device_brand, os.device_model]
+      .filter(Boolean)
+      .join(' ') || 'equipamento'
+
+    const message = renderWhatsAppMessageTemplate(
+      resolveWhatsAppMessageTemplate(settings.message_service_completed, DEFAULT_WHATSAPP_MESSAGES.serviceCompleted),
+      {
+        empresa_nome: os.companies?.name ?? 'Assistência',
+        cliente_nome: os.clients?.name ?? 'cliente',
+        os_numero: String(os.number),
+        equipamento: equipment,
+        telefone_cliente: os.clients?.phone ?? '',
+        valor_orcamento: '',
+        marcas_autorizadas: '',
+        instancia_nome: settings.evolution_instance_name,
+      },
+    )
+
+    const evolutionClient = createEvolutionApiClient({
+      baseUrl: settings.evolution_base_url,
+      apiKey: settings.evolution_api_key,
+      instanceName: settings.evolution_instance_name,
+    })
+
+    await evolutionClient.sendText({ number: recipient, text: message })
+  } catch {
+    // Silencioso — falha no WhatsApp não pode derrubar a atualização de status
+  }
+}
+
 /** Envia notificação WhatsApp de OS criada (fire-and-forget — nunca bloqueia a action). */
 async function sendOsCreatedWhatsApp(companyId: string, osId: string): Promise<void> {
   try {
@@ -297,6 +376,11 @@ export async function updateServiceOrderStatus(
 
     revalidateServiceOrdersPage()
     revalidateServiceOrderDetailPage(id)
+
+    if (nextStatus === 'pronto') {
+      void sendServiceCompletedWhatsApp(companyId, id)
+    }
+
     return { success: true }
   } catch (error: unknown) {
     if (error instanceof Error) return { error: error.message }
