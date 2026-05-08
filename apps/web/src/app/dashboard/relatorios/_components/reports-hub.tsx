@@ -72,7 +72,7 @@ const REPORT_CARDS: ReportCard[] = [
     icon: ClipboardList,
     href: '/dashboard/relatorios/os-por-periodo',
     category: 'Operacional',
-    available: false,
+    available: true,
   },
   {
     title: 'Faturamento por Período',
@@ -80,7 +80,7 @@ const REPORT_CARDS: ReportCard[] = [
     icon: TrendingUp,
     href: '/dashboard/relatorios/faturamento',
     category: 'Financeiro',
-    available: false,
+    available: true,
   },
   {
     title: 'Produtividade por Técnico',
@@ -88,7 +88,7 @@ const REPORT_CARDS: ReportCard[] = [
     icon: BarChart3,
     href: '/dashboard/relatorios/produtividade',
     category: 'Operacional',
-    available: false,
+    available: true,
   },
   {
     title: 'Peças / Giro de Estoque',
@@ -96,7 +96,7 @@ const REPORT_CARDS: ReportCard[] = [
     icon: Package,
     href: '/dashboard/relatorios/estoque',
     category: 'Estoque',
-    available: false,
+    available: true,
   },
 ]
 

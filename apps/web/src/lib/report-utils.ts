@@ -1,3 +1,15 @@
+export const PAYMENT_METHOD_LABEL = (m: string): string => {
+  const labels: Record<string, string> = {
+    dinheiro: 'Dinheiro',
+    pix: 'PIX',
+    cartao_credito: 'Cartão de Crédito',
+    cartao_debito: 'Cartão de Débito',
+    transferencia: 'Transferência',
+    boleto: 'Boleto',
+  }
+  return labels[m] ?? m
+}
+
 export function exportCsv(filename: string, headers: string[], rows: (string | number | null | undefined)[][]) {
   const escape = (v: string | number | null | undefined) => {
     const s = v == null ? '' : String(v)

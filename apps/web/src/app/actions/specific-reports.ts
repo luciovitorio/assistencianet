@@ -371,6 +371,509 @@ export async function getClientRecurrenceReport(
 }
 
 // ---------------------------------------------------------------------------
+// OS por Período
+// ---------------------------------------------------------------------------
+
+export type OsPorPeriodoRow = {
+  id: string
+  number: number
+  status: string
+  device_type: string
+  device_brand: string | null
+  device_model: string | null
+  client_name: string | null
+  branch_name: string | null
+  technician_name: string | null
+  created_at: string
+  completed_at: string | null
+  execution_days: number | null
+  amount_paid: number | null
+  payment_method: string | null
+}
+
+export type OsPorPeriodoSummary = {
+  total: number
+  completed: number
+  canceled: number
+  avg_execution_days: number | null
+  total_revenue: number
+}
+
+export type OsPorPeriodoReportData = {
+  branches: ReportBranch[]
+  summary: OsPorPeriodoSummary
+  rows: OsPorPeriodoRow[]
+}
+
+export async function getOsPorPeriodoReport(
+  filters: SpecificReportFilter & { statuses?: string[] },
+): Promise<{ data: OsPorPeriodoReportData | null; error?: string }> {
+  try {
+    const { companyId } = await getAdminContext('financeiro')
+    const supabase = await createClient()
+    await assertBillingFeature(supabase, companyId, 'advanced_reports')
+
+    const statuses = filters.statuses?.length ? filters.statuses : ['finalizado', 'cancelado']
+
+    let osQuery = supabase
+      .from('service_orders')
+      .select('id, number, status, device_type, device_brand, device_model, created_at, completed_at, amount_paid, payment_method, technician_id, clients(name), branches(name)')
+      .eq('company_id', companyId)
+      .is('deleted_at', null)
+      .in('status', statuses)
+      .gte('created_at', filters.startDate)
+      .lte('created_at', filters.endDate + END_OF_DAY)
+      .order('created_at', { ascending: false })
+      .limit(3000)
+
+    if (filters.branchId) osQuery = osQuery.eq('branch_id', filters.branchId)
+
+    const [{ data: ordersData, error: ordersError }, branchesRes, techRes] = await Promise.all([
+      osQuery,
+      supabase.from('branches').select('id, name').eq('company_id', companyId).is('deleted_at', null).order('name'),
+      supabase.from('employees').select('id, name').eq('company_id', companyId).is('deleted_at', null).order('name'),
+    ])
+
+    if (ordersError) throw ordersError
+
+    const techMap = new Map<string, string>((techRes.data ?? []).map((e: any) => [e.id, e.name]))
+
+    const rows: OsPorPeriodoRow[] = (ordersData ?? []).map((os: any) => {
+      const execDays =
+        os.completed_at
+          ? Math.max(0, Math.round((new Date(os.completed_at).getTime() - new Date(os.created_at).getTime()) / 86_400_000))
+          : null
+      return {
+        id: os.id,
+        number: os.number,
+        status: os.status,
+        device_type: os.device_type,
+        device_brand: os.device_brand,
+        device_model: os.device_model,
+        client_name: os.clients?.name ?? null,
+        branch_name: os.branches?.name ?? null,
+        technician_name: os.technician_id ? (techMap.get(os.technician_id) ?? null) : null,
+        created_at: os.created_at,
+        completed_at: os.completed_at,
+        execution_days: execDays,
+        amount_paid: os.amount_paid != null ? Number(os.amount_paid) : null,
+        payment_method: os.payment_method,
+      }
+    })
+
+    const completed = rows.filter((r) => r.status === 'finalizado')
+    const canceled = rows.filter((r) => r.status === 'cancelado')
+    const completedWithDays = completed.filter((r) => r.execution_days != null)
+    const avgDays =
+      completedWithDays.length > 0
+        ? Math.round(completedWithDays.reduce((s, r) => s + (r.execution_days ?? 0), 0) / completedWithDays.length)
+        : null
+    const totalRevenue = completed.reduce((s, r) => s + (r.amount_paid ?? 0), 0)
+
+    return {
+      data: {
+        branches: branchesRes.data ?? [],
+        summary: {
+          total: rows.length,
+          completed: completed.length,
+          canceled: canceled.length,
+          avg_execution_days: avgDays,
+          total_revenue: roundMoney(totalRevenue),
+        },
+        rows,
+      },
+    }
+  } catch (error) {
+    return { data: null, error: getActionError(error) }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Faturamento por Período
+// ---------------------------------------------------------------------------
+
+export type FaturamentoRow = {
+  id: string
+  service_order_number: number | null
+  branch_name: string | null
+  payment_method: string
+  amount_received: number
+  net_amount: number
+  created_at: string
+}
+
+export type FaturamentoByBranch = {
+  branch_id: string | null
+  branch_name: string
+  total_received: number
+  count: number
+}
+
+export type FaturamentoByPaymentMethod = {
+  method: string
+  total_received: number
+  count: number
+}
+
+export type FaturamentoSummary = {
+  total_received: number
+  total_entries: number
+  avg_ticket: number
+  by_branch: FaturamentoByBranch[]
+  by_payment_method: FaturamentoByPaymentMethod[]
+}
+
+export type FaturamentoReportData = {
+  branches: ReportBranch[]
+  summary: FaturamentoSummary
+  rows: FaturamentoRow[]
+}
+
+export async function getFaturamentoPorPeriodoReport(
+  filters: SpecificReportFilter,
+): Promise<{ data: FaturamentoReportData | null; error?: string }> {
+  try {
+    const { companyId } = await getAdminContext('financeiro')
+    const supabase = await createClient()
+    await assertBillingFeature(supabase, companyId, 'advanced_reports')
+
+    let cashQuery = supabase
+      .from('cash_entries')
+      .select('id, branch_id, payment_method, amount_received, net_amount, created_at, service_orders(number, branches(name))')
+      .eq('company_id', companyId)
+      .gte('created_at', filters.startDate)
+      .lte('created_at', filters.endDate + END_OF_DAY)
+      .order('created_at', { ascending: false })
+      .limit(3000)
+
+    if (filters.branchId) cashQuery = cashQuery.eq('branch_id', filters.branchId)
+
+    const [cashRes, branchesRes] = await Promise.all([
+      cashQuery,
+      supabase.from('branches').select('id, name').eq('company_id', companyId).is('deleted_at', null).order('name'),
+    ])
+
+    if (cashRes.error) throw cashRes.error
+
+    const entries = (cashRes.data ?? []) as any[]
+
+    const rows: FaturamentoRow[] = entries.map((e) => ({
+      id: e.id,
+      service_order_number: e.service_orders?.number ?? null,
+      branch_name: e.service_orders?.branches?.name ?? null,
+      payment_method: e.payment_method ?? 'outro',
+      amount_received: Number(e.amount_received),
+      net_amount: Number(e.net_amount),
+      created_at: e.created_at,
+    }))
+
+    const totalReceived = rows.reduce((s, r) => s + r.net_amount, 0)
+
+    const branchMap = new Map<string, { name: string; total: number; count: number }>()
+    for (const r of rows) {
+      const key = r.branch_name ?? '__sem_filial__'
+      const cur = branchMap.get(key) ?? { name: r.branch_name ?? 'Sem filial', total: 0, count: 0 }
+      cur.total += r.net_amount
+      cur.count++
+      branchMap.set(key, cur)
+    }
+
+    const methodMap = new Map<string, { total: number; count: number }>()
+    for (const r of rows) {
+      const cur = methodMap.get(r.payment_method) ?? { total: 0, count: 0 }
+      cur.total += r.net_amount
+      cur.count++
+      methodMap.set(r.payment_method, cur)
+    }
+
+    const byBranch: FaturamentoByBranch[] = [...branchMap.entries()]
+      .map(([key, v]) => ({
+        branch_id: key === '__sem_filial__' ? null : key,
+        branch_name: v.name,
+        total_received: roundMoney(v.total),
+        count: v.count,
+      }))
+      .sort((a, b) => b.total_received - a.total_received)
+
+    const byPaymentMethod: FaturamentoByPaymentMethod[] = [...methodMap.entries()]
+      .map(([method, v]) => ({
+        method,
+        total_received: roundMoney(v.total),
+        count: v.count,
+      }))
+      .sort((a, b) => b.total_received - a.total_received)
+
+    return {
+      data: {
+        branches: branchesRes.data ?? [],
+        summary: {
+          total_received: roundMoney(totalReceived),
+          total_entries: rows.length,
+          avg_ticket: rows.length > 0 ? roundMoney(totalReceived / rows.length) : 0,
+          by_branch: byBranch,
+          by_payment_method: byPaymentMethod,
+        },
+        rows,
+      },
+    }
+  } catch (error) {
+    return { data: null, error: getActionError(error) }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Produtividade por Técnico
+// ---------------------------------------------------------------------------
+
+export type TechnicianProductivityRow = {
+  technician_id: string
+  technician_name: string
+  os_total: number
+  os_completed: number
+  os_canceled: number
+  os_in_progress: number
+  completion_rate: number
+  avg_execution_days: number | null
+}
+
+export type TechnicianProductivityReportData = {
+  branches: ReportBranch[]
+  rows: TechnicianProductivityRow[]
+  period_total_os: number
+  active_technicians: number
+}
+
+export async function getProdutividadeReport(
+  filters: SpecificReportFilter,
+): Promise<{ data: TechnicianProductivityReportData | null; error?: string }> {
+  try {
+    const { companyId } = await getAdminContext('financeiro')
+    const supabase = await createClient()
+    await assertBillingFeature(supabase, companyId, 'advanced_reports')
+
+    const OPEN_STATUS_LIST = [
+      'aberta', 'em_analise', 'aguardando_envio', 'aguardando_aprovacao',
+      'aprovado', 'reprovado', 'aguardando_peca', 'enviado_terceiro', 'em_reparo', 'pronto',
+    ]
+
+    let osQuery = supabase
+      .from('service_orders')
+      .select('status, technician_id, created_at, completed_at')
+      .eq('company_id', companyId)
+      .is('deleted_at', null)
+      .gte('created_at', filters.startDate)
+      .lte('created_at', filters.endDate + END_OF_DAY)
+      .not('technician_id', 'is', null)
+      .limit(3000)
+
+    if (filters.branchId) osQuery = osQuery.eq('branch_id', filters.branchId)
+
+    const [osRes, branchesRes, techRes] = await Promise.all([
+      osQuery,
+      supabase.from('branches').select('id, name').eq('company_id', companyId).is('deleted_at', null).order('name'),
+      supabase.from('employees').select('id, name').eq('company_id', companyId).is('deleted_at', null).order('name'),
+    ])
+
+    if (osRes.error) throw osRes.error
+
+    const techNames = new Map<string, string>((techRes.data ?? []).map((e: any) => [e.id, e.name]))
+
+    type TechStats = {
+      total: number; completed: number; canceled: number
+      in_progress: number; exec_days: number; exec_count: number
+    }
+    const stats = new Map<string, TechStats>()
+
+    for (const os of (osRes.data ?? []) as any[]) {
+      if (!os.technician_id) continue
+      const cur = stats.get(os.technician_id) ?? { total: 0, completed: 0, canceled: 0, in_progress: 0, exec_days: 0, exec_count: 0 }
+      cur.total++
+      if (os.status === 'finalizado') {
+        cur.completed++
+        if (os.completed_at) {
+          const days = Math.max(0, (new Date(os.completed_at).getTime() - new Date(os.created_at).getTime()) / 86_400_000)
+          cur.exec_days += days
+          cur.exec_count++
+        }
+      } else if (os.status === 'cancelado') {
+        cur.canceled++
+      } else if (OPEN_STATUS_LIST.includes(os.status)) {
+        cur.in_progress++
+      }
+      stats.set(os.technician_id, cur)
+    }
+
+    const rows: TechnicianProductivityRow[] = [...stats.entries()]
+      .map(([id, s]) => ({
+        technician_id: id,
+        technician_name: techNames.get(id) ?? 'Técnico não identificado',
+        os_total: s.total,
+        os_completed: s.completed,
+        os_canceled: s.canceled,
+        os_in_progress: s.in_progress,
+        completion_rate: s.total > 0 ? Math.round((s.completed / s.total) * 100) : 0,
+        avg_execution_days: s.exec_count > 0 ? Math.round((s.exec_days / s.exec_count) * 10) / 10 : null,
+      }))
+      .sort((a, b) => b.os_total - a.os_total)
+
+    return {
+      data: {
+        branches: branchesRes.data ?? [],
+        rows,
+        period_total_os: rows.reduce((s, r) => s + r.os_total, 0),
+        active_technicians: rows.length,
+      },
+    }
+  } catch (error) {
+    return { data: null, error: getActionError(error) }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Peças / Giro de Estoque
+// ---------------------------------------------------------------------------
+
+export type EstoquePartRow = {
+  part_id: string
+  part_name: string
+  sku: string | null
+  category: string
+  min_stock: number
+  cost_price: number
+  sale_price: number
+  total_quantity: number
+  stock_value: number
+  status: 'normal' | 'critico' | 'zerado'
+  saidas_periodo: number
+  entradas_periodo: number
+}
+
+export type EstoqueSummary = {
+  total_skus: number
+  zero_stock: number
+  critical_stock: number
+  total_inventory_value: number
+  total_saidas_periodo: number
+  most_used_part: string | null
+}
+
+export type EstoqueReportData = {
+  branches: ReportBranch[]
+  summary: EstoqueSummary
+  rows: EstoquePartRow[]
+  startDate: string
+  endDate: string
+}
+
+export async function getEstoqueReport(
+  filters: Pick<SpecificReportFilter, 'branchId'> & { startDate: string; endDate: string },
+): Promise<{ data: EstoqueReportData | null; error?: string }> {
+  try {
+    const { companyId } = await getAdminContext('financeiro')
+    const supabase = await createClient()
+    await assertBillingFeature(supabase, companyId, 'advanced_reports')
+
+    let movQuery = supabase
+      .from('stock_movements')
+      .select('part_id, branch_id, movement_type, quantity, unit_cost, entry_date')
+      .eq('company_id', companyId)
+      .limit(5000)
+
+    if (filters.branchId) movQuery = movQuery.eq('branch_id', filters.branchId)
+
+    const [partsRes, movRes, branchesRes] = await Promise.all([
+      supabase
+        .from('parts')
+        .select('id, name, sku, category, min_stock, cost_price, sale_price, active, deleted_at')
+        .eq('company_id', companyId)
+        .eq('active', true)
+        .is('deleted_at', null)
+        .order('name')
+        .limit(2000),
+      movQuery,
+      supabase.from('branches').select('id, name').eq('company_id', companyId).is('deleted_at', null).order('name'),
+    ])
+
+    if (partsRes.error) throw partsRes.error
+    if (movRes.error) throw movRes.error
+
+    const allMovements = (movRes.data ?? []) as any[]
+
+    type PartStats = { quantity: number; saidas_periodo: number; entradas_periodo: number }
+    const statsMap = new Map<string, PartStats>()
+
+    for (const mv of allMovements) {
+      const cur = statsMap.get(mv.part_id) ?? { quantity: 0, saidas_periodo: 0, entradas_periodo: 0 }
+      const qty = Number(mv.quantity)
+
+      if (['entrada', 'ajuste'].includes(mv.movement_type) && qty > 0) {
+        cur.quantity += qty
+      } else if (mv.movement_type === 'saida' || (mv.movement_type === 'ajuste' && qty < 0)) {
+        cur.quantity += qty
+      } else if (mv.movement_type === 'transferencia_entrada') {
+        cur.quantity += qty
+      } else if (mv.movement_type === 'transferencia_saida') {
+        cur.quantity -= Math.abs(qty)
+      }
+
+      const inPeriod = mv.entry_date >= filters.startDate && mv.entry_date <= filters.endDate
+      if (inPeriod) {
+        if (mv.movement_type === 'saida') cur.saidas_periodo += Math.abs(qty)
+        if (mv.movement_type === 'entrada') cur.entradas_periodo += Math.abs(qty)
+      }
+
+      statsMap.set(mv.part_id, cur)
+    }
+
+    const rows: EstoquePartRow[] = (partsRes.data ?? []).map((part: any) => {
+      const stats = statsMap.get(part.id) ?? { quantity: 0, saidas_periodo: 0, entradas_periodo: 0 }
+      const qty = Math.max(0, stats.quantity)
+      const costPrice = Number(part.cost_price ?? 0)
+      const salePrice = Number(part.sale_price ?? 0)
+      const minStock = Number(part.min_stock ?? 0)
+      const status: EstoquePartRow['status'] =
+        qty === 0 ? 'zerado' : qty <= minStock ? 'critico' : 'normal'
+
+      return {
+        part_id: part.id,
+        part_name: part.name,
+        sku: part.sku,
+        category: part.category,
+        min_stock: minStock,
+        cost_price: costPrice,
+        sale_price: salePrice,
+        total_quantity: qty,
+        stock_value: roundMoney(qty * costPrice),
+        status,
+        saidas_periodo: stats.saidas_periodo,
+        entradas_periodo: stats.entradas_periodo,
+      }
+    })
+
+    const topByUsage = [...rows].sort((a, b) => b.saidas_periodo - a.saidas_periodo)
+
+    return {
+      data: {
+        branches: branchesRes.data ?? [],
+        summary: {
+          total_skus: rows.length,
+          zero_stock: rows.filter((r) => r.status === 'zerado').length,
+          critical_stock: rows.filter((r) => r.status === 'critico').length,
+          total_inventory_value: roundMoney(rows.reduce((s, r) => s + r.stock_value, 0)),
+          total_saidas_periodo: rows.reduce((s, r) => s + r.saidas_periodo, 0),
+          most_used_part: topByUsage[0]?.saidas_periodo > 0 ? topByUsage[0].part_name : null,
+        },
+        rows,
+        startDate: filters.startDate,
+        endDate: filters.endDate,
+      },
+    }
+  } catch (error) {
+    return { data: null, error: getActionError(error) }
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Comparativo de Filiais
 // ---------------------------------------------------------------------------
 
