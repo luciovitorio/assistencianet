@@ -122,7 +122,7 @@ function EntradaForm({
       set_as_default_supplier: false,
       invoice_date: '',
       entry_date: new Date().toISOString().slice(0, 10),
-      quantity: '',
+      quantity: 1,
       unit_cost: '',
       notes: '',
     },
@@ -136,7 +136,7 @@ function EntradaForm({
       set_as_default_supplier: false,
       invoice_date: '',
       entry_date: new Date().toISOString().slice(0, 10),
-      quantity: '',
+      quantity: 1,
       unit_cost: '',
       notes: '',
     })
@@ -345,7 +345,7 @@ function EntradaForm({
           render={({ field }) => (
             <StepperInput
               label="Quantidade a entrar *"
-              value={field.value ?? 1}
+              value={field.value}
               onChange={field.onChange}
               min={1}
               disabled={!selectedPart}
