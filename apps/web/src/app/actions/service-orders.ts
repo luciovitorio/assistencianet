@@ -125,6 +125,39 @@ async function sendServiceCompletedWhatsApp(companyId: string, osId: string): Pr
   }
 }
 
+/** Limpa o estado de sessão do bot quando o serviço é concluído (fire-and-forget). */
+async function clearBotSessionOnServiceComplete(companyId: string, osId: string): Promise<void> {
+  try {
+    const adminSupabase = createAdminClient()
+
+    const [{ data: os }, { data: settings }] = await Promise.all([
+      adminSupabase
+        .from('service_orders')
+        .select('clients(phone)')
+        .eq('id', osId)
+        .maybeSingle<{ clients: { phone: string | null } | null }>(),
+      adminSupabase
+        .from('whatsapp_automation_settings')
+        .select('default_country_code')
+        .eq('company_id', companyId)
+        .maybeSingle<{ default_country_code: string | null }>(),
+    ])
+
+    if (!os?.clients?.phone) return
+
+    const normalizedPhone = normalizePhone(os.clients.phone, settings?.default_country_code ?? null)
+    if (!normalizedPhone) return
+
+    await adminSupabase
+      .from('whatsapp_conversations')
+      .update({ bot_state: null, context: {}, attempts: 0 })
+      .eq('company_id', companyId)
+      .eq('phone_number', normalizedPhone)
+  } catch {
+    // Silencioso — falha na limpeza não pode derrubar a atualização de status
+  }
+}
+
 /** Envia notificação WhatsApp de OS criada (fire-and-forget — nunca bloqueia a action). */
 async function sendOsCreatedWhatsApp(companyId: string, osId: string): Promise<void> {
   try {
@@ -379,6 +412,7 @@ export async function updateServiceOrderStatus(
 
     if (nextStatus === 'pronto') {
       void sendServiceCompletedWhatsApp(companyId, id)
+      void clearBotSessionOnServiceComplete(companyId, id)
     }
 
     return { success: true }
