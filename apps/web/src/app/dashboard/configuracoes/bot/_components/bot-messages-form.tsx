@@ -47,6 +47,11 @@ const SECTIONS: SectionDef[] = [
         label: 'Rodapé do menu',
         hint: 'Instrução de como responder, exibida após as opções.',
       },
+      {
+        key: 'more_help',
+        label: 'Reexibição do menu (mid-sessão)',
+        hint: 'Exibido antes das opções quando o bot reapresenta o menu no meio de uma conversa (ex: após resposta informativa ou consulta de OS).',
+      },
     ],
   },
   {
@@ -85,11 +90,6 @@ const SECTIONS: SectionDef[] = [
         key: 'os_list_footer',
         label: 'Rodapé da lista',
         hint: 'Exibido quando todas as OSs do cliente foram listadas.',
-      },
-      {
-        key: 'more_help',
-        label: 'Reexibição do menu (mid-sessão)',
-        hint: 'Exibido antes do menu quando o bot reapresenta as opções no meio de uma conversa (ex: após resposta informativa ou consulta de OS).',
       },
     ],
   },
