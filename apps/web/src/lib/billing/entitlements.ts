@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/supabase/database.types'
 import type { PlanId } from '@/lib/stripe/plans'
@@ -90,6 +91,53 @@ const getMonthBounds = (date = new Date()) => {
     end: end.toISOString(),
   }
 }
+
+// Versão cacheada por request — usa admin client diretamente para evitar o
+// fallback duplo causado por RLS na tabela subscriptions.
+// Use esta função em Server Components/layouts. A variante com supabase passado
+// como parâmetro continua disponível para webhooks e Server Actions fora do
+// ciclo de render do React.
+const resolveSubscriptionAccess = async (companyId: string): Promise<SubscriptionAccess> => {
+  const admin = createAdminClient()
+
+  const { data: subscription, error: subscriptionError } = await admin
+    .from('subscriptions')
+    .select('status, trial_ends_at, plan_id')
+    .eq('company_id', companyId)
+    .maybeSingle<SubscriptionRow>()
+
+  if (subscriptionError) throw subscriptionError
+  if (!hasSubscriptionAccess(subscription)) return INACTIVE_ACCESS
+  if (isTrialActive(subscription) && !subscription?.plan_id) return TRIAL_ACCESS
+  if (!subscription?.plan_id) return INACTIVE_ACCESS
+
+  const { data: plan, error: planError } = await admin
+    .from('plans')
+    .select('id, name, max_os_per_month, max_users, has_whatsapp_bot, has_advanced_reports, has_multiple_branches')
+    .eq('id', subscription.plan_id)
+    .maybeSingle<PlanRow>()
+
+  if (planError) throw planError
+  if (!plan) return INACTIVE_ACCESS
+
+  const planId = plan.id as PlanId
+
+  return {
+    active: true,
+    trial: false,
+    planId,
+    planName: plan.name,
+    maxOsPerMonth: plan.max_os_per_month,
+    maxUsers: plan.max_users,
+    hasWhatsAppBot: plan.has_whatsapp_bot,
+    hasAdvancedReports: plan.has_advanced_reports,
+    hasMultipleBranches: plan.has_multiple_branches,
+    hasStockAlerts: planId !== 'basico',
+    hasFinancialModule: planId !== 'basico',
+  }
+}
+
+export const getCachedSubscriptionAccess = cache(resolveSubscriptionAccess)
 
 export async function getCompanySubscriptionAccess(
   supabase: SupabaseServerClient,

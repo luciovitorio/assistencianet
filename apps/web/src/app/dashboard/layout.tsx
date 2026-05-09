@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { getCompanyContext } from '@/lib/auth/company-context'
-import { getCompanySubscriptionAccess } from '@/lib/billing/entitlements'
+import { getCachedSubscriptionAccess } from '@/lib/billing/entitlements'
 import { DashboardShell } from './_components/dashboard-shell'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -23,7 +23,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     const context = await getCompanyContext()
     const [companyResult, billingAccess, branchResult] = await Promise.all([
       supabase.from('companies').select('id, name, owner_id').eq('id', context.companyId).maybeSingle(),
-      getCompanySubscriptionAccess(supabase, context.companyId),
+      getCachedSubscriptionAccess(context.companyId),
       context.currentBranchId
         ? supabase.from('branches').select('name').eq('id', context.currentBranchId).maybeSingle()
         : Promise.resolve(null),
