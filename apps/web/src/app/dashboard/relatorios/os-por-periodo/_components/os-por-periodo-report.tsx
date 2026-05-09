@@ -313,20 +313,6 @@ export function OsPorPeriodoReport({ initialData, initialStart, initialEnd }: Pr
               filtered.map((row) => <PrintRow key={row.id} row={row} />)
             )}
           </tbody>
-          <tfoot>
-            <tr className="border-t-2 border-black">
-              <td colSpan={6} className="py-1.5 pr-2 text-right text-[11px] font-semibold">
-                Total ({filtered.length} OS):
-              </td>
-              <td className="py-1.5 pr-2 text-right text-[11px] font-semibold">
-                {summary.avg_execution_days != null ? `${summary.avg_execution_days}d méd.` : ''}
-              </td>
-              <td className="py-1.5 pr-2 text-right text-[11px] font-semibold">
-                {fmtCurrency(summary.total_revenue)}
-              </td>
-              <td />
-            </tr>
-          </tfoot>
         </table>
       </div>
 
