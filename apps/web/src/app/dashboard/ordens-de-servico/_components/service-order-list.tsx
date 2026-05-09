@@ -275,6 +275,7 @@ export function ServiceOrderList({
 
   const [localSearch, setLocalSearch] = React.useState(urlSearch)
   const searchTimeoutRef = React.useRef<ReturnType<typeof setTimeout>>(undefined)
+  const debounceActiveRef = React.useRef(false)
   const columnsForUser = isAdmin ? SERVICE_ORDER_COLUMNS_ADMIN : SERVICE_ORDER_COLUMNS_BASE
   const {
     visibility: columnVisibility,
@@ -335,13 +336,16 @@ export function ServiceOrderList({
   }
 
   React.useEffect(() => {
+    if (debounceActiveRef.current) return
     setLocalSearch(urlSearch)
   }, [urlSearch])
 
   function handleSearchChange(value: string) {
     setLocalSearch(value)
+    debounceActiveRef.current = true
     clearTimeout(searchTimeoutRef.current)
     searchTimeoutRef.current = setTimeout(() => {
+      debounceActiveRef.current = false
       router.push(buildFilterUrl({ search: value.trim() || null, page: null }))
     }, 400)
   }
@@ -469,6 +473,7 @@ export function ServiceOrderList({
 
   const resetFilters = () => {
     setLocalSearch('')
+    debounceActiveRef.current = false
     clearTimeout(searchTimeoutRef.current)
     router.push(buildFilterUrl({ search: null, status: null, branch: null, technician: null, page: null }))
   }
