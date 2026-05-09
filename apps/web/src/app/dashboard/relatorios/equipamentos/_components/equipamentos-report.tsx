@@ -188,43 +188,69 @@ export function EquipamentosReport({ initialData, initialStart, initialEnd }: Pr
         />
       </div>
 
-      {/* Table */}
-      <DataTableCard>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/50">
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground w-12">#</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Tipo</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden sm:table-cell">Marca</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden md:table-cell">Modelo</th>
-                <th className="px-4 py-3 text-right font-medium text-muted-foreground">Total OS</th>
-                <th className="px-4 py-3 text-right font-medium text-muted-foreground hidden sm:table-cell">Concluídas</th>
-                <th className="px-4 py-3 text-right font-medium text-muted-foreground hidden lg:table-cell">% Concluído</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginated.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">
-                    <Wrench className="mx-auto mb-2 size-6 opacity-40" />
-                    Nenhum equipamento encontrado no período.
-                  </td>
+      {/* Tabela de tela — paginada */}
+      <div className="print:hidden">
+        <DataTableCard>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-muted/50">
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground w-12">#</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Tipo</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden sm:table-cell">Marca</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden md:table-cell">Modelo</th>
+                  <th className="px-4 py-3 text-right font-medium text-muted-foreground">Total OS</th>
+                  <th className="px-4 py-3 text-right font-medium text-muted-foreground hidden sm:table-cell">Concluídas</th>
+                  <th className="px-4 py-3 text-right font-medium text-muted-foreground hidden lg:table-cell">% Concluído</th>
                 </tr>
-              ) : (
-                paginated.map((row, idx) => (
-                  <EquipmentRow
-                    key={row.key}
-                    row={row}
-                    rank={(page - 1) * rowsPerPage + idx + 1}
-                    isTop={idx === 0 && page === 1}
-                  />
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </DataTableCard>
+              </thead>
+              <tbody>
+                {paginated.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">
+                      <Wrench className="mx-auto mb-2 size-6 opacity-40" />
+                      Nenhum equipamento encontrado no período.
+                    </td>
+                  </tr>
+                ) : (
+                  paginated.map((row, idx) => (
+                    <EquipmentRow
+                      key={row.key}
+                      row={row}
+                      rank={(page - 1) * rowsPerPage + idx + 1}
+                      isTop={idx === 0 && page === 1}
+                    />
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </DataTableCard>
+      </div>
+
+      {/* Tabela de impressão — todos os registros */}
+      <div className="hidden print:block">
+        <table className="w-full border-collapse text-[11px]">
+          <thead>
+            <tr className="border-b-2 border-black">
+              <th className="py-1.5 pr-2 text-left font-semibold w-8">#</th>
+              <th className="py-1.5 pr-2 text-left font-semibold">Tipo</th>
+              <th className="py-1.5 pr-2 text-left font-semibold">Marca</th>
+              <th className="py-1.5 pr-2 text-left font-semibold">Modelo</th>
+              <th className="py-1.5 pr-2 text-right font-semibold">Total OS</th>
+              <th className="py-1.5 pr-2 text-right font-semibold">Concluídas</th>
+              <th className="py-1.5 text-right font-semibold">% Concluído</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.length === 0 ? (
+              <tr><td colSpan={7} className="py-4 text-center">Nenhum equipamento encontrado no período.</td></tr>
+            ) : (
+              filtered.map((row, idx) => <PrintEquipmentRow key={row.key} row={row} rank={idx + 1} />)
+            )}
+          </tbody>
+        </table>
+      </div>
 
       <div className="print:hidden">
         <DataTablePagination
@@ -239,6 +265,22 @@ export function EquipamentosReport({ initialData, initialStart, initialEnd }: Pr
         />
       </div>
     </div>
+  )
+}
+
+function PrintEquipmentRow({ row, rank }: { row: EquipmentRankRow; rank: number }) {
+  const pct = row.count > 0 ? Math.round((row.completed / row.count) * 100) : 0
+
+  return (
+    <tr className="border-b border-gray-300" style={{ breakInside: 'avoid' }}>
+      <td className="py-1 pr-2 font-mono">{rank}</td>
+      <td className="py-1 pr-2 font-medium">{row.device_type}</td>
+      <td className="py-1 pr-2">{row.device_brand ?? '—'}</td>
+      <td className="py-1 pr-2">{row.device_model ?? '—'}</td>
+      <td className="py-1 pr-2 text-right font-semibold">{row.count}</td>
+      <td className="py-1 pr-2 text-right">{row.completed}</td>
+      <td className="py-1 text-right">{pct}%</td>
+    </tr>
   )
 }
 

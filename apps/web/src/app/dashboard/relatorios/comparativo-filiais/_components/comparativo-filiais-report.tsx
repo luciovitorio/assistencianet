@@ -128,69 +128,105 @@ export function ComparativoFiliaisReport({ initialData, initialStart, initialEnd
         />
       </div>
 
-      {/* Cards de filial */}
-      {data.rows.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border bg-card p-12 text-center text-muted-foreground">
-          <Building2 className="mb-3 size-8 opacity-40" />
-          <p>Nenhuma filial com movimento no período.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {data.rows.map((row) => (
-            <BranchCard key={row.branch_id} row={row} maxOs={maxOs} maxRevenue={maxRevenue} />
-          ))}
-        </div>
-      )}
+      {/* Cards de filial — ocultos na impressão */}
+      <div className="print:hidden">
+        {data.rows.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-xl border bg-card p-12 text-center text-muted-foreground">
+            <Building2 className="mb-3 size-8 opacity-40" />
+            <p>Nenhuma filial com movimento no período.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {data.rows.map((row) => (
+              <BranchCard key={row.branch_id} row={row} maxOs={maxOs} maxRevenue={maxRevenue} />
+            ))}
+          </div>
+        )}
+      </div>
 
-      {/* Tabela comparativa */}
-      <DataTableCard>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/50">
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Filial</th>
-                <th className="px-4 py-3 text-right font-medium text-muted-foreground">OS Abertas</th>
-                <th className="px-4 py-3 text-right font-medium text-muted-foreground hidden sm:table-cell">Concluídas</th>
-                <th className="px-4 py-3 text-right font-medium text-muted-foreground hidden sm:table-cell">Canceladas</th>
-                <th className="px-4 py-3 text-right font-medium text-muted-foreground hidden md:table-cell">Em Andamento</th>
-                <th className="px-4 py-3 text-right font-medium text-muted-foreground hidden md:table-cell">Prazo médio</th>
-                <th className="px-4 py-3 text-right font-medium text-muted-foreground">Faturamento</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.rows.map((row) => (
-                <tr key={row.branch_id} className="border-b last:border-0 hover:bg-muted/40">
-                  <td className="px-4 py-3 font-medium">{row.branch_name}</td>
-                  <td className="px-4 py-3 text-right font-semibold">{row.os_opened}</td>
-                  <td className="px-4 py-3 text-right text-muted-foreground hidden sm:table-cell">{row.os_completed}</td>
-                  <td className="px-4 py-3 text-right text-muted-foreground hidden sm:table-cell">{row.os_canceled}</td>
-                  <td className="px-4 py-3 text-right text-muted-foreground hidden md:table-cell">{row.os_in_progress}</td>
-                  <td className="px-4 py-3 text-right text-muted-foreground hidden md:table-cell">
-                    {row.avg_execution_days != null ? `${row.avg_execution_days} dias` : '—'}
-                  </td>
-                  <td className="px-4 py-3 text-right font-medium">{fmtCurrency(row.revenue)}</td>
+      {/* Tabela comparativa — tela (responsiva) */}
+      <div className="print:hidden">
+        <DataTableCard>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-muted/50">
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Filial</th>
+                  <th className="px-4 py-3 text-right font-medium text-muted-foreground">OS Abertas</th>
+                  <th className="px-4 py-3 text-right font-medium text-muted-foreground hidden sm:table-cell">Concluídas</th>
+                  <th className="px-4 py-3 text-right font-medium text-muted-foreground hidden sm:table-cell">Canceladas</th>
+                  <th className="px-4 py-3 text-right font-medium text-muted-foreground hidden md:table-cell">Em Andamento</th>
+                  <th className="px-4 py-3 text-right font-medium text-muted-foreground hidden md:table-cell">Prazo médio</th>
+                  <th className="px-4 py-3 text-right font-medium text-muted-foreground">Faturamento</th>
                 </tr>
-              ))}
-              {/* Totals row */}
-              <tr className="border-t bg-muted/30 font-semibold">
-                <td className="px-4 py-3">Total</td>
-                <td className="px-4 py-3 text-right">{data.period_total_os}</td>
-                <td className="px-4 py-3 text-right hidden sm:table-cell">
-                  {data.rows.reduce((s, r) => s + r.os_completed, 0)}
-                </td>
-                <td className="px-4 py-3 text-right hidden sm:table-cell">
-                  {data.rows.reduce((s, r) => s + r.os_canceled, 0)}
-                </td>
-                <td className="px-4 py-3 text-right hidden md:table-cell">
-                  {data.rows.reduce((s, r) => s + r.os_in_progress, 0)}
-                </td>
-                <td className="px-4 py-3 text-right hidden md:table-cell">—</td>
-                <td className="px-4 py-3 text-right">{fmtCurrency(data.period_total_revenue)}</td>
+              </thead>
+              <tbody>
+                {data.rows.map((row) => (
+                  <tr key={row.branch_id} className="border-b last:border-0 hover:bg-muted/40">
+                    <td className="px-4 py-3 font-medium">{row.branch_name}</td>
+                    <td className="px-4 py-3 text-right font-semibold">{row.os_opened}</td>
+                    <td className="px-4 py-3 text-right text-muted-foreground hidden sm:table-cell">{row.os_completed}</td>
+                    <td className="px-4 py-3 text-right text-muted-foreground hidden sm:table-cell">{row.os_canceled}</td>
+                    <td className="px-4 py-3 text-right text-muted-foreground hidden md:table-cell">{row.os_in_progress}</td>
+                    <td className="px-4 py-3 text-right text-muted-foreground hidden md:table-cell">
+                      {row.avg_execution_days != null ? `${row.avg_execution_days} dias` : '—'}
+                    </td>
+                    <td className="px-4 py-3 text-right font-medium">{fmtCurrency(row.revenue)}</td>
+                  </tr>
+                ))}
+                <tr className="border-t bg-muted/30 font-semibold">
+                  <td className="px-4 py-3">Total</td>
+                  <td className="px-4 py-3 text-right">{data.period_total_os}</td>
+                  <td className="px-4 py-3 text-right hidden sm:table-cell">{data.rows.reduce((s, r) => s + r.os_completed, 0)}</td>
+                  <td className="px-4 py-3 text-right hidden sm:table-cell">{data.rows.reduce((s, r) => s + r.os_canceled, 0)}</td>
+                  <td className="px-4 py-3 text-right hidden md:table-cell">{data.rows.reduce((s, r) => s + r.os_in_progress, 0)}</td>
+                  <td className="px-4 py-3 text-right hidden md:table-cell">—</td>
+                  <td className="px-4 py-3 text-right">{fmtCurrency(data.period_total_revenue)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </DataTableCard>
+      </div>
+
+      {/* Tabela de impressão — todas as colunas */}
+      <div className="hidden print:block">
+        <table className="w-full border-collapse text-[11px]">
+          <thead>
+            <tr className="border-b-2 border-black">
+              <th className="py-1.5 pr-2 text-left font-semibold">Filial</th>
+              <th className="py-1.5 pr-2 text-right font-semibold">OS Abertas</th>
+              <th className="py-1.5 pr-2 text-right font-semibold">Concluídas</th>
+              <th className="py-1.5 pr-2 text-right font-semibold">Canceladas</th>
+              <th className="py-1.5 pr-2 text-right font-semibold">Em Andamento</th>
+              <th className="py-1.5 pr-2 text-right font-semibold">Prazo médio</th>
+              <th className="py-1.5 text-right font-semibold">Faturamento</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.rows.map((row) => (
+              <tr key={row.branch_id} className="border-b border-gray-300" style={{ breakInside: 'avoid' }}>
+                <td className="py-1 pr-2 font-medium">{row.branch_name}</td>
+                <td className="py-1 pr-2 text-right font-semibold">{row.os_opened}</td>
+                <td className="py-1 pr-2 text-right">{row.os_completed}</td>
+                <td className="py-1 pr-2 text-right">{row.os_canceled}</td>
+                <td className="py-1 pr-2 text-right">{row.os_in_progress}</td>
+                <td className="py-1 pr-2 text-right">{row.avg_execution_days != null ? `${row.avg_execution_days}d` : '—'}</td>
+                <td className="py-1 text-right font-medium">{fmtCurrency(row.revenue)}</td>
               </tr>
-            </tbody>
-          </table>
-        </div>
-      </DataTableCard>
+            ))}
+            <tr className="border-t-2 border-black font-semibold">
+              <td className="py-1 pr-2">Total</td>
+              <td className="py-1 pr-2 text-right">{data.period_total_os}</td>
+              <td className="py-1 pr-2 text-right">{data.rows.reduce((s, r) => s + r.os_completed, 0)}</td>
+              <td className="py-1 pr-2 text-right">{data.rows.reduce((s, r) => s + r.os_canceled, 0)}</td>
+              <td className="py-1 pr-2 text-right">{data.rows.reduce((s, r) => s + r.os_in_progress, 0)}</td>
+              <td className="py-1 pr-2 text-right">—</td>
+              <td className="py-1 text-right">{fmtCurrency(data.period_total_revenue)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }

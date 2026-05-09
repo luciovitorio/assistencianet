@@ -197,43 +197,70 @@ export function ProdutividadeReport({ initialData, initialStart, initialEnd }: P
         />
       </div>
 
-      {/* Table */}
-      <DataTableCard>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/50">
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground w-10">#</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Técnico</th>
-                <th className="px-4 py-3 text-right font-medium text-muted-foreground">Total OS</th>
-                <th className="px-4 py-3 text-right font-medium text-muted-foreground hidden sm:table-cell">Finalizadas</th>
-                <th className="px-4 py-3 text-right font-medium text-muted-foreground hidden md:table-cell">Canceladas</th>
-                <th className="px-4 py-3 text-right font-medium text-muted-foreground hidden md:table-cell">Em Andamento</th>
-                <th className="px-4 py-3 text-right font-medium text-muted-foreground hidden sm:table-cell">Taxa</th>
-                <th className="px-4 py-3 text-right font-medium text-muted-foreground hidden lg:table-cell">Prazo Médio</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginated.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center text-muted-foreground">
-                    <BarChart3 className="mx-auto mb-2 size-6 opacity-40" />
-                    Nenhum técnico com OS no período.
-                  </td>
+      {/* Tabela de tela — paginada */}
+      <div className="print:hidden">
+        <DataTableCard>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-muted/50">
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground w-10">#</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Técnico</th>
+                  <th className="px-4 py-3 text-right font-medium text-muted-foreground">Total OS</th>
+                  <th className="px-4 py-3 text-right font-medium text-muted-foreground hidden sm:table-cell">Finalizadas</th>
+                  <th className="px-4 py-3 text-right font-medium text-muted-foreground hidden md:table-cell">Canceladas</th>
+                  <th className="px-4 py-3 text-right font-medium text-muted-foreground hidden md:table-cell">Em Andamento</th>
+                  <th className="px-4 py-3 text-right font-medium text-muted-foreground hidden sm:table-cell">Taxa</th>
+                  <th className="px-4 py-3 text-right font-medium text-muted-foreground hidden lg:table-cell">Prazo Médio</th>
                 </tr>
-              ) : (
-                paginated.map((row, idx) => (
-                  <TechRow
-                    key={row.technician_id}
-                    row={row}
-                    rank={(page - 1) * rowsPerPage + idx + 1}
-                  />
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </DataTableCard>
+              </thead>
+              <tbody>
+                {paginated.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="px-4 py-12 text-center text-muted-foreground">
+                      <BarChart3 className="mx-auto mb-2 size-6 opacity-40" />
+                      Nenhum técnico com OS no período.
+                    </td>
+                  </tr>
+                ) : (
+                  paginated.map((row, idx) => (
+                    <TechRow
+                      key={row.technician_id}
+                      row={row}
+                      rank={(page - 1) * rowsPerPage + idx + 1}
+                    />
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </DataTableCard>
+      </div>
+
+      {/* Tabela de impressão — todos os registros */}
+      <div className="hidden print:block">
+        <table className="w-full border-collapse text-[11px]">
+          <thead>
+            <tr className="border-b-2 border-black">
+              <th className="py-1.5 pr-2 text-left font-semibold w-8">#</th>
+              <th className="py-1.5 pr-2 text-left font-semibold">Técnico</th>
+              <th className="py-1.5 pr-2 text-right font-semibold">Total OS</th>
+              <th className="py-1.5 pr-2 text-right font-semibold">Finalizadas</th>
+              <th className="py-1.5 pr-2 text-right font-semibold">Canceladas</th>
+              <th className="py-1.5 pr-2 text-right font-semibold">Em Andamento</th>
+              <th className="py-1.5 pr-2 text-right font-semibold">Taxa</th>
+              <th className="py-1.5 text-right font-semibold">Prazo Médio</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.length === 0 ? (
+              <tr><td colSpan={8} className="py-4 text-center">Nenhum técnico com OS no período.</td></tr>
+            ) : (
+              filtered.map((row, idx) => <PrintTechRow key={row.technician_id} row={row} rank={idx + 1} />)
+            )}
+          </tbody>
+        </table>
+      </div>
 
       <div className="print:hidden">
         <DataTablePagination
@@ -248,6 +275,21 @@ export function ProdutividadeReport({ initialData, initialStart, initialEnd }: P
         />
       </div>
     </div>
+  )
+}
+
+function PrintTechRow({ row, rank }: { row: TechnicianProductivityRow; rank: number }) {
+  return (
+    <tr className="border-b border-gray-300" style={{ breakInside: 'avoid' }}>
+      <td className="py-1 pr-2 font-mono">{rank}</td>
+      <td className="py-1 pr-2 font-medium">{row.technician_name}</td>
+      <td className="py-1 pr-2 text-right font-semibold">{row.os_total}</td>
+      <td className="py-1 pr-2 text-right">{row.os_completed}</td>
+      <td className="py-1 pr-2 text-right">{row.os_canceled}</td>
+      <td className="py-1 pr-2 text-right">{row.os_in_progress}</td>
+      <td className="py-1 pr-2 text-right">{row.completion_rate}%</td>
+      <td className="py-1 text-right">{row.avg_execution_days != null ? `${row.avg_execution_days}d` : '—'}</td>
+    </tr>
   )
 }
 

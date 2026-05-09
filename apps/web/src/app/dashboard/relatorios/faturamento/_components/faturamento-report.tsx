@@ -222,35 +222,60 @@ export function FaturamentoReport({ initialData, initialStart, initialEnd }: Pro
         />
       </div>
 
-      {/* Table */}
-      <DataTableCard>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/50">
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">OS</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden sm:table-cell">Filial</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden md:table-cell">Pagamento</th>
-                <th className="px-4 py-3 text-right font-medium text-muted-foreground hidden md:table-cell">Valor Cobrado</th>
-                <th className="px-4 py-3 text-right font-medium text-muted-foreground">Valor Líquido</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden sm:table-cell">Data</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginated.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">
-                    <DollarSign className="mx-auto mb-2 size-6 opacity-40" />
-                    Nenhum recebimento encontrado no período.
-                  </td>
+      {/* Tabela de tela — paginada */}
+      <div className="print:hidden">
+        <DataTableCard>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-muted/50">
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">OS</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden sm:table-cell">Filial</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden md:table-cell">Pagamento</th>
+                  <th className="px-4 py-3 text-right font-medium text-muted-foreground hidden md:table-cell">Valor Cobrado</th>
+                  <th className="px-4 py-3 text-right font-medium text-muted-foreground">Valor Líquido</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden sm:table-cell">Data</th>
                 </tr>
-              ) : (
-                paginated.map((row) => <FaturamentoEntryRow key={row.id} row={row} />)
-              )}
-            </tbody>
-          </table>
-        </div>
-      </DataTableCard>
+              </thead>
+              <tbody>
+                {paginated.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">
+                      <DollarSign className="mx-auto mb-2 size-6 opacity-40" />
+                      Nenhum recebimento encontrado no período.
+                    </td>
+                  </tr>
+                ) : (
+                  paginated.map((row) => <FaturamentoEntryRow key={row.id} row={row} />)
+                )}
+              </tbody>
+            </table>
+          </div>
+        </DataTableCard>
+      </div>
+
+      {/* Tabela de impressão — todos os registros */}
+      <div className="hidden print:block">
+        <table className="w-full border-collapse text-[11px]">
+          <thead>
+            <tr className="border-b-2 border-black">
+              <th className="py-1.5 pr-2 text-left font-semibold">OS</th>
+              <th className="py-1.5 pr-2 text-left font-semibold">Filial</th>
+              <th className="py-1.5 pr-2 text-left font-semibold">Pagamento</th>
+              <th className="py-1.5 pr-2 text-right font-semibold">Valor Cobrado</th>
+              <th className="py-1.5 text-right font-semibold">Valor Líquido</th>
+              <th className="py-1.5 pl-2 text-left font-semibold">Data</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.length === 0 ? (
+              <tr><td colSpan={6} className="py-4 text-center">Nenhum recebimento encontrado no período.</td></tr>
+            ) : (
+              filtered.map((row) => <PrintFaturamentoRow key={row.id} row={row} />)
+            )}
+          </tbody>
+        </table>
+      </div>
 
       <div className="print:hidden">
         <DataTablePagination
@@ -265,6 +290,21 @@ export function FaturamentoReport({ initialData, initialStart, initialEnd }: Pro
         />
       </div>
     </div>
+  )
+}
+
+function PrintFaturamentoRow({ row }: { row: FaturamentoRow }) {
+  return (
+    <tr className="border-b border-gray-300" style={{ breakInside: 'avoid' }}>
+      <td className="py-1 pr-2 font-mono">
+        {row.service_order_number != null ? `#${row.service_order_number}` : '—'}
+      </td>
+      <td className="py-1 pr-2">{row.branch_name ?? '—'}</td>
+      <td className="py-1 pr-2">{PAYMENT_METHOD_LABEL(row.payment_method)}</td>
+      <td className="py-1 pr-2 text-right">{fmtCurrency(row.amount_received)}</td>
+      <td className="py-1 text-right font-semibold">{fmtCurrency(row.net_amount)}</td>
+      <td className="py-1 pl-2 whitespace-nowrap">{fmtDate(row.created_at)}</td>
+    </tr>
   )
 }
 

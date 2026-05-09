@@ -209,41 +209,66 @@ export function ClientesRecorrentesReport({ initialData, initialStart, initialEn
         />
       </div>
 
-      {/* Table */}
-      <DataTableCard>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/50">
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground w-12">#</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Cliente</th>
-                <th className="px-4 py-3 text-right font-medium text-muted-foreground">OS no período</th>
-                <th className="px-4 py-3 text-right font-medium text-muted-foreground hidden sm:table-cell">Concluídas</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden md:table-cell">Primeira OS</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden md:table-cell">Última OS</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginated.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">
-                    <UserCheck className="mx-auto mb-2 size-6 opacity-40" />
-                    Nenhum cliente encontrado no período.
-                  </td>
+      {/* Tabela de tela — paginada */}
+      <div className="print:hidden">
+        <DataTableCard>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-muted/50">
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground w-12">#</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Cliente</th>
+                  <th className="px-4 py-3 text-right font-medium text-muted-foreground">OS no período</th>
+                  <th className="px-4 py-3 text-right font-medium text-muted-foreground hidden sm:table-cell">Concluídas</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden md:table-cell">Primeira OS</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden md:table-cell">Última OS</th>
                 </tr>
-              ) : (
-                paginated.map((row, idx) => (
-                  <ClientRow
-                    key={row.client_id}
-                    row={row}
-                    rank={(page - 1) * rowsPerPage + idx + 1}
-                  />
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </DataTableCard>
+              </thead>
+              <tbody>
+                {paginated.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">
+                      <UserCheck className="mx-auto mb-2 size-6 opacity-40" />
+                      Nenhum cliente encontrado no período.
+                    </td>
+                  </tr>
+                ) : (
+                  paginated.map((row, idx) => (
+                    <ClientRow
+                      key={row.client_id}
+                      row={row}
+                      rank={(page - 1) * rowsPerPage + idx + 1}
+                    />
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </DataTableCard>
+      </div>
+
+      {/* Tabela de impressão — todos os registros */}
+      <div className="hidden print:block">
+        <table className="w-full border-collapse text-[11px]">
+          <thead>
+            <tr className="border-b-2 border-black">
+              <th className="py-1.5 pr-2 text-left font-semibold w-8">#</th>
+              <th className="py-1.5 pr-2 text-left font-semibold">Cliente</th>
+              <th className="py-1.5 pr-2 text-right font-semibold">OS no período</th>
+              <th className="py-1.5 pr-2 text-right font-semibold">Concluídas</th>
+              <th className="py-1.5 pr-2 text-left font-semibold">Primeira OS</th>
+              <th className="py-1.5 text-left font-semibold">Última OS</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.length === 0 ? (
+              <tr><td colSpan={6} className="py-4 text-center">Nenhum cliente encontrado no período.</td></tr>
+            ) : (
+              filtered.map((row, idx) => <PrintClientRow key={row.client_id} row={row} rank={idx + 1} />)
+            )}
+          </tbody>
+        </table>
+      </div>
 
       <div className="print:hidden">
         <DataTablePagination
@@ -258,6 +283,21 @@ export function ClientesRecorrentesReport({ initialData, initialStart, initialEn
         />
       </div>
     </div>
+  )
+}
+
+function PrintClientRow({ row, rank }: { row: ClientRecurrenceRow; rank: number }) {
+  return (
+    <tr className="border-b border-gray-300" style={{ breakInside: 'avoid' }}>
+      <td className="py-1 pr-2 font-mono">{rank}</td>
+      <td className="py-1 pr-2 font-medium">
+        {row.client_name}{row.os_count >= 2 ? ' *' : ''}
+      </td>
+      <td className="py-1 pr-2 text-right font-semibold">{row.os_count}</td>
+      <td className="py-1 pr-2 text-right">{row.completed_count}</td>
+      <td className="py-1 pr-2 whitespace-nowrap">{fmtDate(row.first_os_at)}</td>
+      <td className="py-1 whitespace-nowrap">{fmtDate(row.last_os_at)}</td>
+    </tr>
   )
 }
 

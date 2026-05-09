@@ -264,38 +264,66 @@ export function EstoqueReport({ initialData, initialStart, initialEnd }: Props) 
         />
       </div>
 
-      {/* Table */}
-      <DataTableCard>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/50">
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Peça</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden md:table-cell">SKU</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden lg:table-cell">Categoria</th>
-                <th className="px-4 py-3 text-right font-medium text-muted-foreground">Qtd.</th>
-                <th className="px-4 py-3 text-right font-medium text-muted-foreground hidden sm:table-cell">Mín.</th>
-                <th className="px-4 py-3 text-right font-medium text-muted-foreground hidden md:table-cell">Custo unit.</th>
-                <th className="px-4 py-3 text-right font-medium text-muted-foreground hidden lg:table-cell">Valor total</th>
-                <th className="px-4 py-3 text-right font-medium text-muted-foreground hidden sm:table-cell">Saídas</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginated.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="px-4 py-12 text-center text-muted-foreground">
-                    <Package className="mx-auto mb-2 size-6 opacity-40" />
-                    Nenhuma peça encontrada.
-                  </td>
+      {/* Tabela de tela — paginada */}
+      <div className="print:hidden">
+        <DataTableCard>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-muted/50">
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Peça</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden md:table-cell">SKU</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden lg:table-cell">Categoria</th>
+                  <th className="px-4 py-3 text-right font-medium text-muted-foreground">Qtd.</th>
+                  <th className="px-4 py-3 text-right font-medium text-muted-foreground hidden sm:table-cell">Mín.</th>
+                  <th className="px-4 py-3 text-right font-medium text-muted-foreground hidden md:table-cell">Custo unit.</th>
+                  <th className="px-4 py-3 text-right font-medium text-muted-foreground hidden lg:table-cell">Valor total</th>
+                  <th className="px-4 py-3 text-right font-medium text-muted-foreground hidden sm:table-cell">Saídas</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
                 </tr>
-              ) : (
-                paginated.map((row) => <EstoqueRow key={row.part_id} row={row} />)
-              )}
-            </tbody>
-          </table>
-        </div>
-      </DataTableCard>
+              </thead>
+              <tbody>
+                {paginated.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="px-4 py-12 text-center text-muted-foreground">
+                      <Package className="mx-auto mb-2 size-6 opacity-40" />
+                      Nenhuma peça encontrada.
+                    </td>
+                  </tr>
+                ) : (
+                  paginated.map((row) => <EstoqueRow key={row.part_id} row={row} />)
+                )}
+              </tbody>
+            </table>
+          </div>
+        </DataTableCard>
+      </div>
+
+      {/* Tabela de impressão — todos os registros */}
+      <div className="hidden print:block">
+        <table className="w-full border-collapse text-[11px]">
+          <thead>
+            <tr className="border-b-2 border-black">
+              <th className="py-1.5 pr-2 text-left font-semibold">Peça</th>
+              <th className="py-1.5 pr-2 text-left font-semibold">SKU</th>
+              <th className="py-1.5 pr-2 text-left font-semibold">Categoria</th>
+              <th className="py-1.5 pr-2 text-right font-semibold">Qtd.</th>
+              <th className="py-1.5 pr-2 text-right font-semibold">Mín.</th>
+              <th className="py-1.5 pr-2 text-right font-semibold">Custo unit.</th>
+              <th className="py-1.5 pr-2 text-right font-semibold">Valor total</th>
+              <th className="py-1.5 pr-2 text-right font-semibold">Saídas</th>
+              <th className="py-1.5 text-left font-semibold">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.length === 0 ? (
+              <tr><td colSpan={9} className="py-4 text-center">Nenhuma peça encontrada.</td></tr>
+            ) : (
+              filtered.map((row) => <PrintEstoqueRow key={row.part_id} row={row} />)
+            )}
+          </tbody>
+        </table>
+      </div>
 
       <div className="print:hidden">
         <DataTablePagination
@@ -310,6 +338,24 @@ export function EstoqueReport({ initialData, initialStart, initialEnd }: Props) 
         />
       </div>
     </div>
+  )
+}
+
+function PrintEstoqueRow({ row }: { row: EstoquePartRow }) {
+  const statusLabel = STATUS_LABELS[row.status] ?? row.status
+
+  return (
+    <tr className="border-b border-gray-300" style={{ breakInside: 'avoid' }}>
+      <td className="py-1 pr-2 font-medium">{row.part_name}</td>
+      <td className="py-1 pr-2 font-mono">{row.sku ?? '—'}</td>
+      <td className="py-1 pr-2">{row.category}</td>
+      <td className="py-1 pr-2 text-right font-semibold">{row.total_quantity}</td>
+      <td className="py-1 pr-2 text-right">{row.min_stock}</td>
+      <td className="py-1 pr-2 text-right">{row.cost_price > 0 ? fmtCurrency(row.cost_price) : '—'}</td>
+      <td className="py-1 pr-2 text-right">{row.stock_value > 0 ? fmtCurrency(row.stock_value) : '—'}</td>
+      <td className="py-1 pr-2 text-right">{row.saidas_periodo > 0 ? row.saidas_periodo : '—'}</td>
+      <td className="py-1">{statusLabel}</td>
+    </tr>
   )
 }
 

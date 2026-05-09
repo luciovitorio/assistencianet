@@ -245,36 +245,62 @@ export function OrcamentosReport({ initialData, initialStart, initialEnd }: Prop
         />
       </div>
 
-      {/* Table */}
-      <DataTableCard>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/50">
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">OS</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Cliente</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden lg:table-cell">Filial</th>
-                <th className="px-4 py-3 text-right font-medium text-muted-foreground">Valor</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden md:table-cell">Criado em</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden md:table-cell">Aprovado / Recusado</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginated.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">
-                    <FileText className="mx-auto mb-2 size-6 opacity-40" />
-                    Nenhum orçamento encontrado no período.
-                  </td>
+      {/* Tabela de tela — paginada */}
+      <div className="print:hidden">
+        <DataTableCard>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-muted/50">
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">OS</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Cliente</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden lg:table-cell">Filial</th>
+                  <th className="px-4 py-3 text-right font-medium text-muted-foreground">Valor</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden md:table-cell">Criado em</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden md:table-cell">Aprovado / Recusado</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
                 </tr>
-              ) : (
-                paginated.map((row) => <EstimateRow key={row.id} row={row} />)
-              )}
-            </tbody>
-          </table>
-        </div>
-      </DataTableCard>
+              </thead>
+              <tbody>
+                {paginated.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">
+                      <FileText className="mx-auto mb-2 size-6 opacity-40" />
+                      Nenhum orçamento encontrado no período.
+                    </td>
+                  </tr>
+                ) : (
+                  paginated.map((row) => <EstimateRow key={row.id} row={row} />)
+                )}
+              </tbody>
+            </table>
+          </div>
+        </DataTableCard>
+      </div>
+
+      {/* Tabela de impressão — todos os registros */}
+      <div className="hidden print:block">
+        <table className="w-full border-collapse text-[11px]">
+          <thead>
+            <tr className="border-b-2 border-black">
+              <th className="py-1.5 pr-2 text-left font-semibold">OS</th>
+              <th className="py-1.5 pr-2 text-left font-semibold">Cliente</th>
+              <th className="py-1.5 pr-2 text-left font-semibold">Filial</th>
+              <th className="py-1.5 pr-2 text-right font-semibold">Valor</th>
+              <th className="py-1.5 pr-2 text-left font-semibold">Criado em</th>
+              <th className="py-1.5 pr-2 text-left font-semibold">Aprov. / Recusado</th>
+              <th className="py-1.5 text-left font-semibold">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.length === 0 ? (
+              <tr><td colSpan={7} className="py-4 text-center">Nenhum orçamento encontrado no período.</td></tr>
+            ) : (
+              filtered.map((row) => <PrintEstimateRow key={row.id} row={row} />)
+            )}
+          </tbody>
+        </table>
+      </div>
 
       <div className="print:hidden">
         <DataTablePagination
@@ -289,6 +315,23 @@ export function OrcamentosReport({ initialData, initialStart, initialEnd }: Prop
         />
       </div>
     </div>
+  )
+}
+
+function PrintEstimateRow({ row }: { row: EstimateConversionRow }) {
+  const label = STATUS_LABELS[row.status] ?? row.status
+  const eventDate = row.status === 'aprovado' ? row.approved_at : row.status === 'recusado' ? row.rejected_at : null
+
+  return (
+    <tr className="border-b border-gray-300" style={{ breakInside: 'avoid' }}>
+      <td className="py-1 pr-2 font-mono">#{row.service_order_number}</td>
+      <td className="py-1 pr-2">{row.client_name ?? '—'}</td>
+      <td className="py-1 pr-2">{row.branch_name ?? '—'}</td>
+      <td className="py-1 pr-2 text-right font-medium">{fmtCurrency(row.total_amount)}</td>
+      <td className="py-1 pr-2 whitespace-nowrap">{fmtDate(row.created_at)}</td>
+      <td className="py-1 pr-2 whitespace-nowrap">{fmtDate(eventDate)}</td>
+      <td className="py-1">{label}</td>
+    </tr>
   )
 }
 
