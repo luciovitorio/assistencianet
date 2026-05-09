@@ -42,39 +42,35 @@ export type DashboardOverviewData = {
   recentServiceOrders: DashboardRecentServiceOrder[]
 }
 
-type BranchRow = {
-  id: string
-  name: string
-}
-
-type ServiceOrderBranchRow = {
-  id: string
-  branch_id: string | null
-}
-
-type CashEntryRow = {
-  id: string
-  branch_id: string | null
-  service_order_id: string
-  net_amount: number
-}
-
-type BillRow = {
-  id: string
-  branch_id: string
-  amount: number
-}
-
-type RecentServiceOrderRow = {
-  id: string
-  number: number
-  status: string
-  device_type: string
-  device_brand: string | null
-  device_model: string | null
-  created_at: string
-  clients: { name: string; phone: string | null } | { name: string; phone: string | null }[] | null
-  branches: { name: string } | { name: string }[] | null
+type RpcResult = {
+  kpis: {
+    open_service_orders: number
+    delivered_service_orders: number
+    revenue: number
+    operational_expenses: number
+    paid_order_count: number
+  }
+  branch_performance: Array<{
+    branch_id: string
+    branch_name: string
+    open_orders: number
+    delivered_orders: number
+    revenue: number
+    expenses: number
+    net_result: number
+  }>
+  recent_orders: Array<{
+    id: string
+    number: number
+    status: string
+    device_type: string
+    device_brand: string | null
+    device_model: string | null
+    created_at: string
+    client_name: string | null
+    client_phone: string | null
+    branch_name: string | null
+  }>
 }
 
 const OPEN_SERVICE_ORDER_STATUSES = [
@@ -113,21 +109,6 @@ const getCurrentMonthPeriod = () => {
 
 const roundMoney = (value: number) => Math.round(value * 100) / 100
 
-const incrementCount = (map: Map<string, number>, key: string | null | undefined, quantity = 1) => {
-  if (!key) return
-  map.set(key, (map.get(key) ?? 0) + quantity)
-}
-
-const sumMoney = <TRow extends { [key: string]: unknown }>(
-  rows: TRow[],
-  field: keyof TRow,
-) => rows.reduce((total, row) => total + Number(row[field] ?? 0), 0)
-
-const firstRelation = <TRow>(value: TRow | TRow[] | null | undefined) => {
-  if (Array.isArray(value)) return value[0] ?? null
-  return value ?? null
-}
-
 const getActionErrorMessage = (error: unknown, fallback: string) => {
   if (error instanceof Error) return error.message
   if (typeof error === 'object' && error !== null && 'message' in error) {
@@ -146,148 +127,54 @@ export async function getDashboardOverview(): Promise<{
     const period = getCurrentMonthPeriod()
     const periodEnd = period.endDate + END_OF_DAY
 
-    const [
-      branchesResult,
-      openOrdersResult,
-      deliveredOrdersResult,
-      cashEntriesResult,
-      billsResult,
-      recentOrdersResult,
-    ] = await Promise.all([
-      supabase
-        .from('branches')
-        .select('id, name')
-        .eq('company_id', companyId)
-        .is('deleted_at', null)
-        .eq('active', true)
-        .order('name', { ascending: true }),
-      supabase
-        .from('service_orders')
-        .select('id, branch_id')
-        .eq('company_id', companyId)
-        .is('deleted_at', null)
-        .in('status', OPEN_SERVICE_ORDER_STATUSES)
-        .limit(5000),
-      supabase
-        .from('service_orders')
-        .select('id, branch_id')
-        .eq('company_id', companyId)
-        .is('deleted_at', null)
-        .eq('status', 'finalizado')
-        .not('delivered_at', 'is', null)
-        .gte('delivered_at', period.startDate)
-        .lte('delivered_at', periodEnd)
-        .limit(5000),
-      supabase
-        .from('cash_entries')
-        .select('id, branch_id, service_order_id, net_amount')
-        .eq('company_id', companyId)
-        .gte('created_at', period.startDate)
-        .lte('created_at', periodEnd)
-        .limit(5000),
-      supabase
-        .from('bills')
-        .select('id, branch_id, amount')
-        .eq('company_id', companyId)
-        .is('deleted_at', null)
-        .eq('status', 'pago')
-        .not('paid_at', 'is', null)
-        .gte('paid_at', period.startDate)
-        .lte('paid_at', periodEnd)
-        .limit(5000),
-      supabase
-        .from('service_orders')
-        .select(
-          'id, number, status, device_type, device_brand, device_model, created_at, clients(name, phone), branches(name)',
-        )
-        .eq('company_id', companyId)
-        .is('deleted_at', null)
-        .order('number', { ascending: false })
-        .limit(6),
-    ])
+    const { data: rpcData, error: rpcError } = await supabase.rpc('get_dashboard_overview', {
+      p_company_id: companyId,
+      p_start_date: period.startDate,
+      p_end_date: periodEnd,
+      p_open_statuses: OPEN_SERVICE_ORDER_STATUSES,
+    })
 
-    if (branchesResult.error) throw branchesResult.error
-    if (openOrdersResult.error) throw openOrdersResult.error
-    if (deliveredOrdersResult.error) throw deliveredOrdersResult.error
-    if (cashEntriesResult.error) throw cashEntriesResult.error
-    if (billsResult.error) throw billsResult.error
-    if (recentOrdersResult.error) throw recentOrdersResult.error
+    if (rpcError) throw rpcError
 
-    const branches = (branchesResult.data ?? []) as BranchRow[]
-    const openOrders = (openOrdersResult.data ?? []) as ServiceOrderBranchRow[]
-    const deliveredOrders = (deliveredOrdersResult.data ?? []) as ServiceOrderBranchRow[]
-    const cashEntries = (cashEntriesResult.data ?? []) as CashEntryRow[]
-    const bills = (billsResult.data ?? []) as BillRow[]
+    const result = rpcData as RpcResult
 
-    const openOrdersByBranch = new Map<string, number>()
-    const deliveredOrdersByBranch = new Map<string, number>()
-    const revenueByBranch = new Map<string, number>()
-    const expensesByBranch = new Map<string, number>()
+    const revenue = roundMoney(Number(result.kpis.revenue))
+    const operationalExpenses = roundMoney(Number(result.kpis.operational_expenses))
+    const paidOrderCount = Number(result.kpis.paid_order_count)
 
-    for (const order of openOrders) {
-      incrementCount(openOrdersByBranch, order.branch_id)
-    }
+    const branchPerformance: DashboardBranchPerformanceRow[] = result.branch_performance.map((bp) => ({
+      branch_id: bp.branch_id,
+      branch_name: bp.branch_name,
+      open_orders: Number(bp.open_orders),
+      delivered_orders: Number(bp.delivered_orders),
+      revenue: roundMoney(Number(bp.revenue)),
+      expenses: roundMoney(Number(bp.expenses)),
+      net_result: roundMoney(Number(bp.net_result)),
+    }))
 
-    for (const order of deliveredOrders) {
-      incrementCount(deliveredOrdersByBranch, order.branch_id)
-    }
+    const recentServiceOrders: DashboardRecentServiceOrder[] = result.recent_orders.map((order) => {
+      const device = [order.device_type, order.device_brand, order.device_model]
+        .filter(Boolean)
+        .join(' ')
 
-    for (const entry of cashEntries) {
-      incrementCount(revenueByBranch, entry.branch_id, Number(entry.net_amount))
-    }
-
-    for (const bill of bills) {
-      incrementCount(expensesByBranch, bill.branch_id, Number(bill.amount))
-    }
-
-    const revenue = roundMoney(sumMoney(cashEntries, 'net_amount'))
-    const operationalExpenses = roundMoney(sumMoney(bills, 'amount'))
-    const paidOrderCount = new Set(cashEntries.map((entry) => entry.service_order_id)).size
-
-    const branchPerformance = branches
-      .map((branch) => {
-        const branchRevenue = revenueByBranch.get(branch.id) ?? 0
-        const branchExpenses = expensesByBranch.get(branch.id) ?? 0
-
-        return {
-          branch_id: branch.id,
-          branch_name: branch.name,
-          open_orders: openOrdersByBranch.get(branch.id) ?? 0,
-          delivered_orders: deliveredOrdersByBranch.get(branch.id) ?? 0,
-          revenue: roundMoney(branchRevenue),
-          expenses: roundMoney(branchExpenses),
-          net_result: roundMoney(branchRevenue - branchExpenses),
-        }
-      })
-      .sort((a, b) => b.revenue - a.revenue || b.open_orders - a.open_orders)
-
-    const recentServiceOrders = ((recentOrdersResult.data ?? []) as RecentServiceOrderRow[]).map(
-      (order) => {
-        const client = firstRelation(order.clients)
-        const branch = firstRelation(order.branches)
-        const device = [order.device_type, order.device_brand, order.device_model]
-          .filter(Boolean)
-          .join(' ')
-
-        return {
-          id: order.id,
-          number: order.number,
-          status: order.status,
-          client_name: client?.name ?? 'Cliente sem nome',
-          client_phone: client?.phone ?? null,
-          device: device || 'Equipamento não informado',
-          branch_name: branch?.name ?? 'Filial não informada',
-          created_at: order.created_at,
-        }
-      },
-    )
+      return {
+        id: order.id,
+        number: order.number,
+        status: order.status,
+        client_name: order.client_name ?? 'Cliente sem nome',
+        client_phone: order.client_phone ?? null,
+        device: device || 'Equipamento não informado',
+        branch_name: order.branch_name ?? 'Filial não informada',
+        created_at: order.created_at,
+      }
+    })
 
     return {
       data: {
         period,
         kpis: {
-          openServiceOrders: openOrders.length,
-          deliveredServiceOrders: deliveredOrders.length,
+          openServiceOrders: Number(result.kpis.open_service_orders),
+          deliveredServiceOrders: Number(result.kpis.delivered_service_orders),
           revenue,
           operationalExpenses,
           netResult: roundMoney(revenue - operationalExpenses),

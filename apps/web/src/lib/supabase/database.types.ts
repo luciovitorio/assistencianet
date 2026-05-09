@@ -2464,6 +2464,29 @@ export type Database = {
         Returns: string
       }
       get_current_user_company_id: { Args: never; Returns: string }
+      list_service_orders_page: {
+        Args: {
+          p_company_id: string
+          p_offset: number
+          p_limit: number
+          p_search?: string | null
+          p_search_number?: number | null
+          p_statuses?: string[] | null
+          p_branches?: string[] | null
+          p_technicians?: string[] | null
+          p_restrict_branch?: string | null
+        }
+        Returns: Json
+      }
+      get_dashboard_overview: {
+        Args: {
+          p_company_id: string
+          p_start_date: string
+          p_end_date: string
+          p_open_statuses: string[]
+        }
+        Returns: Json
+      }
       is_active_company_admin: {
         Args: { p_company_id: string }
         Returns: boolean
