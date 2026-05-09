@@ -6,6 +6,8 @@ export interface CompanyContext {
   user: User
   companyId: string
   currentBranchId: string | null
+  currentEmployeeId: string | null
+  employeeRole: string | null
   isOwner: boolean
   isAdmin: boolean
   isEmployee: boolean
@@ -29,7 +31,7 @@ const resolveCompanyContext = async (): Promise<CompanyContext> => {
       .maybeSingle(),
     supabase
       .from('employees')
-      .select('company_id, branch_id, role')
+      .select('id, company_id, branch_id, role')
       .eq('user_id', user.id)
       .eq('active', true)
       .is('deleted_at', null)
@@ -48,6 +50,8 @@ const resolveCompanyContext = async (): Promise<CompanyContext> => {
     user,
     companyId,
     currentBranchId: employee?.branch_id ?? null,
+    currentEmployeeId: employee?.id ?? null,
+    employeeRole: employee?.role ?? null,
     isOwner,
     isAdmin,
     isEmployee: Boolean(employee),

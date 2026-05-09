@@ -1,31 +1,28 @@
-import { createAdminClient } from '@/lib/supabase/admin'
+import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 import { getCompanyContext } from '@/lib/auth/company-context'
 import { AdminDashboard } from './_components/admin-dashboard'
 import { TechnicianDashboard } from './_components/technician-dashboard'
+import { DashboardSkeleton } from './_components/dashboard-skeleton'
 
 export default async function DashboardPage() {
-  const { user } = await getCompanyContext()
+  const { user, isAdmin } = await getCompanyContext()
 
-  const employeeRole = user?.app_metadata?.role
-  let forcePasswordChange = Boolean(user?.app_metadata?.force_password_change)
-
-  if (!forcePasswordChange && user?.id) {
-    const admin = createAdminClient()
-    const { data } = await admin.auth.admin.getUserById(user.id)
-    forcePasswordChange = Boolean(data.user?.app_metadata?.force_password_change)
-  }
-
-  if (forcePasswordChange) {
+  if (Boolean(user?.app_metadata?.force_password_change)) {
     redirect('/dashboard/alterar-senha')
   }
 
-  const usesOperationalDashboard =
-    employeeRole === 'tecnico' || employeeRole === 'atendente'
-
-  if (usesOperationalDashboard) {
-    return <TechnicianDashboard />
+  if (!isAdmin) {
+    return (
+      <Suspense fallback={<DashboardSkeleton />}>
+        <TechnicianDashboard />
+      </Suspense>
+    )
   }
 
-  return <AdminDashboard />
+  return (
+    <Suspense fallback={<DashboardSkeleton />}>
+      <AdminDashboard />
+    </Suspense>
+  )
 }

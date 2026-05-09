@@ -24,22 +24,12 @@ function formatDeliveryShort(dateStr: string): string {
 }
 
 export async function TechnicianDashboard() {
-  const { companyId, currentBranchId, user, isAdmin } = await getCompanyContext()
+  const { companyId, currentBranchId, currentEmployeeId, employeeRole, isAdmin } = await getCompanyContext()
   const supabase = await createClient()
 
   const todayStr = new Date().toISOString().split('T')[0]
 
-  // Descobre o employee_id e role do usuário logado
-  const { data: currentEmployee } = await supabase
-    .from('employees')
-    .select('id, role')
-    .eq('user_id', user.id)
-    .eq('company_id', companyId)
-    .is('deleted_at', null)
-    .maybeSingle()
-
-  const currentEmployeeId = currentEmployee?.id ?? null
-  const isTecnico = !isAdmin && currentEmployee?.role === 'tecnico'
+  const isTecnico = !isAdmin && employeeRole === 'tecnico'
 
   const activeOrdersQuery = supabase
     .from('service_orders')
