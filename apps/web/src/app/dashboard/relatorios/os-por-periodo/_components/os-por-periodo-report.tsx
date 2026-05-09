@@ -158,28 +158,28 @@ export function OsPorPeriodoReport({ initialData, initialStart, initialEnd }: Pr
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 print:grid-cols-4">
         <div className="rounded-xl border bg-card p-4">
           <p className="text-xs font-medium text-muted-foreground">Total no período</p>
-          <p className="mt-1 text-3xl font-bold">{summary.total}</p>
+          <p className="mt-1 text-3xl font-bold print:text-2xl">{summary.total}</p>
         </div>
         <div className="rounded-xl border bg-card p-4">
           <p className="text-xs font-medium text-muted-foreground">Finalizadas</p>
-          <p className="mt-1 text-3xl font-bold text-green-600">{summary.completed}</p>
+          <p className="mt-1 text-3xl font-bold text-green-600 print:text-2xl">{summary.completed}</p>
         </div>
         <div className="rounded-xl border bg-card p-4">
           <p className="text-xs font-medium text-muted-foreground">Canceladas</p>
-          <p className="mt-1 text-3xl font-bold text-red-500">{summary.canceled}</p>
+          <p className="mt-1 text-3xl font-bold text-red-500 print:text-2xl">{summary.canceled}</p>
         </div>
         <div className="rounded-xl border bg-card p-4">
           <p className="text-xs font-medium text-muted-foreground">Prazo médio</p>
-          <p className="mt-1 text-3xl font-bold">
+          <p className="mt-1 text-3xl font-bold print:text-2xl">
             {summary.avg_execution_days != null ? `${summary.avg_execution_days}d` : '—'}
           </p>
         </div>
       </div>
 
-      <div className="rounded-xl border bg-card p-4 sm:col-span-4">
+      <div className="rounded-xl border bg-card p-4">
         <p className="text-xs font-medium text-muted-foreground">Receita das finalizadas</p>
         <p className="mt-1 text-2xl font-bold text-emerald-600">{fmtCurrency(summary.total_revenue)}</p>
         <p className="text-xs text-muted-foreground">Soma de amount_paid das OS finalizadas no período</p>
@@ -253,38 +253,82 @@ export function OsPorPeriodoReport({ initialData, initialStart, initialEnd }: Pr
         />
       </div>
 
-      {/* Table */}
-      <DataTableCard>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/50">
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">OS</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Cliente</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden md:table-cell">Equipamento</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden lg:table-cell">Técnico</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden sm:table-cell">Abertura</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden sm:table-cell">Conclusão</th>
-                <th className="px-4 py-3 text-right font-medium text-muted-foreground hidden md:table-cell">Dias</th>
-                <th className="px-4 py-3 text-right font-medium text-muted-foreground hidden lg:table-cell">Valor</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginated.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="px-4 py-12 text-center text-muted-foreground">
-                    <ClipboardList className="mx-auto mb-2 size-6 opacity-40" />
-                    Nenhuma OS encontrada no período.
-                  </td>
+      {/* Tabela de tela — paginada, responsiva */}
+      <div className="print:hidden">
+        <DataTableCard>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-muted/50">
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">OS</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Cliente</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden md:table-cell">Equipamento</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden lg:table-cell">Técnico</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden sm:table-cell">Abertura</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden sm:table-cell">Conclusão</th>
+                  <th className="px-4 py-3 text-right font-medium text-muted-foreground hidden md:table-cell">Dias</th>
+                  <th className="px-4 py-3 text-right font-medium text-muted-foreground hidden lg:table-cell">Valor</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
                 </tr>
-              ) : (
-                paginated.map((row) => <OsRow key={row.id} row={row} />)
-              )}
-            </tbody>
-          </table>
-        </div>
-      </DataTableCard>
+              </thead>
+              <tbody>
+                {paginated.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="px-4 py-12 text-center text-muted-foreground">
+                      <ClipboardList className="mx-auto mb-2 size-6 opacity-40" />
+                      Nenhuma OS encontrada no período.
+                    </td>
+                  </tr>
+                ) : (
+                  paginated.map((row) => <OsRow key={row.id} row={row} />)
+                )}
+              </tbody>
+            </table>
+          </div>
+        </DataTableCard>
+      </div>
+
+      {/* Tabela de impressão — todos os registros, todas as colunas */}
+      <div className="hidden print:block">
+        <table className="w-full border-collapse text-[11px]">
+          <thead>
+            <tr className="border-b-2 border-black">
+              <th className="py-1.5 pr-2 text-left font-semibold">OS</th>
+              <th className="py-1.5 pr-2 text-left font-semibold">Cliente</th>
+              <th className="py-1.5 pr-2 text-left font-semibold">Equipamento</th>
+              <th className="py-1.5 pr-2 text-left font-semibold">Técnico</th>
+              <th className="py-1.5 pr-2 text-left font-semibold">Abertura</th>
+              <th className="py-1.5 pr-2 text-left font-semibold">Conclusão</th>
+              <th className="py-1.5 pr-2 text-right font-semibold">Dias</th>
+              <th className="py-1.5 pr-2 text-right font-semibold">Valor</th>
+              <th className="py-1.5 text-left font-semibold">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.length === 0 ? (
+              <tr>
+                <td colSpan={9} className="py-4 text-center">Nenhuma OS encontrada no período.</td>
+              </tr>
+            ) : (
+              filtered.map((row) => <PrintRow key={row.id} row={row} />)
+            )}
+          </tbody>
+          <tfoot>
+            <tr className="border-t-2 border-black">
+              <td colSpan={6} className="py-1.5 pr-2 text-right text-[11px] font-semibold">
+                Total ({filtered.length} OS):
+              </td>
+              <td className="py-1.5 pr-2 text-right text-[11px] font-semibold">
+                {summary.avg_execution_days != null ? `${summary.avg_execution_days}d méd.` : ''}
+              </td>
+              <td className="py-1.5 pr-2 text-right text-[11px] font-semibold">
+                {fmtCurrency(summary.total_revenue)}
+              </td>
+              <td />
+            </tr>
+          </tfoot>
+        </table>
+      </div>
 
       <div className="print:hidden">
         <DataTablePagination
@@ -328,6 +372,27 @@ function OsRow({ row }: { row: OsPorPeriodoRow }) {
           {statusLabel}
         </span>
       </td>
+    </tr>
+  )
+}
+
+function PrintRow({ row }: { row: OsPorPeriodoRow }) {
+  const statusLabel = STATUS_LABELS[row.status] ?? row.status
+  const equipment = [row.device_type, row.device_brand, row.device_model].filter(Boolean).join(' ')
+
+  return (
+    <tr className="border-b border-gray-300" style={{ breakInside: 'avoid' }}>
+      <td className="py-1 pr-2 font-mono">#{row.number}</td>
+      <td className="py-1 pr-2">{row.client_name ?? '—'}</td>
+      <td className="py-1 pr-2 max-w-36 truncate">{equipment || '—'}</td>
+      <td className="py-1 pr-2">{row.technician_name ?? '—'}</td>
+      <td className="py-1 pr-2 whitespace-nowrap">{fmtDate(row.created_at)}</td>
+      <td className="py-1 pr-2 whitespace-nowrap">{fmtDate(row.completed_at)}</td>
+      <td className="py-1 pr-2 text-right">{row.execution_days != null ? `${row.execution_days}d` : '—'}</td>
+      <td className="py-1 pr-2 text-right whitespace-nowrap">
+        {row.amount_paid != null ? fmtCurrency(row.amount_paid) : '—'}
+      </td>
+      <td className="py-1">{statusLabel}</td>
     </tr>
   )
 }
