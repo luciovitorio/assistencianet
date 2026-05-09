@@ -39,7 +39,8 @@ export default async function EstoquePage({
       .eq('company_id', companyId)
       .is('deleted_at', null)
       .eq('active', true)
-      .order('name', { ascending: true }),
+      .order('name', { ascending: true })
+      .limit(5000),
     supabase
       .from('branches')
       .select('id, name')
@@ -53,16 +54,19 @@ export default async function EstoquePage({
       .eq('company_id', companyId)
       .is('deleted_at', null)
       .eq('active', true)
-      .order('name', { ascending: true }),
+      .order('name', { ascending: true })
+      .limit(2000),
     supabase
       .from('stock_movements')
       .select('part_id, branch_id, quantity')
-      .eq('company_id', companyId),
+      .eq('company_id', companyId)
+      .limit(100000),
     supabase
       .from('stock_reservations')
       .select('part_id, branch_id, quantity')
       .eq('company_id', companyId)
-      .eq('status', 'ativa'),
+      .eq('status', 'ativa')
+      .limit(10000),
   ])
 
   // Saldo físico por `${part_id}:${branch_id}`

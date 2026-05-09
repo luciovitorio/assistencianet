@@ -19,6 +19,7 @@ export default async function LogsPage() {
     .select('*')
     .eq('company_id', companyId)
     .order('created_at', { ascending: false })
+    .limit(500)
 
   return (
     <div className="space-y-6">

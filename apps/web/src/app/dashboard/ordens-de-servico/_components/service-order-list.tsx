@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import {
   ArrowRight,
   Building2,
@@ -141,6 +141,10 @@ interface ServiceOrderListProps {
   currentEmployeeId: string | null
   initialColumnVisibility: Record<string, boolean> | null
   isAdmin: boolean
+  totalCount: number
+  currentPage: number
+  totalPages: number
+  rowsPerPage: number
 }
 
 type DialogState =
@@ -245,8 +249,14 @@ export function ServiceOrderList({
   initialColumnVisibility,
   currentEmployeeId,
   isAdmin,
+  totalCount,
+  currentPage,
+  totalPages,
+  rowsPerPage,
 }: ServiceOrderListProps) {
   const router = useRouter()
+  const pathname = usePathname()
+  const rawSearchParams = useSearchParams()
   const { navigate } = useRouteTransition()
   useRealtimeRefresh('service_orders')
   const [orders, setOrders] = React.useState(initialOrders)
@@ -257,13 +267,14 @@ export function ServiceOrderList({
   const [pickupOrderId, setPickupOrderId] = React.useState<string | null>(null)
   const [dispatchOrderId, setDispatchOrderId] = React.useState<string | null>(null)
   const [returnOrderId, setReturnOrderId] = React.useState<string | null>(null)
-  const [search, setSearch] = React.useState('')
-  const [statusFilter, setStatusFilter] = React.useState<string[]>([])
-  const [branchFilter, setBranchFilter] = React.useState<string[]>([])
-  const [technicianFilter, setTechnicianFilter] = React.useState<string[]>([])
-  const [rowsPerPage, setRowsPerPage] = React.useState(10)
-  const [currentPage, setCurrentPage] = React.useState(1)
-  const deferredSearch = React.useDeferredValue(search)
+
+  const urlSearch = rawSearchParams.get('search') ?? ''
+  const urlStatusFilter = rawSearchParams.get('status')?.split(',').filter(Boolean) ?? []
+  const urlBranchFilter = rawSearchParams.get('branch')?.split(',').filter(Boolean) ?? []
+  const urlTechnicianFilter = rawSearchParams.get('technician')?.split(',').filter(Boolean) ?? []
+
+  const [localSearch, setLocalSearch] = React.useState(urlSearch)
+  const searchTimeoutRef = React.useRef<ReturnType<typeof setTimeout>>(undefined)
   const columnsForUser = isAdmin ? SERVICE_ORDER_COLUMNS_ADMIN : SERVICE_ORDER_COLUMNS_BASE
   const {
     visibility: columnVisibility,
@@ -296,100 +307,52 @@ export function ServiceOrderList({
   )
 
   const statusOptions = React.useMemo<DataTableFilterOption[]>(
-    () =>
-      (Object.keys(STATUS_LABELS) as ServiceOrderStatus[]).map((s) => ({
-        value: s,
-        label: STATUS_LABELS[s],
-        count: orders.filter((o) => o.status === s).length,
-      })),
-    [orders]
+    () => (Object.keys(STATUS_LABELS) as ServiceOrderStatus[]).map((s) => ({ value: s, label: STATUS_LABELS[s] })),
+    []
   )
 
   const branchOptions = React.useMemo<DataTableFilterOption[]>(
-    () =>
-      branches.map((b) => ({
-        value: b.id,
-        label: b.name,
-        count: orders.filter((o) => o.branch_id === b.id).length,
-      })),
-    [branches, orders]
+    () => branches.map((b) => ({ value: b.id, label: b.name })),
+    [branches]
   )
 
-  const technicianOptions = React.useMemo<DataTableFilterOption[]>(() => {
-    const countById = new Map<string, number>()
-    for (const o of orders) {
-      if (o.technician_id) countById.set(o.technician_id, (countById.get(o.technician_id) ?? 0) + 1)
+  const technicianOptions = React.useMemo<DataTableFilterOption[]>(
+    () => employees.map((e) => ({ value: e.id, label: e.name })),
+    [employees]
+  )
+
+  function buildFilterUrl(updates: Record<string, string | null>) {
+    const params = new URLSearchParams(rawSearchParams)
+    for (const [key, value] of Object.entries(updates)) {
+      if (value === null || value === '') {
+        params.delete(key)
+      } else {
+        params.set(key, value)
+      }
     }
-    return employees
-      .filter((e) => countById.has(e.id))
-      .map((e) => ({ value: e.id, label: e.name, count: countById.get(e.id)! }))
-  }, [employees, orders])
+    const str = params.toString()
+    return str ? `${pathname}?${str}` : pathname
+  }
 
-  const filteredOrders = React.useMemo(() => {
-    const q = deferredSearch.trim().toLowerCase()
+  React.useEffect(() => {
+    setLocalSearch(urlSearch)
+  }, [urlSearch])
 
-    return orders.filter((order) => {
-      const client = clientMap[order.client_id]
-      const technicianName = order.technician_id ? technicianMap[order.technician_id] : ''
-      const branchName = order.branch_id ? branchMap[order.branch_id] : ''
-
-      const matchesSearch =
-        q.length === 0 ||
-        [
-          String(order.number),
-          client?.name,
-          client?.phone,
-          client?.document,
-          order.device_brand,
-          order.device_model,
-          order.device_serial,
-          order.reported_issue,
-          technicianName,
-          branchName,
-        ]
-          .filter(Boolean)
-          .some((v) => v!.toLowerCase().includes(q))
-
-      const matchesStatus = statusFilter.length === 0 || statusFilter.includes(order.status)
-      const matchesBranch =
-        branchFilter.length === 0 ||
-        (order.branch_id !== null && branchFilter.includes(order.branch_id))
-      const matchesTechnician =
-        technicianFilter.length === 0 ||
-        (order.technician_id !== null && technicianFilter.includes(order.technician_id))
-
-      return matchesSearch && matchesStatus && matchesBranch && matchesTechnician
-    })
-  }, [
-    branchFilter,
-    branchMap,
-    clientMap,
-    deferredSearch,
-    orders,
-    statusFilter,
-    technicianFilter,
-    technicianMap,
-  ])
+  function handleSearchChange(value: string) {
+    setLocalSearch(value)
+    clearTimeout(searchTimeoutRef.current)
+    searchTimeoutRef.current = setTimeout(() => {
+      router.push(buildFilterUrl({ search: value.trim() || null, page: null }))
+    }, 400)
+  }
 
   const hasActiveFilters =
-    search.trim().length > 0 ||
-    statusFilter.length > 0 ||
-    branchFilter.length > 0 ||
-    technicianFilter.length > 0
+    urlSearch.trim().length > 0 ||
+    urlStatusFilter.length > 0 ||
+    urlBranchFilter.length > 0 ||
+    urlTechnicianFilter.length > 0
 
-  const totalPages = Math.max(1, Math.ceil(filteredOrders.length / rowsPerPage))
-  const paginatedOrders = React.useMemo(() => {
-    const start = (currentPage - 1) * rowsPerPage
-    return filteredOrders.slice(start, start + rowsPerPage)
-  }, [currentPage, filteredOrders, rowsPerPage])
-
-  React.useEffect(() => {
-    setCurrentPage(1)
-  }, [deferredSearch, statusFilter, branchFilter, technicianFilter, rowsPerPage])
-
-  React.useEffect(() => {
-    if (currentPage > totalPages) setCurrentPage(totalPages)
-  }, [currentPage, totalPages])
+  const paginatedOrders = orders
 
   const closeDialog = () => setDialog({ type: 'none' })
 
@@ -505,10 +468,9 @@ export function ServiceOrderList({
   }
 
   const resetFilters = () => {
-    setSearch('')
-    setStatusFilter([])
-    setBranchFilter([])
-    setTechnicianFilter([])
+    setLocalSearch('')
+    clearTimeout(searchTimeoutRef.current)
+    router.push(buildFilterUrl({ search: null, status: null, branch: null, technician: null, page: null }))
   }
 
   const handleDeleteSuccess = (deletedId: string) => {
@@ -584,37 +546,39 @@ export function ServiceOrderList({
         filters={
           <>
             <DataTableSearch
-              value={search}
-              onChange={setSearch}
+              value={localSearch}
+              onChange={handleSearchChange}
               placeholder="Buscar por número, cliente, equipamento..."
-              disabled={orders.length === 0}
+              disabled={totalCount === 0 && !hasActiveFilters}
             />
 
             <DataTableFilterPopover
               title="Status"
               options={statusOptions}
-              selectedValues={statusFilter}
-              onToggle={(v) =>
-                setStatusFilter((prev) =>
-                  prev.includes(v) ? prev.filter((x) => x !== v) : [...prev, v]
-                )
-              }
-              onClear={() => setStatusFilter([])}
-              disabled={orders.length === 0}
+              selectedValues={urlStatusFilter}
+              onToggle={(v) => {
+                const next = urlStatusFilter.includes(v)
+                  ? urlStatusFilter.filter((x) => x !== v)
+                  : [...urlStatusFilter, v]
+                router.push(buildFilterUrl({ status: next.join(',') || null, page: null }))
+              }}
+              onClear={() => router.push(buildFilterUrl({ status: null, page: null }))}
+              disabled={totalCount === 0 && !hasActiveFilters}
             />
 
             {isAdmin && (
               <DataTableFilterPopover
                 title="Filial"
                 options={branchOptions}
-                selectedValues={branchFilter}
-                onToggle={(v) =>
-                  setBranchFilter((prev) =>
-                    prev.includes(v) ? prev.filter((x) => x !== v) : [...prev, v]
-                  )
-                }
-                onClear={() => setBranchFilter([])}
-                disabled={orders.length === 0}
+                selectedValues={urlBranchFilter}
+                onToggle={(v) => {
+                  const next = urlBranchFilter.includes(v)
+                    ? urlBranchFilter.filter((x) => x !== v)
+                    : [...urlBranchFilter, v]
+                  router.push(buildFilterUrl({ branch: next.join(',') || null, page: null }))
+                }}
+                onClear={() => router.push(buildFilterUrl({ branch: null, page: null }))}
+                disabled={totalCount === 0 && !hasActiveFilters}
               />
             )}
 
@@ -622,14 +586,15 @@ export function ServiceOrderList({
               <DataTableFilterPopover
                 title="Técnico"
                 options={technicianOptions}
-                selectedValues={technicianFilter}
-                onToggle={(v) =>
-                  setTechnicianFilter((prev) =>
-                    prev.includes(v) ? prev.filter((x) => x !== v) : [...prev, v]
-                  )
-                }
-                onClear={() => setTechnicianFilter([])}
-                disabled={orders.length === 0}
+                selectedValues={urlTechnicianFilter}
+                onToggle={(v) => {
+                  const next = urlTechnicianFilter.includes(v)
+                    ? urlTechnicianFilter.filter((x) => x !== v)
+                    : [...urlTechnicianFilter, v]
+                  router.push(buildFilterUrl({ technician: next.join(',') || null, page: null }))
+                }}
+                onClear={() => router.push(buildFilterUrl({ technician: null, page: null }))}
+                disabled={totalCount === 0 && !hasActiveFilters}
               />
             )}
 
@@ -657,7 +622,7 @@ export function ServiceOrderList({
       />
 
       <DataTableCard>
-        {orders.length === 0 ? (
+        {orders.length === 0 && !hasActiveFilters ? (
           <div className="flex flex-col items-center justify-center p-16 text-center">
             <Wrench className="size-12 text-muted-foreground/40 mb-4" />
             <h3 className="text-lg font-medium mb-2">Nenhuma OS cadastrada</h3>
@@ -665,18 +630,16 @@ export function ServiceOrderList({
               Clique em &quot;Nova OS&quot; para abrir a primeira ordem de serviço.
             </p>
           </div>
-        ) : filteredOrders.length === 0 ? (
+        ) : orders.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-16 text-center">
             <h3 className="text-lg font-medium mb-2">Nenhum resultado encontrado</h3>
             <p className="text-muted-foreground text-sm max-w-md">
               Ajuste a busca ou os filtros para localizar outra OS.
             </p>
-            {hasActiveFilters && (
-              <Button variant="outline" onClick={resetFilters} className="mt-4 gap-2">
-                <X className="size-4" />
-                Limpar filtros
-              </Button>
-            )}
+            <Button variant="outline" onClick={resetFilters} className="mt-4 gap-2">
+              <X className="size-4" />
+              Limpar filtros
+            </Button>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -1232,15 +1195,15 @@ export function ServiceOrderList({
           </div>
         )}
 
-        {orders.length > 0 && filteredOrders.length > 0 && (
+        {orders.length > 0 && (
           <DataTablePagination
             currentPage={currentPage}
             totalPages={totalPages}
             rowsPerPage={rowsPerPage}
-            onRowsPerPageChange={setRowsPerPage}
-            onPageChange={setCurrentPage}
-            totalItems={filteredOrders.length}
-            currentItemsCount={paginatedOrders.length}
+            onRowsPerPageChange={(rows) => router.push(buildFilterUrl({ perPage: String(rows), page: null }))}
+            onPageChange={(p) => router.push(buildFilterUrl({ page: String(p) }))}
+            totalItems={totalCount}
+            currentItemsCount={orders.length}
             itemLabel="OS"
           />
         )}

@@ -40,7 +40,29 @@ const normalizeServiceOrder = (order: ServiceOrderQueryRow): ServiceOrderData =>
   }
 }
 
-export default async function OrdensDeServicoPage() {
+const VALID_PER_PAGE = [10, 25, 50] as const
+
+export default async function OrdensDeServicoPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}) {
+  const params = await searchParams
+  const page = Math.max(1, Number(params.page) || 1)
+  const perPage = VALID_PER_PAGE.includes(Number(params.perPage) as typeof VALID_PER_PAGE[number])
+    ? Number(params.perPage)
+    : 25
+  const search = (typeof params.search === 'string' ? params.search : '') || ''
+  const statusFilter = typeof params.status === 'string' && params.status
+    ? params.status.split(',').filter(Boolean)
+    : []
+  const branchFilter = typeof params.branch === 'string' && params.branch
+    ? params.branch.split(',').filter(Boolean)
+    : []
+  const technicianFilter = typeof params.technician === 'string' && params.technician
+    ? params.technician.split(',').filter(Boolean)
+    : []
+
   const supabase = await createClient()
 
   let companyId: string
@@ -67,21 +89,64 @@ export default async function OrdensDeServicoPage() {
     redirect('/dashboard')
   }
 
+  // Pre-query client IDs matching the search text (for name/phone/document search)
+  let searchClientIds: string[] = []
+  if (search.trim()) {
+    const q = search.trim()
+    const { data: matchingClients } = await supabase
+      .from('clients')
+      .select('id')
+      .eq('company_id', companyId)
+      .or(`name.ilike.%${q}%,phone.ilike.%${q}%,document.ilike.%${q}%`)
+    searchClientIds = matchingClients?.map((c) => c.id) ?? []
+  }
+
+  const from = (page - 1) * perPage
+  const to = from + perPage - 1
+
   const serviceOrdersQuery = supabase
     .from('service_orders')
     .select(
-      'id, number, status, device_type, device_brand, device_model, device_serial, device_color, device_internal_code, device_condition, reported_issue, estimated_delivery, notes, branch_id, client_id, technician_id, third_party_id, created_at, client_notified_at, client_notified_via, clients!client_id(id, name, phone, document, email), service_order_estimates(id, version, total_amount, status, valid_until, profiles!created_by(name))'
+      'id, number, status, device_type, device_brand, device_model, device_serial, device_color, device_internal_code, device_condition, reported_issue, estimated_delivery, notes, branch_id, client_id, technician_id, third_party_id, created_at, client_notified_at, client_notified_via, clients!client_id(id, name, phone, document, email), service_order_estimates(id, version, total_amount, status, valid_until, profiles!created_by(name))',
+      { count: 'exact' }
     )
     .eq('company_id', companyId)
     .is('deleted_at', null)
     .order('number', { ascending: false })
+    .range(from, to)
 
   if (!isAdmin && currentBranchId) {
     serviceOrdersQuery.eq('branch_id', currentBranchId)
   }
 
+  if (statusFilter.length > 0) {
+    serviceOrdersQuery.in('status', statusFilter)
+  }
+
+  if (branchFilter.length > 0) {
+    serviceOrdersQuery.in('branch_id', branchFilter)
+  }
+
+  if (technicianFilter.length > 0) {
+    serviceOrdersQuery.in('technician_id', technicianFilter)
+  }
+
+  if (search.trim()) {
+    const q = search.trim()
+    const isNumeric = /^\d+$/.test(q)
+    const conditions: string[] = [
+      `device_brand.ilike.%${q}%`,
+      `device_model.ilike.%${q}%`,
+      `device_serial.ilike.%${q}%`,
+      `reported_issue.ilike.%${q}%`,
+    ]
+    if (isNumeric) conditions.unshift(`number.eq.${parseInt(q, 10)}`)
+    if (searchClientIds.length > 0) conditions.push(`client_id.in.(${searchClientIds.join(',')})`)
+    serviceOrdersQuery.or(conditions.join(','))
+  }
+
   const [
-    { data: serviceOrders },
+    { data: serviceOrders, count: totalCount },
     { data: branches },
     { data: employees },
     { data: activeThirdParties },
@@ -120,6 +185,10 @@ export default async function OrdensDeServicoPage() {
     if (client) clientsById.set(client.id, client)
   }
 
+  const resolvedTotalCount = totalCount ?? 0
+  const totalPages = Math.max(1, Math.ceil(resolvedTotalCount / perPage))
+  const safePage = Math.min(page, totalPages)
+
   return (
     <div className="space-y-6">
       <ServiceOrderList
@@ -132,6 +201,10 @@ export default async function OrdensDeServicoPage() {
         currentEmployeeId={currentEmployeeId}
         initialColumnVisibility={columnVisibility}
         isAdmin={isAdmin}
+        totalCount={resolvedTotalCount}
+        currentPage={safePage}
+        totalPages={totalPages}
+        rowsPerPage={perPage}
       />
     </div>
   )

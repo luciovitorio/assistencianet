@@ -26,7 +26,8 @@ export default async function FuncionariosPage() {
       .select('id, name, role, email, phone, cpf, active, branch_id, user_id, labor_rate, is_owner')
       .eq('company_id', companyId)
       .is('deleted_at', null)
-      .order('name', { ascending: true }),
+      .order('name', { ascending: true })
+      .limit(500),
     supabase
       .from('branches')
       .select('id, name')

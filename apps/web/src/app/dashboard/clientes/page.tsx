@@ -42,7 +42,8 @@ export default async function ClientesPage() {
       .from('clients')
       .select('id, name, document, phone, email, address, notes, active, origin_branch_id, zip_code, street, number, complement, city, state, classification, classification_manual')
       .eq('company_id', companyId)
-      .is('deleted_at', null),
+      .is('deleted_at', null)
+      .limit(10000),
     supabase
       .from('branches')
       .select('id, name, is_main')

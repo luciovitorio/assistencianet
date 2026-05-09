@@ -20,14 +20,16 @@ export default async function PecasPage() {
       .select('id, name, sku, category, unit, supplier_id, cost_price, sale_price, min_stock, notes, active')
       .eq('company_id', companyId)
       .is('deleted_at', null)
-      .order('name', { ascending: true }),
+      .order('name', { ascending: true })
+      .limit(5000),
     supabase
       .from('suppliers')
       .select('id, name')
       .eq('company_id', companyId)
       .is('deleted_at', null)
       .eq('active', true)
-      .order('name', { ascending: true }),
+      .order('name', { ascending: true })
+      .limit(2000),
   ])
 
   return (
