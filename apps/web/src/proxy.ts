@@ -253,6 +253,16 @@ export async function proxy(request: NextRequest) {
         return NextResponse.redirect(new URL('/login', request.url))
       }
 
+      const { data: employeeCompany } = await createAdminClient()
+        .from('companies')
+        .select('is_blocked')
+        .eq('id', employee.company_id)
+        .maybeSingle()
+
+      if ((employeeCompany as { is_blocked?: boolean } | null)?.is_blocked) {
+        return NextResponse.redirect(new URL('/conta-suspensa', request.url))
+      }
+
       const billingAccess = await getBillingAccess(employee.company_id)
       if (!billingAccess.active || getBlockedPlanFeature(pathname, billingAccess)) {
         return NextResponse.redirect(new URL('/sem-plano', request.url))
@@ -273,9 +283,13 @@ export async function proxy(request: NextRequest) {
 
     const { data: company } = await supabase
       .from('companies')
-      .select('id, onboarding_completed, onboarding_step')
+      .select('id, onboarding_completed, onboarding_step, is_blocked')
       .eq('owner_id', user.id)
       .single()
+
+    if (company?.is_blocked) {
+      return NextResponse.redirect(new URL('/conta-suspensa', request.url))
+    }
 
     if (!company || !company.onboarding_completed) {
       const step = company?.onboarding_step ?? 0

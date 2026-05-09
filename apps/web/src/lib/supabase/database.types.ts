@@ -454,6 +454,7 @@ export type Database = {
           created_at: string | null
           email: string | null
           id: string
+          is_blocked: boolean
           logo_url: string | null
           name: string
           onboarding_completed: boolean | null
@@ -469,6 +470,7 @@ export type Database = {
           created_at?: string | null
           email?: string | null
           id?: string
+          is_blocked?: boolean
           logo_url?: string | null
           name: string
           onboarding_completed?: boolean | null
@@ -484,6 +486,7 @@ export type Database = {
           created_at?: string | null
           email?: string | null
           id?: string
+          is_blocked?: boolean
           logo_url?: string | null
           name?: string
           onboarding_completed?: boolean | null
