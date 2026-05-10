@@ -19,11 +19,20 @@ export default async function PixPage({ params }: { params: Promise<{ osId: stri
     ? new Date(os.asaas_pix_expires_at) < new Date()
     : false
 
-  const [{ data: company }, { data: branch }] = await Promise.all([
+  const [{ data: company }, { data: branch }, { data: estimate }] = await Promise.all([
     supabase.from('companies').select('name, cnpj, phone').eq('id', os.company_id).single(),
     os.branch_id
       ? supabase.from('branches').select('name, phone, city, state').eq('id', os.branch_id).maybeSingle()
       : Promise.resolve({ data: null }),
+    supabase
+      .from('service_order_estimates')
+      .select('total_amount')
+      .eq('service_order_id', osId)
+      .eq('status', 'aprovado')
+      .is('deleted_at', null)
+      .order('version', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ])
 
   return (
@@ -64,6 +73,14 @@ export default async function PixPage({ params }: { params: Promise<{ osId: stri
             <div className="text-center space-y-1">
               <p className="text-sm text-muted-foreground">Pagamento via PIX</p>
               <h1 className="text-2xl font-bold">OS #{os.number}</h1>
+              {estimate?.total_amount != null && (
+                <p className="text-3xl font-extrabold text-emerald-600">
+                  {Number(estimate.total_amount).toLocaleString('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL',
+                  })}
+                </p>
+              )}
             </div>
 
             {isExpired ? (
