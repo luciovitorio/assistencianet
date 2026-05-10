@@ -78,10 +78,10 @@ export default async function OrdensDeServicoPage({
       p_limit:           perPage,
       p_search:          q ?? undefined,
       p_search_number:   searchNumber ?? undefined,
-      p_statuses:        statusFilter.length > 0 ? statusFilter : null,
-      p_branches:        branchFilter.length > 0 ? branchFilter : null,
-      p_technicians:     technicianFilter.length > 0 ? technicianFilter : null,
-      p_restrict_branch: !isAdmin && currentBranchId ? currentBranchId : null,
+      p_statuses:        statusFilter.length > 0 ? statusFilter : undefined,
+      p_branches:        branchFilter.length > 0 ? branchFilter : undefined,
+      p_technicians:     technicianFilter.length > 0 ? technicianFilter : undefined,
+      p_restrict_branch: !isAdmin && currentBranchId ? currentBranchId : undefined,
     }),
     supabase
       .from('employees')
