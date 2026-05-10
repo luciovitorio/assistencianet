@@ -23,6 +23,7 @@ import { ServiceOrderTimeline } from './_components/service-order-timeline'
 import { TimelineSheet } from './_components/timeline-sheet'
 import { EstimatesModal } from './_components/estimates-modal'
 import { type ServiceOrderEstimateRecord } from './_components/service-order-estimates-panel'
+import { GeneratePixButton } from './_components/generate-pix-button'
 
 type ServiceOrderPageProps = {
   params: Promise<{ id: string }>
@@ -191,7 +192,7 @@ export default async function ServiceOrderDetailPage({ params }: ServiceOrderPag
     supabase
       .from('service_orders')
       .select(
-        'id, number, status, payment_status, device_type, device_brand, device_model, device_serial, device_color, device_internal_code, device_condition, reported_issue, estimated_delivery, delivered_at, warranty_expires_at, notes, branch_id, client_id, technician_id, created_at, third_party_id, third_party_dispatched_at, third_party_expected_return_at, third_party_returned_at, third_party_notes, parent_service_order_id, is_warranty_rework',
+        'id, number, status, payment_status, device_type, device_brand, device_model, device_serial, device_color, device_internal_code, device_condition, reported_issue, estimated_delivery, delivered_at, warranty_expires_at, notes, branch_id, client_id, technician_id, created_at, third_party_id, third_party_dispatched_at, third_party_expected_return_at, third_party_returned_at, third_party_notes, parent_service_order_id, is_warranty_rework, asaas_payment_id',
       )
       .eq('id', id)
       .eq('company_id', companyId)
@@ -241,6 +242,7 @@ export default async function ServiceOrderDetailPage({ params }: ServiceOrderPag
     { data: currentThirdParty },
     { data: parentServiceOrder },
     { data: childReworks },
+    { data: pixData },
   ] = await Promise.all([
     supabase
       .from('clients')
@@ -323,6 +325,19 @@ export default async function ServiceOrderDetailPage({ params }: ServiceOrderPag
       .eq('company_id', companyId)
       .is('deleted_at', null)
       .order('created_at', { ascending: false }),
+    // Campos pesados do PIX só buscados quando a OS está pronta e tem cobrança pendente
+    serviceOrder.status === 'pronto' && serviceOrder.asaas_payment_id
+      ? supabase
+          .from('service_orders')
+          .select('asaas_pix_qr_encoded, asaas_pix_copy_paste, asaas_pix_expires_at')
+          .eq('id', serviceOrder.id)
+          .eq('company_id', companyId)
+          .maybeSingle<{
+            asaas_pix_qr_encoded: string | null
+            asaas_pix_copy_paste: string | null
+            asaas_pix_expires_at: string | null
+          }>()
+      : Promise.resolve({ data: null }),
   ])
 
   const fisico: Record<string, number> = {}
@@ -584,6 +599,64 @@ export default async function ServiceOrderDetailPage({ params }: ServiceOrderPag
                       #{formatOsNumber(rework.number)}
                     </Link>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {/* Botão gerar PIX quando Asaas está configurado mas cobrança ainda não existe */}
+            {status === 'pronto' && !serviceOrder.asaas_payment_id && paymentStatus !== 'pago' && (
+              <div>
+                <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
+                  Cobrança PIX
+                </p>
+                <GeneratePixButton osId={serviceOrder.id} />
+              </div>
+            )}
+
+            {/* PIX pendente */}
+            {status === 'pronto' && serviceOrder.asaas_payment_id && pixData && (pixData.asaas_pix_qr_encoded || pixData.asaas_pix_copy_paste) && paymentStatus !== 'pago' && (
+              <div>
+                <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
+                  Cobrança PIX
+                </p>
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 space-y-3">
+                  {pixData.asaas_pix_qr_encoded && (
+                    <div className="flex justify-center">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={`data:image/png;base64,${pixData.asaas_pix_qr_encoded}`}
+                        alt="QR Code PIX"
+                        className="size-36 rounded-lg border border-emerald-200"
+                      />
+                    </div>
+                  )}
+                  {pixData.asaas_pix_copy_paste && (
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-semibold text-emerald-700">
+                        {pixData.asaas_pix_qr_encoded ? 'Copia e cola' : 'Link de pagamento'}
+                      </p>
+                      <a
+                        href={pixData.asaas_pix_copy_paste}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block break-all rounded bg-white/70 px-2 py-1.5 font-mono text-[10px] text-emerald-700 underline border border-emerald-100"
+                      >
+                        {pixData.asaas_pix_copy_paste}
+                      </a>
+                    </div>
+                  )}
+                  {pixData.asaas_pix_expires_at && (
+                    <p className="text-[10px] text-emerald-600">
+                      Expira em{' '}
+                      {new Date(pixData.asaas_pix_expires_at).toLocaleDateString('pt-BR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </p>
+                  )}
                 </div>
               </div>
             )}

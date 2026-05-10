@@ -29,6 +29,16 @@ export interface EvolutionApiSendTextInput {
   delay?: number
 }
 
+export interface EvolutionApiSendMediaInput {
+  number: string
+  mediatype: 'image' | 'document' | 'video' | 'audio'
+  /** URL pública OU base64 puro (sem prefixo data:...). Use mimetype para base64. */
+  media: string
+  mimetype?: string
+  caption?: string
+  delay?: number
+}
+
 export interface EvolutionApiSetWebhookInput {
   url: string
   events?: string[]
@@ -266,6 +276,19 @@ export class EvolutionApiClient {
       instanceName: this.instanceName,
       number,
     }
+  }
+
+  async sendMedia({ number, mediatype, media, mimetype, caption, delay }: EvolutionApiSendMediaInput) {
+    if (!this.instanceName) {
+      throw new Error('Informe o nome da instância da Evolution API.')
+    }
+
+    await this.request<unknown>(`/message/sendMedia/${encodeURIComponent(this.instanceName)}`, {
+      method: 'POST',
+      body: JSON.stringify({ number, mediatype, media, mimetype, caption, delay }),
+    })
+
+    return { instanceName: this.instanceName, number }
   }
 
   async logoutInstance() {

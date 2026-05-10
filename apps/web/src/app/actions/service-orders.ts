@@ -13,6 +13,8 @@ import {
   resolveWhatsAppMessageTemplate,
   DEFAULT_WHATSAPP_MESSAGES,
 } from '@/lib/whatsapp/message-templates'
+import { createAsaasClient } from '@/lib/asaas'
+import type { AsaasEnvironment } from '@/lib/asaas'
 import { calculatePickupPayment } from '@/lib/service-orders/pickup-payment'
 import { reserveEstimatePartsIfAvailable } from '@/lib/service-orders/reserve-estimate-parts'
 import { applyEstimateClientResponse } from '@/lib/service-orders/apply-estimate-response'
@@ -155,6 +157,148 @@ async function clearBotSessionOnServiceComplete(companyId: string, osId: string)
       .eq('phone_number', normalizedPhone)
   } catch {
     // Silencioso — falha na limpeza não pode derrubar a atualização de status
+  }
+}
+
+/**
+ * Gera cobrança PIX no Asaas quando a OS fica pronta e envia QR Code via WhatsApp.
+ * Fire-and-forget — nunca bloqueia o fluxo principal.
+ */
+async function generatePixChargeIfEnabled(companyId: string, osId: string): Promise<void> {
+  try {
+    const adminSupabase = createAdminClient()
+
+    const [{ data: asaasSettings }, { data: os }, { data: waSettings }, { data: approvedEstimate }] = await Promise.all([
+      adminSupabase
+        .from('asaas_payment_settings')
+        .select('enabled, environment, api_key')
+        .eq('company_id', companyId)
+        .maybeSingle<{
+          enabled: boolean
+          environment: AsaasEnvironment
+          api_key: string
+        }>(),
+      adminSupabase
+        .from('service_orders')
+        .select('id, number, asaas_payment_id, clients(id, name, phone, document)')
+        .eq('id', osId)
+        .is('deleted_at', null)
+        .maybeSingle<{
+          id: string
+          number: number
+          asaas_payment_id: string | null
+          clients: { id: string; name: string; phone: string | null; document: string | null } | null
+        }>(),
+      adminSupabase
+        .from('whatsapp_automation_settings')
+        .select('enabled, provider, evolution_base_url, evolution_api_key, evolution_instance_name, default_country_code')
+        .eq('company_id', companyId)
+        .maybeSingle<{
+          enabled: boolean
+          provider: string
+          evolution_base_url: string
+          evolution_api_key: string | null
+          evolution_instance_name: string | null
+          default_country_code: string | null
+        }>(),
+      // Query isolada e filtrada — evita carregar todos os orçamentos no app
+      adminSupabase
+        .from('service_order_estimates')
+        .select('total_amount')
+        .eq('service_order_id', osId)
+        .eq('status', 'aprovado')
+        .is('deleted_at', null)
+        .order('version', { ascending: false })
+        .limit(1)
+        .maybeSingle<{ total_amount: number | null }>(),
+    ])
+
+    if (!asaasSettings?.enabled || !asaasSettings.api_key) return
+    if (!os) return
+    if (os.asaas_payment_id) return // cobrança já existe
+
+    const totalAmount = Number(approvedEstimate?.total_amount ?? 0)
+    if (totalAmount <= 0) return
+
+    const client = createAsaasClient(asaasSettings.api_key, asaasSettings.environment)
+
+    const clientName = os.clients?.name ?? 'Cliente'
+    const clientPhone = os.clients?.phone?.replace(/\D/g, '') ?? undefined
+    const rawDocument = os.clients?.document?.replace(/\D/g, '') ?? ''
+    const cpfCnpj = rawDocument.length === 11 || rawDocument.length === 14 ? rawDocument : undefined
+
+    if (!cpfCnpj) return // cliente sem CPF/CNPJ — não gera cobrança automaticamente
+
+    const externalRef = `client_${os.clients?.id ?? osId}`
+
+    const asaasCustomer = await client.findOrCreateCustomer({
+      name: clientName,
+      cpfCnpj,
+      ...(clientPhone && { mobilePhone: clientPhone }),
+      externalReference: externalRef,
+    })
+
+    const dueDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+
+    const charge = await client.createCharge({
+      customer: asaasCustomer.id,
+      billingType: 'PIX',
+      value: totalAmount,
+      dueDate,
+      description: `OS #${os.number}`,
+      externalReference: `os_${osId}`,
+    })
+
+    const qrCode = await client.getPixQrCodeSafe(charge)
+
+    await adminSupabase
+      .from('service_orders')
+      .update({
+        asaas_payment_id: charge.id,
+        asaas_pix_qr_encoded: qrCode.encodedImage ?? null,
+        asaas_pix_copy_paste: qrCode.payload ?? null,
+        asaas_pix_expires_at: qrCode.expirationDate ?? null,
+      })
+      .eq('id', osId)
+
+    // Envia QR Code via WhatsApp se Evolution estiver configurado
+    if (
+      waSettings?.enabled &&
+      waSettings.provider === 'evolution_api' &&
+      waSettings.evolution_api_key &&
+      waSettings.evolution_instance_name &&
+      os.clients?.phone
+    ) {
+      const recipient = normalizePhone(os.clients.phone, waSettings.default_country_code)
+      if (recipient) {
+        const evolutionClient = createEvolutionApiClient({
+          baseUrl: waSettings.evolution_base_url,
+          apiKey: waSettings.evolution_api_key,
+          instanceName: waSettings.evolution_instance_name,
+        })
+
+        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? ''
+        const pixPageUrl = siteUrl ? `${siteUrl}/pix/${osId}` : null
+
+        if (qrCode.encodedImage) {
+          await evolutionClient.sendMedia({
+            number: recipient,
+            mediatype: 'image',
+            mimetype: 'image/png',
+            media: qrCode.encodedImage,
+            caption: `Olá! O serviço da OS *#${os.number}* está pronto. Pague via PIX para retirar seu equipamento. 👇`,
+          })
+        }
+        if (pixPageUrl) {
+          await evolutionClient.sendText({
+            number: recipient,
+            text: `📋 *PIX Copia e Cola* — toque no link, depois em "Copiar código PIX" e cole no seu banco:\n${pixPageUrl}`,
+          })
+        }
+      }
+    }
+  } catch (err) {
+    console.error('[PIX] generatePixChargeIfEnabled falhou:', err)
   }
 }
 
@@ -413,6 +557,7 @@ export async function updateServiceOrderStatus(
     if (nextStatus === 'pronto') {
       void sendServiceCompletedWhatsApp(companyId, id)
       void clearBotSessionOnServiceComplete(companyId, id)
+      void generatePixChargeIfEnabled(companyId, id)
     }
 
     return { success: true }
@@ -1462,6 +1607,11 @@ export async function returnFromThirdParty(
 
     revalidateServiceOrdersPage()
     revalidateServiceOrderDetailPage(id)
+
+    if (nextStatus === 'pronto') {
+      void generatePixChargeIfEnabled(companyId, id)
+    }
+
     return { success: true }
   } catch (error: unknown) {
     if (error instanceof Error) return { error: error.message }
