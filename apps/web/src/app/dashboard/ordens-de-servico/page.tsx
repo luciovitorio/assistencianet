@@ -77,7 +77,7 @@ export default async function OrdensDeServicoPage({
       p_offset:          offset,
       p_limit:           perPage,
       p_search:          q ?? undefined,
-      p_search_number:   searchNumber,
+      p_search_number:   searchNumber ?? undefined,
       p_statuses:        statusFilter.length > 0 ? statusFilter : null,
       p_branches:        branchFilter.length > 0 ? branchFilter : null,
       p_technicians:     technicianFilter.length > 0 ? technicianFilter : null,
