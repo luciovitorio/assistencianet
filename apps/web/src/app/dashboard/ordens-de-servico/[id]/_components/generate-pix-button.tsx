@@ -14,7 +14,7 @@ export function GeneratePixButton({ osId }: { osId: string }) {
     startTransition(async () => {
       const result = await generatePixChargeForOs(osId)
       if ('error' in result) {
-        setMessage({ type: 'error', text: result.error })
+        setMessage({ type: 'error', text: result.error ?? 'Erro ao gerar cobrança PIX.' })
       } else {
         setMessage({ type: 'success', text: 'Cobrança PIX gerada! Recarregue a página para ver o QR Code.' })
       }
