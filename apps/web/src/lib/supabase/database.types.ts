@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      asaas_payment_settings: {
+        Row: {
+          api_key: string
+          company_id: string
+          created_at: string
+          enabled: boolean
+          environment: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          api_key?: string
+          company_id: string
+          created_at?: string
+          enabled?: boolean
+          environment?: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          api_key?: string
+          company_id?: string
+          created_at?: string
+          enabled?: boolean
+          environment?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asaas_payment_settings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -1140,6 +1178,10 @@ export type Database = {
       service_orders: {
         Row: {
           amount_paid: number | null
+          asaas_payment_id: string | null
+          asaas_pix_copy_paste: string | null
+          asaas_pix_expires_at: string | null
+          asaas_pix_qr_encoded: string | null
           branch_id: string | null
           change_amount: number | null
           client_id: string
@@ -1183,6 +1225,10 @@ export type Database = {
         }
         Insert: {
           amount_paid?: number | null
+          asaas_payment_id?: string | null
+          asaas_pix_copy_paste?: string | null
+          asaas_pix_expires_at?: string | null
+          asaas_pix_qr_encoded?: string | null
           branch_id?: string | null
           change_amount?: number | null
           client_id: string
@@ -1226,6 +1272,10 @@ export type Database = {
         }
         Update: {
           amount_paid?: number | null
+          asaas_payment_id?: string | null
+          asaas_pix_copy_paste?: string | null
+          asaas_pix_expires_at?: string | null
+          asaas_pix_qr_encoded?: string | null
           branch_id?: string | null
           change_amount?: number | null
           client_id?: string
@@ -2464,32 +2514,32 @@ export type Database = {
         Returns: string
       }
       get_current_user_company_id: { Args: never; Returns: string }
-      list_service_orders_page: {
-        Args: {
-          p_company_id: string
-          p_offset: number
-          p_limit: number
-          p_search?: string | null
-          p_search_number?: number | null
-          p_statuses?: string[] | null
-          p_branches?: string[] | null
-          p_technicians?: string[] | null
-          p_restrict_branch?: string | null
-        }
-        Returns: Json
-      }
       get_dashboard_overview: {
         Args: {
           p_company_id: string
-          p_start_date: string
           p_end_date: string
           p_open_statuses: string[]
+          p_start_date: string
         }
         Returns: Json
       }
       is_active_company_admin: {
         Args: { p_company_id: string }
         Returns: boolean
+      }
+      list_service_orders_page: {
+        Args: {
+          p_branches?: string[]
+          p_company_id: string
+          p_limit: number
+          p_offset: number
+          p_restrict_branch?: string
+          p_search?: string
+          p_search_number?: number
+          p_statuses?: string[]
+          p_technicians?: string[]
+        }
+        Returns: Json
       }
       recalculate_client_classification: {
         Args: { p_client_id: string }
@@ -2627,3 +2677,4 @@ export const Constants = {
     Enums: {},
   },
 } as const
+
