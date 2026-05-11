@@ -24,6 +24,7 @@ import { TimelineSheet } from './_components/timeline-sheet'
 import { EstimatesModal } from './_components/estimates-modal'
 import { type ServiceOrderEstimateRecord } from './_components/service-order-estimates-panel'
 import { GeneratePixButton } from './_components/generate-pix-button'
+import { PixCopyCode } from './_components/pix-copy-code'
 
 type ServiceOrderPageProps = {
   params: Promise<{ id: string }>
@@ -632,17 +633,8 @@ export default async function ServiceOrderDetailPage({ params }: ServiceOrderPag
                   )}
                   {pixData.asaas_pix_copy_paste && (
                     <div className="space-y-1">
-                      <p className="text-[10px] font-semibold text-emerald-700">
-                        {pixData.asaas_pix_qr_encoded ? 'Copia e cola' : 'Link de pagamento'}
-                      </p>
-                      <a
-                        href={pixData.asaas_pix_copy_paste}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block break-all rounded bg-white/70 px-2 py-1.5 font-mono text-[10px] text-emerald-700 underline border border-emerald-100"
-                      >
-                        {pixData.asaas_pix_copy_paste}
-                      </a>
+                      <p className="text-[10px] font-semibold text-emerald-700">Copia e cola</p>
+                      <PixCopyCode code={pixData.asaas_pix_copy_paste} />
                     </div>
                   )}
                   {pixData.asaas_pix_expires_at && (
