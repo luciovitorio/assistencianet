@@ -11,6 +11,8 @@ import {
   Building2,
   ChevronRight,
   Cpu,
+  ExternalLink,
+  Eye,
   Info,
   MessageSquare,
   Shield,
@@ -21,6 +23,13 @@ import {
   X,
 } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { buttonVariants } from '@/components/ui/button-variants'
@@ -37,8 +46,11 @@ import {
   createServiceOrder,
   editServiceOrder,
   getClientActiveWarranties,
+  getWarrantyOSDetails,
   type ActiveWarrantyOS,
+  type WarrantyOSDetails,
 } from '@/app/actions/service-orders'
+import { STATUS_LABELS, STATUS_COLORS } from '@/lib/validations/service-order'
 import { ClientDialog } from '@/app/dashboard/clientes/_components/client-dialog'
 import { EquipmentDialog } from '@/app/dashboard/equipamentos/_components/equipment-dialog'
 import { PrintServiceOrderDialog } from './print-service-order-dialog'
@@ -177,7 +189,7 @@ function ClientSearchInput({
                   </span>
                 )}
               </TooltipTrigger>
-              <TooltipContent side="right" align="center" className="z-[10000] flex-col items-start gap-1">
+              <TooltipContent side="right" align="center" className="z-10000 flex-col items-start gap-1">
                 <div><span className="font-semibold">Nome:</span> {client.name}</div>
                 {client.phone && <div><span className="font-semibold">Telefone:</span> {client.phone}</div>}
                 {client.document && <div><span className="font-semibold">CPF/CNPJ:</span> {client.document}</div>}
@@ -453,6 +465,25 @@ export function ServiceOrderForm({
   const selectedClientId = useWatch({ control, name: 'client_id' })
   const [activeWarranties, setActiveWarranties] = React.useState<ActiveWarrantyOS[]>([])
   const [linkedParent, setLinkedParent] = React.useState<ActiveWarrantyOS | null>(null)
+  const [previewOS, setPreviewOS] = React.useState<ActiveWarrantyOS | null>(null)
+  const [previewOSDetails, setPreviewOSDetails] = React.useState<WarrantyOSDetails | null>(null)
+  const [previewOSLoading, setPreviewOSLoading] = React.useState(false)
+
+  const openPreviewOS = (os: ActiveWarrantyOS) => {
+    setPreviewOS(os)
+    setPreviewOSDetails(null)
+    setPreviewOSLoading(true)
+    getWarrantyOSDetails(os.id).then((details) => {
+      setPreviewOSDetails(details)
+      setPreviewOSLoading(false)
+    })
+  }
+
+  const closePreviewOS = () => {
+    setPreviewOS(null)
+    setPreviewOSDetails(null)
+    setPreviewOSLoading(false)
+  }
 
   React.useEffect(() => {
     if (isEdit || !selectedClientId) {
@@ -842,15 +873,28 @@ export function ServiceOrderForm({
                                 {new Date(os.warranty_expires_at + 'T12:00:00').toLocaleDateString('pt-BR')}
                               </span>
                             </div>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              onClick={() => linkAsWarrantyRework(os)}
-                              className="border-amber-400 text-amber-900 hover:bg-amber-100 text-xs h-7"
-                            >
-                              Vincular como retrabalho
-                            </Button>
+                            <div className="flex items-center gap-1.5">
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => openPreviewOS(os)}
+                                className="text-amber-700 hover:bg-amber-100 hover:text-amber-900 text-xs h-7 px-2"
+                                title="Ver detalhes da OS"
+                              >
+                                <Eye className="size-3.5" />
+                                Ver OS
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => linkAsWarrantyRework(os)}
+                                className="border-amber-400 text-amber-900 hover:bg-amber-100 text-xs h-7"
+                              >
+                                Vincular como retrabalho
+                              </Button>
+                            </div>
                           </li>
                         ))}
                       </ul>
@@ -1104,6 +1148,191 @@ export function ServiceOrderForm({
           </div>
         </div>
       </form>
+
+      {/* Modal de preview da OS em garantia */}
+      <Dialog open={!!previewOS} onOpenChange={(open) => { if (!open) closePreviewOS() }}>
+        {previewOS && (
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <div className="flex items-center gap-2.5 pr-6">
+                <DialogTitle>OS #{formatOsNumber(previewOS.number)}</DialogTitle>
+                {previewOSDetails && (
+                  <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${STATUS_COLORS[previewOSDetails.status as keyof typeof STATUS_COLORS] ?? 'bg-muted text-muted-foreground'}`}>
+                    {STATUS_LABELS[previewOSDetails.status as keyof typeof STATUS_LABELS] ?? previewOSDetails.status}
+                  </span>
+                )}
+              </div>
+            </DialogHeader>
+
+            {previewOSLoading ? (
+              <div className="flex items-center justify-center py-10 text-sm text-muted-foreground">
+                Carregando...
+              </div>
+            ) : previewOSDetails ? (
+              <div className="space-y-4 overflow-y-auto max-h-[60vh] py-1 pr-0.5">
+
+                {/* Equipamento */}
+                <section className="space-y-1.5">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Equipamento</p>
+                  <div className="grid grid-cols-[7rem_1fr] gap-x-3 gap-y-1.5 text-sm">
+                    {(previewOSDetails.device_type || previewOSDetails.device_brand || previewOSDetails.device_model) && (
+                      <>
+                        <span className="text-muted-foreground">Aparelho</span>
+                        <span className="font-medium">
+                          {[previewOSDetails.device_type, previewOSDetails.device_brand, previewOSDetails.device_model].filter(Boolean).join(' ')}
+                        </span>
+                      </>
+                    )}
+                    {previewOSDetails.device_serial && (
+                      <>
+                        <span className="text-muted-foreground">Série</span>
+                        <span className="font-mono text-xs">{previewOSDetails.device_serial}</span>
+                      </>
+                    )}
+                    {previewOSDetails.device_color && (
+                      <>
+                        <span className="text-muted-foreground">Cor</span>
+                        <span>{previewOSDetails.device_color}</span>
+                      </>
+                    )}
+                    {previewOSDetails.device_internal_code && (
+                      <>
+                        <span className="text-muted-foreground">Cód. interno</span>
+                        <span className="font-mono text-xs">{previewOSDetails.device_internal_code}</span>
+                      </>
+                    )}
+                    {previewOSDetails.device_condition && (
+                      <>
+                        <span className="text-muted-foreground">Condição</span>
+                        <span>{previewOSDetails.device_condition}</span>
+                      </>
+                    )}
+                  </div>
+                </section>
+
+                {/* Defeito relatado */}
+                {previewOSDetails.reported_issue && (
+                  <section className="space-y-1.5">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Defeito relatado</p>
+                    <p className="text-sm rounded-md border bg-muted/40 px-3 py-2 leading-relaxed whitespace-pre-wrap">
+                      {previewOSDetails.reported_issue}
+                    </p>
+                  </section>
+                )}
+
+                {/* Cliente e Técnico */}
+                <section className="space-y-1.5">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Atendimento</p>
+                  <div className="grid grid-cols-[7rem_1fr] gap-x-3 gap-y-1.5 text-sm">
+                    {previewOSDetails.client && (
+                      <>
+                        <span className="text-muted-foreground">Cliente</span>
+                        <span className="font-medium">{previewOSDetails.client.name}</span>
+                      </>
+                    )}
+                    {previewOSDetails.client?.phone && (
+                      <>
+                        <span className="text-muted-foreground">Telefone</span>
+                        <span>{previewOSDetails.client.phone}</span>
+                      </>
+                    )}
+                    {previewOSDetails.technician && (
+                      <>
+                        <span className="text-muted-foreground">Técnico</span>
+                        <span>{previewOSDetails.technician.name}</span>
+                      </>
+                    )}
+                    <span className="text-muted-foreground">Abertura</span>
+                    <span>{new Date(previewOSDetails.created_at).toLocaleDateString('pt-BR')}</span>
+                    {previewOSDetails.estimated_delivery && (
+                      <>
+                        <span className="text-muted-foreground">Previsão</span>
+                        <span>{new Date(previewOSDetails.estimated_delivery + 'T12:00:00').toLocaleDateString('pt-BR')}</span>
+                      </>
+                    )}
+                    {previewOSDetails.delivered_at && (
+                      <>
+                        <span className="text-muted-foreground">Retirado em</span>
+                        <span>{new Date(previewOSDetails.delivered_at).toLocaleDateString('pt-BR')}</span>
+                      </>
+                    )}
+                  </div>
+                </section>
+
+                {/* Orçamento */}
+                {previewOSDetails.estimate && (
+                  <section className="space-y-1.5">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Orçamento</p>
+                    <div className="grid grid-cols-[7rem_1fr] gap-x-3 gap-y-1.5 text-sm">
+                      <span className="text-muted-foreground">Total</span>
+                      <span className="font-semibold">
+                        {previewOSDetails.estimate.total_amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      </span>
+                      {previewOSDetails.estimate.warranty_days != null && (
+                        <>
+                          <span className="text-muted-foreground">Garantia</span>
+                          <span>{previewOSDetails.estimate.warranty_days} dias</span>
+                        </>
+                      )}
+                    </div>
+                  </section>
+                )}
+
+                {/* Garantia */}
+                {previewOSDetails.warranty_expires_at && (
+                  <section className="space-y-1.5">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Garantia</p>
+                    <div className="grid grid-cols-[7rem_1fr] gap-x-3 gap-y-1.5 text-sm">
+                      <span className="text-muted-foreground">Válida até</span>
+                      <span className="font-medium text-emerald-700">
+                        {new Date(previewOSDetails.warranty_expires_at + 'T12:00:00').toLocaleDateString('pt-BR')}
+                      </span>
+                    </div>
+                  </section>
+                )}
+
+                {/* Observações */}
+                {previewOSDetails.notes && (
+                  <section className="space-y-1.5">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Observações</p>
+                    <p className="text-sm rounded-md border bg-muted/40 px-3 py-2 leading-relaxed whitespace-pre-wrap">
+                      {previewOSDetails.notes}
+                    </p>
+                  </section>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center justify-center py-10 text-sm text-muted-foreground">
+                Não foi possível carregar os dados.
+              </div>
+            )}
+
+            <DialogFooter className="flex-row items-center justify-between gap-2">
+              <a
+                href={`/dashboard/ordens-de-servico/${previewOS.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <ExternalLink className="size-3.5" />
+                Abrir OS completa
+              </a>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => {
+                  linkAsWarrantyRework(previewOS)
+                  closePreviewOS()
+                }}
+                className="bg-amber-500 hover:bg-amber-600 text-white text-xs h-8"
+              >
+                <ShieldCheck className="size-3.5" />
+                Vincular como retrabalho
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        )}
+      </Dialog>
     </div>
   )
 }

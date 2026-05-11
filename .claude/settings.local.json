@@ -124,7 +124,11 @@
       "Bash(Get-ChildItem -Path \"c:\\\\projetos\\\\assistencia_saas\" -Directory)",
       "Bash(Select-Object Name)",
       "Bash(Get-ChildItem -Path \"c:\\\\projetos\\\\assistencia_saas\\\\apps\\\\web\\\\src\\\\app\\\\dashboard\\\\ordens-de-servico\" -Recurse -File)",
-      "Bash(Select-Object FullName)"
+      "Bash(Select-Object FullName)",
+      "Bash(git checkout *)",
+      "Bash(git stash *)",
+      "Bash(Get-ChildItem -Path \"c:\\\\projetos\\\\assistencia_saas\" -Recurse -Filter \"*service*order*\" -ErrorAction SilentlyContinue)",
+      "Bash(Get-ChildItem -Path \"c:\\\\projetos\\\\assistencia_saas\\\\apps\\\\web\\\\src\" -Filter \"middleware.ts\" -Recurse)"
     ]
   }
 }

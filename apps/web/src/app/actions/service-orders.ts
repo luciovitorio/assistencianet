@@ -1211,6 +1211,94 @@ export async function getClientActiveWarranties(
   }
 }
 
+export type WarrantyOSDetails = {
+  id: string
+  number: number
+  status: string
+  payment_status: string | null
+  device_type: string | null
+  device_brand: string | null
+  device_model: string | null
+  device_serial: string | null
+  device_color: string | null
+  device_internal_code: string | null
+  device_condition: string | null
+  reported_issue: string | null
+  estimated_delivery: string | null
+  delivered_at: string | null
+  warranty_expires_at: string | null
+  notes: string | null
+  created_at: string
+  is_warranty_rework: boolean
+  equipment_model_id: string | null
+  client: { name: string; phone: string | null } | null
+  technician: { name: string } | null
+  estimate: { total_amount: number; warranty_days: number | null; status: string } | null
+}
+
+export async function getWarrantyOSDetails(
+  id: string,
+): Promise<WarrantyOSDetails | null> {
+  if (!id) return null
+  try {
+    const { companyId } = await getCompanyContext()
+    const supabase = await createSupabaseClient()
+
+    const { data: os } = await supabase
+      .from('service_orders')
+      .select(
+        'id, number, status, payment_status, device_type, device_brand, device_model, device_serial, device_color, device_internal_code, device_condition, reported_issue, estimated_delivery, delivered_at, warranty_expires_at, notes, created_at, client_id, technician_id, is_warranty_rework, equipment_model_id',
+      )
+      .eq('id', id)
+      .eq('company_id', companyId)
+      .is('deleted_at', null)
+      .maybeSingle()
+
+    if (!os) return null
+
+    const [{ data: client }, { data: technician }, { data: estimates }] = await Promise.all([
+      supabase
+        .from('clients')
+        .select('name, phone')
+        .eq('id', os.client_id)
+        .eq('company_id', companyId)
+        .maybeSingle(),
+      os.technician_id
+        ? supabase
+            .from('employees')
+            .select('name')
+            .eq('id', os.technician_id)
+            .eq('company_id', companyId)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
+      supabase
+        .from('service_order_estimates')
+        .select('total_amount, warranty_days, status')
+        .eq('service_order_id', id)
+        .eq('company_id', companyId)
+        .order('version', { ascending: false })
+        .limit(1),
+    ])
+
+    const latestEstimate = estimates?.[0] ?? null
+
+    return {
+      ...os,
+      client: client ?? null,
+      technician: technician ?? null,
+      estimate: latestEstimate
+        ? {
+            total_amount: latestEstimate.total_amount,
+            warranty_days: latestEstimate.warranty_days,
+            status: latestEstimate.status,
+          }
+        : null,
+    } as WarrantyOSDetails
+  } catch {
+    return null
+  }
+}
+
 export async function createServiceOrder(data: ServiceOrderSchema) {
   try {
     const { companyId, user } = await getCompanyContext()
