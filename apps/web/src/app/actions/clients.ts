@@ -226,6 +226,8 @@ export async function updateClient(id: string, data: ClientSchema) {
   }
 }
 
+const CLOSED_SERVICE_ORDER_STATUSES = ['finalizado', 'cancelado']
+
 export async function deleteClient(id: string) {
   try {
     const { companyId, user } = await getAdminContext('clientes')
@@ -241,6 +243,20 @@ export async function deleteClient(id: string) {
 
     if (clientError || !client) {
       throw new Error('Cliente não encontrado.')
+    }
+
+    const { count: openOsCount } = await supabase
+      .from('service_orders')
+      .select('id', { count: 'exact', head: true })
+      .eq('client_id', id)
+      .eq('company_id', companyId)
+      .is('deleted_at', null)
+      .not('status', 'in', `(${CLOSED_SERVICE_ORDER_STATUSES.join(',')})`)
+
+    if (openOsCount && openOsCount > 0) {
+      throw new Error(
+        `Não é possível excluir este cliente pois possui ${openOsCount} ordem${openOsCount > 1 ? 's' : ''} de serviço em aberto.`,
+      )
     }
 
     const deletedAt = new Date().toISOString()
