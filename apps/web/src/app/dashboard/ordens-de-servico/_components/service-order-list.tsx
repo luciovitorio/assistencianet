@@ -31,6 +31,7 @@ import {
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { sendEstimate } from '@/app/actions/service-order-estimates'
+import { sendPixChargeToWhatsApp } from '@/app/actions/asaas-settings'
 import {
   claimServiceOrder,
   releaseServiceOrder,
@@ -101,6 +102,7 @@ export interface ServiceOrderData {
   created_at: string
   client_notified_at: string | null
   client_notified_via: string | null
+  asaas_payment_id: string | null
   service_order_estimates: Array<{
     id: string
     version: number
@@ -262,6 +264,7 @@ export function ServiceOrderList({
   const [orders, setOrders] = React.useState(initialOrders)
   const [dialog, setDialog] = React.useState<DialogState>({ type: 'none' })
   const [sendingId, setSendingId] = React.useState<string | null>(null)
+  const [sendingPixId, setSendingPixId] = React.useState<string | null>(null)
   const [actionOrderId, setActionOrderId] = React.useState<string | null>(null)
   const [historyOrderId, setHistoryOrderId] = React.useState<string | null>(null)
   const [pickupOrderId, setPickupOrderId] = React.useState<string | null>(null)
@@ -468,6 +471,20 @@ export function ServiceOrderList({
       }
     } finally {
       setSendingId(null)
+    }
+  }
+
+  const handleSendPixWhatsApp = async (serviceOrderId: string, serviceOrderNumber: number) => {
+    setSendingPixId(serviceOrderId)
+    try {
+      const result = await sendPixChargeToWhatsApp(serviceOrderId)
+      if (result?.error) {
+        toast.error(result.error)
+      } else {
+        toast.success(`OS #${serviceOrderNumber}: cobrança PIX enviada via WhatsApp.`)
+      }
+    } finally {
+      setSendingPixId(null)
     }
   }
 
@@ -1118,6 +1135,25 @@ export function ServiceOrderList({
                                     </>
                                   )
                                 })()}
+                                {order.asaas_payment_id && (
+                                  <>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                      disabled={sendingPixId === order.id}
+                                      onClick={(e) => {
+                                        e.preventDefault()
+                                        handleSendPixWhatsApp(order.id, order.number)
+                                      }}
+                                    >
+                                      {sendingPixId === order.id ? (
+                                        <Loader2 className="size-4 animate-spin" />
+                                      ) : (
+                                        <MessageCircle className="size-4 text-[#25D366]" />
+                                      )}
+                                      Enviar PIX via WhatsApp
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
                               </DropdownMenuGroup>
                               {(DISPATCHABLE_STATUSES.includes(status) || status === 'enviado_terceiro') && (
                                 <DropdownMenuGroup>

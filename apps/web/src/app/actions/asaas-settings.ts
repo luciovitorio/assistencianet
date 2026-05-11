@@ -187,6 +187,48 @@ async function sendPixWhatsApp({
   }
 }
 
+export async function sendPixChargeToWhatsApp(osId: string) {
+  try {
+    const { companyId } = await getCompanyContext()
+    const supabase = createAdminClient()
+
+    const { data: os } = await supabase
+      .from('service_orders')
+      .select('id, number, asaas_payment_id, asaas_pix_qr_encoded, asaas_pix_copy_paste, clients(phone)')
+      .eq('id', osId)
+      .eq('company_id', companyId)
+      .is('deleted_at', null)
+      .maybeSingle<{
+        id: string
+        number: number
+        asaas_payment_id: string | null
+        asaas_pix_qr_encoded: string | null
+        asaas_pix_copy_paste: string | null
+        clients: { phone: string | null } | null
+      }>()
+
+    if (!os) return { error: 'OS não encontrada.' }
+    if (!os.asaas_payment_id) return { error: 'Esta OS ainda não possui cobrança PIX gerada.' }
+
+    await sendPixWhatsApp({
+      supabase,
+      companyId,
+      osId,
+      osNumber: os.number,
+      clientPhone: os.clients?.phone ?? null,
+      qrCode: {
+        encodedImage: os.asaas_pix_qr_encoded,
+        payload: os.asaas_pix_copy_paste,
+      },
+    })
+
+    return { success: true }
+  } catch (error: unknown) {
+    if (error instanceof Error) return { error: error.message }
+    return { error: 'Erro ao enviar PIX via WhatsApp.' }
+  }
+}
+
 const asaasSettingsSchema = z.object({
   enabled: z.boolean(),
   environment: z.enum(['sandbox', 'production']),

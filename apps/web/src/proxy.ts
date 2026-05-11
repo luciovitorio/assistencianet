@@ -9,6 +9,7 @@ const PUBLIC_ROUTES = [
   '/register',
   '/verify-email',
   '/auth',
+  '/pix',
   '/funcionalidades',
   '/sobre-nos',
   '/em-construcao',
