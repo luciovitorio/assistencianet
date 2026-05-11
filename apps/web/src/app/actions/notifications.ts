@@ -1,8 +1,11 @@
 'use server'
 
+import { cookies } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getCompanyContext } from '@/lib/auth/company-context'
+
+const THIRD_PARTY_CHECK_INTERVAL_MS = 60 * 60 * 1000 // 1 hora
 
 export interface Notification {
   id: string
@@ -74,12 +77,23 @@ export async function markAllNotificationsAsRead(): Promise<void> {
 
 /**
  * Verifica OS com prazo de retorno de terceiro vencido e cria notificações.
- * Deve ser chamada ao carregar o dashboard (sem bloquear o render).
+ * Rate-limitada a 1 chamada por hora via cookie.
  */
 export async function checkThirdPartyOverdueNotifications(): Promise<void> {
   try {
+    const jar = await cookies()
+    const lastCheck = jar.get('tp_overdue_last_check')?.value
+    if (lastCheck && Date.now() - Number(lastCheck) < THIRD_PARTY_CHECK_INTERVAL_MS) return
+
     const supabase = await createClient()
     await supabase.rpc('fn_notify_third_party_overdue')
+
+    jar.set('tp_overdue_last_check', String(Date.now()), {
+      httpOnly: true,
+      sameSite: 'lax',
+      maxAge: 3600,
+      path: '/',
+    })
   } catch {
     // Falha silenciosa — não impacta o carregamento do dashboard
   }
