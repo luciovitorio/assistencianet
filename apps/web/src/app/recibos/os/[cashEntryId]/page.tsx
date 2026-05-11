@@ -1,10 +1,7 @@
 import { notFound, redirect } from 'next/navigation'
 import { getCompanyContext } from '@/lib/auth/company-context'
 import { createClient } from '@/lib/supabase/server'
-import {
-  PAYMENT_METHOD_LABELS,
-  type PaymentMethod,
-} from '@/lib/validations/service-order'
+import { PAYMENT_METHOD_LABELS, type PaymentMethod } from '@/lib/validations/service-order'
 import { ReceiptPrintActions } from './receipt-print-actions'
 import { formatCurrency } from '@/lib/format'
 
@@ -33,7 +30,7 @@ export default async function ServiceOrderReceiptPage({ params }: ReceiptPagePro
   const { data: cashEntry, error: cashEntryError } = await supabase
     .from('cash_entries')
     .select(
-      'id, service_order_id, branch_id, estimate_id, payment_method, amount_due, amount_received, change_amount, net_amount, notes, created_at',
+      'id, service_order_id, branch_id, estimate_id, payment_method, amount_due, amount_received, change_amount, net_amount, notes, created_at'
     )
     .eq('id', cashEntryId)
     .eq('company_id', companyId)
@@ -47,16 +44,12 @@ export default async function ServiceOrderReceiptPage({ params }: ReceiptPagePro
     supabase
       .from('service_orders')
       .select(
-        'id, number, status, payment_status, client_id, branch_id, created_at, delivered_at, warranty_expires_at, payment_method, amount_paid, change_amount, pickup_notes',
+        'id, number, status, payment_status, client_id, branch_id, created_at, delivered_at, warranty_expires_at, payment_method, amount_paid, change_amount, pickup_notes'
       )
       .eq('id', cashEntry.service_order_id)
       .eq('company_id', companyId)
       .single(),
-    supabase
-      .from('companies')
-      .select('name, cnpj, phone, email')
-      .eq('id', companyId)
-      .single(),
+    supabase.from('companies').select('name, cnpj, phone, email').eq('id', companyId).single(),
     cashEntry.estimate_id
       ? supabase
           .from('service_order_estimates')
@@ -91,7 +84,7 @@ export default async function ServiceOrderReceiptPage({ params }: ReceiptPagePro
 
   return (
     <main className="min-h-screen bg-neutral-100 px-4 py-6 print:min-h-0 print:bg-white print:px-0 print:py-0">
-      <div className="mx-auto w-full max-w-[960px] space-y-3 print:h-[148mm] print:max-w-none print:space-y-0">
+      <div className="mx-auto w-full max-w-240 space-y-3 print:h-[148mm] print:max-w-none print:space-y-0">
         <ReceiptPrintActions />
 
         <section className="overflow-hidden rounded-3xl border border-border bg-white shadow-sm print:rounded-none print:border-0 print:shadow-none">
@@ -110,10 +103,20 @@ export default async function ServiceOrderReceiptPage({ params }: ReceiptPagePro
               </div>
 
               <div className="max-w-sm text-right">
-                <p className="text-base font-semibold text-foreground print:text-[13px]">{company.name}</p>
-                {company.cnpj && <p className="text-sm text-muted-foreground print:text-[10px]">CNPJ {company.cnpj}</p>}
-                {company.phone && <p className="text-sm text-muted-foreground print:text-[10px]">{company.phone}</p>}
-                {company.email && <p className="text-sm text-muted-foreground print:text-[10px]">{company.email}</p>}
+                <p className="text-base font-semibold text-foreground print:text-[13px]">
+                  {company.name}
+                </p>
+                {company.cnpj && (
+                  <p className="text-sm text-muted-foreground print:text-[10px]">
+                    CNPJ {company.cnpj}
+                  </p>
+                )}
+                {company.phone && (
+                  <p className="text-sm text-muted-foreground print:text-[10px]">{company.phone}</p>
+                )}
+                {company.email && (
+                  <p className="text-sm text-muted-foreground print:text-[10px]">{company.email}</p>
+                )}
                 {branch?.name && (
                   <p className="mt-1.5 text-sm text-muted-foreground print:mt-0.5 print:text-[10px]">
                     {branch.name}
@@ -133,10 +136,14 @@ export default async function ServiceOrderReceiptPage({ params }: ReceiptPagePro
                   Cliente
                 </h2>
                 <div className="mt-2 space-y-0.5 text-sm print:mt-1 print:text-[10px]">
-                  <p className="text-base font-semibold text-foreground print:text-[12px]">{client?.name ?? 'Não informado'}</p>
+                  <p className="text-base font-semibold text-foreground print:text-[12px]">
+                    {client?.name ?? 'Não informado'}
+                  </p>
                   {client?.document && <p className="text-muted-foreground">{client.document}</p>}
                   {client?.phone && <p className="text-muted-foreground">{client.phone}</p>}
-                  {client?.email && <p className="truncate text-muted-foreground">{client.email}</p>}
+                  {client?.email && (
+                    <p className="truncate text-muted-foreground">{client.email}</p>
+                  )}
                 </div>
               </div>
 
@@ -152,11 +159,7 @@ export default async function ServiceOrderReceiptPage({ params }: ReceiptPagePro
                   <div className="flex items-center justify-between gap-4">
                     <dt className="text-muted-foreground">Forma de pagamento</dt>
                     <dd className="font-medium text-foreground">
-                      {
-                        PAYMENT_METHOD_LABELS[
-                          cashEntry.payment_method as PaymentMethod
-                        ]
-                      }
+                      {PAYMENT_METHOD_LABELS[cashEntry.payment_method as PaymentMethod]}
                     </dd>
                   </div>
                   <div className="flex items-center justify-between gap-4">
@@ -171,7 +174,9 @@ export default async function ServiceOrderReceiptPage({ params }: ReceiptPagePro
                     <div className="flex items-center justify-between gap-4">
                       <dt className="text-muted-foreground">Garantia válida até</dt>
                       <dd className="font-medium text-foreground">
-                        {new Date(serviceOrder.warranty_expires_at + 'T12:00:00').toLocaleDateString('pt-BR')}
+                        {new Date(
+                          serviceOrder.warranty_expires_at + 'T12:00:00'
+                        ).toLocaleDateString('pt-BR')}
                       </dd>
                     </div>
                   )}
@@ -230,7 +235,9 @@ export default async function ServiceOrderReceiptPage({ params }: ReceiptPagePro
                 </div>
                 <div className="border-t border-dashed border-border pt-3 print:pt-2">
                   <div className="flex items-center justify-between gap-4">
-                    <span className="text-sm font-semibold text-foreground print:text-[10px]">Valor liquidado</span>
+                    <span className="text-sm font-semibold text-foreground print:text-[10px]">
+                      Valor liquidado
+                    </span>
                     <span className="text-xl font-bold text-foreground print:text-[18px]">
                       {formatCurrency(cashEntry.net_amount)}
                     </span>
@@ -239,12 +246,11 @@ export default async function ServiceOrderReceiptPage({ params }: ReceiptPagePro
               </div>
 
               <div className="mt-5 rounded-xl bg-white px-4 py-2.5 text-xs leading-snug text-muted-foreground print:mt-3 print:rounded-md print:px-3 print:py-1.5 print:text-[9px]">
-                Este recibo confirma a retirada do equipamento e o registro do recebimento no
-                caixa da assistência.
+                Este recibo confirma a retirada do equipamento e o registro do recebimento no caixa
+                da assistência.
               </div>
             </div>
           </div>
-
         </section>
       </div>
     </main>
