@@ -28,6 +28,17 @@ import { PixCopyCode } from './_components/pix-copy-code'
 
 type ServiceOrderPageProps = {
   params: Promise<{ id: string }>
+  searchParams: Promise<{ from?: string }>
+}
+
+const ALLOWED_BACK_PREFIXES = ['/dashboard/clientes/', '/dashboard/ordens-de-servico']
+
+function resolveBackHref(from: string | undefined): { href: string; label: string } {
+  if (from && ALLOWED_BACK_PREFIXES.some((p) => from.startsWith(p))) {
+    const label = from.startsWith('/dashboard/clientes/') ? 'Perfil do Cliente' : 'Ordens de Serviço'
+    return { href: from, label }
+  }
+  return { href: '/dashboard/ordens-de-servico', label: 'Ordens de Serviço' }
 }
 
 const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
@@ -171,8 +182,10 @@ function InfoField({ label, value }: { label: string; value: string | null | und
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
-export default async function ServiceOrderDetailPage({ params }: ServiceOrderPageProps) {
+export default async function ServiceOrderDetailPage({ params, searchParams }: ServiceOrderPageProps) {
   const { id } = await params
+  const { from } = await searchParams
+  const back = resolveBackHref(from)
   const supabase = await createClient()
 
   let companyId: string
@@ -414,13 +427,13 @@ export default async function ServiceOrderDetailPage({ params }: ServiceOrderPag
 
   return (
     <div className="flex min-h-0 flex-col overflow-hidden xl:-mx-8 xl:-mt-8 xl:-mb-12 xl:h-[calc(100vh-4rem)]">
-      <ServiceOrderHeaderSlot number={serviceOrder.number} />
+      <ServiceOrderHeaderSlot number={serviceOrder.number} backHref={back.href} backLabel={back.label} />
 
       {/* ── Page header ── */}
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-6 py-4">
         <div className="flex items-center gap-3">
           <Link
-            href="/dashboard/ordens-de-servico"
+            href={back.href}
             className={cn(
               buttonVariants({ variant: 'outline', size: 'icon' }),
               'shrink-0 border-slate-200',

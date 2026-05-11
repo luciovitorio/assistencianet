@@ -223,7 +223,7 @@ export function ClientDetail({ profile, branches, isAdmin }: ClientDetailProps) 
                     <ShieldCheck className="size-3.5 shrink-0 text-emerald-600" />
                     <div className="min-w-0 flex-1">
                       <Link
-                        href={`/dashboard/ordens-de-servico/${w.id}`}
+                        href={`/dashboard/ordens-de-servico/${w.id}?from=/dashboard/clientes/${client.id}`}
                         className="font-mono text-[13px] font-bold text-emerald-900 hover:underline"
                       >
                         #{osNum(w.number)}
@@ -259,7 +259,7 @@ export function ClientDetail({ profile, branches, isAdmin }: ClientDetailProps) 
                   return (
                     <Link
                       key={os.id}
-                      href={`/dashboard/ordens-de-servico/${os.id}`}
+                      href={`/dashboard/ordens-de-servico/${os.id}?from=/dashboard/clientes/${client.id}`}
                       className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 transition-colors hover:bg-slate-50"
                     >
                       <span className="shrink-0 font-mono text-[13px] font-bold text-slate-800">
