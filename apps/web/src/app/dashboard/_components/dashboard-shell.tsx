@@ -27,6 +27,7 @@ import { NotificationBell } from './notification-bell'
 import { AtendimentoWaitingBadge } from './atendimento-waiting-badge'
 import { LogoutButton } from './logout-button'
 import { HeaderSlotProvider, useHeaderSlotConfig, type HeaderConfig } from './header-slot'
+import { GlobalSearchModal } from './global-search-modal'
 
 interface DashboardShellProps {
   children: React.ReactNode
@@ -309,7 +310,8 @@ function acceptsHeaderSlot(pathname: string) {
   return (
     pathname === '/dashboard/ordens-de-servico/nova' ||
     /^\/dashboard\/ordens-de-servico\/[^/]+$/.test(pathname) ||
-    /^\/dashboard\/ordens-de-servico\/[^/]+\/editar$/.test(pathname)
+    /^\/dashboard\/ordens-de-servico\/[^/]+\/editar$/.test(pathname) ||
+    /^\/dashboard\/clientes\/[^/]+$/.test(pathname)
   )
 }
 
@@ -347,44 +349,66 @@ function DashboardTopbar({
   const routeConfig = getRouteHeaderConfig(pathname)
   const slotConfig = acceptsHeaderSlot(pathname) ? config : null
   const effectiveConfig = slotConfig ?? routeConfig
+  const [searchOpen, setSearchOpen] = useState(false)
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault()
+        setSearchOpen((prev) => !prev)
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [])
 
   return (
-    <header
-      className={`fixed top-0 right-0 h-16 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md flex justify-between items-center px-8 z-40 border-b border-border transition-all duration-300 ${
-        isExpanded ? 'w-[calc(100%-16rem)]' : 'w-[calc(100%-5rem)]'
-      }`}
-    >
-      <div className="flex items-center gap-4">
-        {effectiveConfig ? (
-          <BreadcrumbHeader config={effectiveConfig} />
-        ) : (
-          <h1 className="text-foreground font-semibold text-lg">
-            {isAdmin ? 'Dashboard Geral' : 'Meu Painel'}
-          </h1>
-        )}
-      </div>
-
-      <div className="flex items-center space-x-4">
-        <div className="hidden lg:flex flex-col items-end leading-tight">
-          <span className="text-muted-foreground text-sm font-medium tracking-tight">
-            {currentDate}
-          </span>
-          {branchName && (
-            <span className="text-muted-foreground/70 text-xs font-normal">
-              {branchName}
-            </span>
+    <>
+      <GlobalSearchModal open={searchOpen} onOpenChange={setSearchOpen} />
+      <header
+        className={`fixed top-0 right-0 h-16 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md flex justify-between items-center px-8 z-40 border-b border-border transition-all duration-300 ${
+          isExpanded ? 'w-[calc(100%-16rem)]' : 'w-[calc(100%-5rem)]'
+        }`}
+      >
+        <div className="flex items-center gap-4">
+          {effectiveConfig ? (
+            <BreadcrumbHeader config={effectiveConfig} />
+          ) : (
+            <h1 className="text-foreground font-semibold text-lg">
+              {isAdmin ? 'Dashboard Geral' : 'Meu Painel'}
+            </h1>
           )}
         </div>
-        <button className="p-2 text-muted-foreground hover:text-primary transition-colors cursor-pointer">
-          <Search className="size-5" />
-        </button>
-        <NotificationBell />
-        <div className="h-6 w-px bg-border"></div>
-        <form action={logout}>
-          <LogoutButton />
-        </form>
-      </div>
-    </header>
+
+        <div className="flex items-center space-x-4">
+          <div className="hidden lg:flex flex-col items-end leading-tight">
+            <span className="text-muted-foreground text-sm font-medium tracking-tight">
+              {currentDate}
+            </span>
+            {branchName && (
+              <span className="text-muted-foreground/70 text-xs font-normal">
+                {branchName}
+              </span>
+            )}
+          </div>
+          <button
+            onClick={() => setSearchOpen(true)}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer text-sm"
+          >
+            <Search className="size-4" />
+            <span className="hidden sm:inline text-xs">Buscar</span>
+            <kbd className="hidden lg:inline-flex h-4 items-center rounded border border-border bg-background px-1 text-[10px] font-medium">
+              Ctrl K
+            </kbd>
+          </button>
+          <NotificationBell />
+          <div className="h-6 w-px bg-border"></div>
+          <form action={logout}>
+            <LogoutButton />
+          </form>
+        </div>
+      </header>
+    </>
   )
 }
 

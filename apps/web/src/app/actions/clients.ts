@@ -296,3 +296,130 @@ export async function deleteClient(id: string) {
     return { error: getActionErrorMessage(error, 'Erro ao excluir cliente') }
   }
 }
+
+export type ClientServiceOrder = {
+  id: string
+  number: number
+  status: string
+  device_type: string | null
+  device_brand: string | null
+  device_model: string | null
+  created_at: string
+  amount_paid: number | null
+  payment_status: string | null
+}
+
+export type ClientWarranty = {
+  id: string
+  number: number
+  device_type: string | null
+  device_brand: string | null
+  device_model: string | null
+  warranty_expires_at: string | null
+}
+
+export type ClientProfileClient = {
+  id: string
+  name: string
+  document: string | null
+  phone: string | null
+  email: string | null
+  zip_code: string | null
+  street: string | null
+  number: string | null
+  complement: string | null
+  city: string | null
+  state: string | null
+  notes: string | null
+  active: boolean
+  classification: string
+  origin_branch_id: string | null
+  created_at: string
+}
+
+export type ClientProfileData = {
+  client: ClientProfileClient
+  branchName: string | null
+  stats: {
+    total: number
+    open: number
+    totalPaid: number
+    lastOrderDate: string | null
+  }
+  serviceOrders: ClientServiceOrder[]
+  warranties: ClientWarranty[]
+}
+
+const OPEN_STATUSES = new Set([
+  'aberta', 'em_analise', 'aguardando_envio', 'aguardando_aprovacao',
+  'aprovado', 'aguardando_peca', 'enviado_terceiro', 'em_reparo', 'pronto',
+])
+
+const ORDER_PAGE_SIZE = 50
+
+export async function getClientProfile(id: string): Promise<ClientProfileData | null> {
+  try {
+    const { companyId } = await getCompanyContext()
+    const supabase = await createSupabaseClient()
+    const today = new Date().toISOString().slice(0, 10)
+
+    // All three queries fire in parallel — no waterfall.
+    // Branch name comes via join on clients (no extra round-trip).
+    // Stats aggregated in DB via RPC (no app-side reduce/filter).
+    // Orders paginated to ORDER_PAGE_SIZE rows.
+    const [clientResult, ordersResult, warrantiesResult, statsResult] = await Promise.all([
+      supabase
+        .from('clients')
+        .select('id, name, document, phone, email, zip_code, street, number, complement, city, state, notes, active, classification, origin_branch_id, created_at, branches!origin_branch_id(name)')
+        .eq('id', id)
+        .eq('company_id', companyId)
+        .is('deleted_at', null)
+        .single(),
+      supabase
+        .from('service_orders')
+        .select('id, number, status, device_type, device_brand, device_model, created_at, amount_paid, payment_status')
+        .eq('client_id', id)
+        .eq('company_id', companyId)
+        .is('deleted_at', null)
+        .order('number', { ascending: false })
+        .limit(ORDER_PAGE_SIZE),
+      supabase
+        .from('service_orders')
+        .select('id, number, device_type, device_brand, device_model, warranty_expires_at')
+        .eq('client_id', id)
+        .eq('company_id', companyId)
+        .is('deleted_at', null)
+        .not('warranty_expires_at', 'is', null)
+        .gte('warranty_expires_at', today)
+        .order('warranty_expires_at'),
+      supabase.rpc('get_client_stats', {
+        p_client_id: id,
+        p_company_id: companyId,
+      }),
+    ])
+
+    if (clientResult.error || !clientResult.data) return null
+
+    const { branches: branchJoin, ...clientFields } = clientResult.data
+    const branchName = Array.isArray(branchJoin)
+      ? (branchJoin[0]?.name ?? null)
+      : ((branchJoin as { name: string } | null)?.name ?? null)
+
+    const statsRow = statsResult.data?.[0]
+
+    return {
+      client: clientFields,
+      branchName,
+      stats: {
+        total: Number(statsRow?.total_orders ?? 0),
+        open: Number(statsRow?.open_orders ?? 0),
+        totalPaid: Number(statsRow?.total_paid ?? 0),
+        lastOrderDate: statsRow?.last_order_at ?? null,
+      },
+      serviceOrders: ordersResult.data ?? [],
+      warranties: warrantiesResult.data ?? [],
+    }
+  } catch {
+    return null
+  }
+}

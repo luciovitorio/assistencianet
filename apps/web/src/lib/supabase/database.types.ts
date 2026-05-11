@@ -2513,6 +2513,15 @@ export type Database = {
         Args: { p_company_id: string }
         Returns: string
       }
+      get_client_stats: {
+        Args: { p_client_id: string; p_company_id: string }
+        Returns: {
+          total_orders: number
+          open_orders: number
+          total_paid: number
+          last_order_at: string | null
+        }[]
+      }
       get_current_user_company_id: { Args: never; Returns: string }
       get_dashboard_overview: {
         Args: {
@@ -2544,6 +2553,20 @@ export type Database = {
       recalculate_client_classification: {
         Args: { p_client_id: string }
         Returns: undefined
+      }
+      search_clients_global: {
+        Args: {
+          p_company_id: string
+          p_term: string
+          p_numeric: string
+          p_lim?: number
+        }
+        Returns: {
+          id: string
+          name: string
+          phone: string | null
+          document: string | null
+        }[]
       }
     }
     Enums: {

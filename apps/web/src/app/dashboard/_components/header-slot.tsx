@@ -32,10 +32,19 @@ export function HeaderSlotProvider({ children }: { children: React.ReactNode }) 
 
 export function useHeaderSlot(config: HeaderConfig | null) {
   const { setConfig } = useContext(HeaderSlotContext)
+  const backHref = config?.backHref
+  const backLabel = config?.backLabel
+  const title = config?.title
+  const badge = config?.badge
+  const osNumber = config?.osNumber
   useEffect(() => {
-    setConfig(config)
+    if (backHref !== undefined && backLabel !== undefined && title !== undefined) {
+      setConfig({ backHref, backLabel, title, badge, osNumber })
+    } else {
+      setConfig(null)
+    }
     return () => setConfig(null)
-  }, [config, setConfig])
+  }, [backHref, backLabel, title, badge, osNumber, setConfig])
 }
 
 export function useHeaderSlotConfig(): HeaderConfig | null {
