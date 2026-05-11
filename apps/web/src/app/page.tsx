@@ -39,7 +39,7 @@ const faqItems = [
   },
   {
     q: 'Como funciona o Bot WhatsApp? Precisa de número dedicado?',
-    a: 'Sim, recomendamos usar um número de WhatsApp dedicado para a assistência. O SmartConserto usa a API oficial do WhatsApp Business — suas mensagens nunca são bloqueadas. A configuração leva menos de 10 minutos.',
+    a: 'Sim, recomendamos usar um número de WhatsApp dedicado para a assistência. O SmartConserto usa a Evolution API para conectar seu WhatsApp. A configuração leva menos de 10 minutos.',
   },
   {
     q: 'Posso migrar meus dados de outro sistema?',
@@ -63,7 +63,7 @@ const mockupOsList = [
 ]
 
 const howSteps = [
-  { n: 1, title: 'Cliente entra com o dispositivo', desc: 'Abra a OS em segundos: capture o problema, tire fotos, gere um orçamento e envie para aprovação via WhatsApp — sem papel.' },
+  { n: 1, title: 'Cliente entra com o dispositivo', desc: 'Abra a OS em segundos: registre o problema, gere um orçamento e envie para aprovação via WhatsApp — sem papel.' },
   { n: 2, title: 'Acompanhe o reparo em tempo real', desc: 'Atualize o status da OS e o cliente recebe notificação automática no WhatsApp. Toda a equipe sabe o que está em andamento.' },
   { n: 3, title: 'Conclua, receba e fideliza', desc: 'Marque como pronto, o cliente é avisado automaticamente, você recebe via PIX e o histórico fica salvo para sempre.' },
 ]
@@ -293,11 +293,11 @@ export default function LandingPage() {
                 <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
               </div>
               <div className={s['feature-title']}>Ordens de Serviço</div>
-              <div className={s['feature-desc']}>Crie, acompanhe e finalize OS com agilidade. Histórico completo, fotos do aparelho, laudos técnicos e assinatura digital.</div>
+              <div className={s['feature-desc']}>Crie, acompanhe e finalize OS com agilidade. Histórico completo de alterações, controle de orçamentos e notificações automáticas via WhatsApp.</div>
               <div className={s['feature-tags']}>
                 <span className={s['feature-tag']}>Status em tempo real</span>
-                <span className={s['feature-tag']}>Laudos PDF</span>
-                <span className={s['feature-tag']}>Assinatura digital</span>
+                <span className={s['feature-tag']}>Histórico completo</span>
+                <span className={s['feature-tag']}>Orçamentos integrados</span>
               </div>
             </MotionCard>
             <MotionCard className={s['feature-card']}>
@@ -317,11 +317,11 @@ export default function LandingPage() {
                 <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
               </div>
               <div className={s['feature-title']}>Controle Financeiro</div>
-              <div className={s['feature-desc']}>Fluxo de caixa, contas a pagar e receber, integração com PIX. Saiba exatamente quanto sua assistência está faturando.</div>
+              <div className={s['feature-desc']}>Contas a pagar e receber, integração com PIX e relatórios de faturamento. Saiba exatamente quanto sua assistência está faturando.</div>
               <div className={s['feature-tags']}>
-                <span className={s['feature-tag']}>Fluxo de caixa</span>
+                <span className={s['feature-tag']}>Contas a pagar/receber</span>
                 <span className={s['feature-tag']}>PIX integrado</span>
-                <span className={s['feature-tag']}>NF-e</span>
+                <span className={s['feature-tag']}>Relatórios de faturamento</span>
               </div>
             </MotionCard>
             <MotionCard className={s['feature-card']}>

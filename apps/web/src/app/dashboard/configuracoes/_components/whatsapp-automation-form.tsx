@@ -65,11 +65,13 @@ const PROVIDER_OPTIONS: Array<{
   value: WhatsAppAutomationProvider
   label: string
   description: string
+  disabled?: boolean
 }> = [
   {
     value: 'whatsapp_cloud_api',
     label: 'Meta Cloud API',
     description: 'API oficial, templates aprovados e webhook da Meta.',
+    disabled: true,
   },
   {
     value: 'evolution_api',
@@ -132,16 +134,26 @@ function ProviderTabs({
           <button
             key={option.value}
             type="button"
-            onClick={() => onChange(option.value)}
+            onClick={() => !option.disabled && onChange(option.value)}
+            disabled={option.disabled}
             className={cn(
               'rounded-xl border p-4 text-left shadow-sm transition',
-              active
-                ? 'border-emerald-300 bg-emerald-50 text-emerald-950'
-                : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300',
+              option.disabled
+                ? 'cursor-not-allowed border-slate-100 bg-slate-50 text-slate-400'
+                : active
+                  ? 'border-emerald-300 bg-emerald-50 text-emerald-950'
+                  : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300',
             )}
           >
-            <span className="block text-sm font-semibold">{option.label}</span>
-            <span className="mt-1 block text-xs leading-5 text-slate-600">
+            <span className="flex items-center gap-2 text-sm font-semibold">
+              {option.label}
+              {option.disabled && (
+                <span className="rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-500">
+                  Em breve
+                </span>
+              )}
+            </span>
+            <span className="mt-1 block text-xs leading-5 text-slate-500">
               {option.description}
             </span>
           </button>
