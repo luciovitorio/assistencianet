@@ -396,7 +396,7 @@ export async function inviteEmployee(employeeId: string) {
     const admin = createAdminClient()
     const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(
       employee.email,
-      { redirectTo: `${siteUrl}/auth/callback` },
+      { redirectTo: `${siteUrl}/auth/invite` },
     )
 
     if (inviteError) {
@@ -410,7 +410,7 @@ export async function inviteEmployee(employeeId: string) {
     }
 
     await admin.auth.admin.updateUserById(invited.user.id, {
-      app_metadata: { role: employee.role, company_id: employee.company_id },
+      app_metadata: { role: employee.role, company_id: employee.company_id, force_password_change: true },
     })
 
     const { error: updateError } = await supabase

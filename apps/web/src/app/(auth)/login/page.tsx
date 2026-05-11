@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { login, loginWithGoogle } from '@/app/actions/auth'
@@ -17,6 +17,17 @@ export default function LoginPage() {
   const [isGooglePending, startGoogleTransition] = useTransition()
   const [googleError, setGoogleError] = useState<string | null>(null)
   const [remembered, setRemembered] = useState(false)
+  const [urlError, setUrlError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const error = params.get('error')
+    if (error === 'invite_expired') {
+      setUrlError('Convite expirado ou inválido. Peça ao administrador um novo convite.')
+    } else if (error === 'auth_callback') {
+      setUrlError('Erro na autenticação. Tente fazer login normalmente ou contate o suporte.')
+    }
+  }, [])
 
   const {
     register,
@@ -60,6 +71,11 @@ export default function LoginPage() {
 
       {/* Form */}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        {urlError && (
+          <Alert variant="destructive">
+            <AlertDescription>{urlError}</AlertDescription>
+          </Alert>
+        )}
         {errors.root && (
           <Alert variant="destructive">
             <AlertDescription>{errors.root.message}</AlertDescription>
