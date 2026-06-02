@@ -78,36 +78,23 @@ export default async function ConfiguracoesGuiaPage() {
         </p>
 
         <div className="mb-4 space-y-3">
-          <SubStep n="1.1" title="Preencha os campos do provedor">
+          <SubStep n="1.1" title="Selecione o provedor e habilite a automação">
             <p className="text-sm text-slate-600">
               Em <em>Notificações WhatsApp</em>, selecione o provedor{' '}
-              <strong>Evolution API</strong> e informe:
+              <strong>Evolution API</strong>, marque a opção{' '}
+              <strong>Habilitar automação do WhatsApp</strong> e clique em{' '}
+              <strong>Salvar automação</strong>. O sistema gera automaticamente o nome da
+              instância — você não precisa preencher nenhum campo de URL ou chave.
             </p>
-            <ul className="mt-2 space-y-1 text-sm text-slate-600">
-              <li>
-                <strong>URL da Evolution API</strong> — ex:{' '}
-                <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-700">
-                  https://evolution.seudominio.com.br
-                </code>
-              </li>
-              <li>
-                <strong>API Key</strong> — chave de acesso configurada no seu servidor
-              </li>
-              <li>
-                <strong>Nome da instância</strong> — nome único para este número (ex:{' '}
-                <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-700">
-                  assistencia-principal
-                </code>
-                )
-              </li>
-            </ul>
           </SubStep>
 
-          <SubStep n="1.2" title="Escaneie o QR Code">
+          <SubStep n="1.2" title="Conecte a instância e escaneie o QR Code">
             <p className="text-sm text-slate-600">
-              Após salvar, clique em <strong>Conectar / Gerar QR Code</strong>. Abra o WhatsApp no
-              celular, vá em <strong>Dispositivos conectados → Conectar dispositivo</strong> e
-              escaneie o QR Code exibido.
+              Após salvar, o botão <strong>Conectar instância na Evolution</strong> fica
+              disponível. Clique nele para registrar a instância no servidor. Em seguida, clique
+              em <strong>Gerar QR Code</strong>, abra o WhatsApp no celular, vá em{' '}
+              <strong>Dispositivos conectados → Conectar dispositivo</strong> e escaneie o QR
+              Code exibido.
             </p>
           </SubStep>
 
