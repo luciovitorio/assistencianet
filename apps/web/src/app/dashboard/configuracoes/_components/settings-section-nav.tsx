@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Bot, ListTree, Settings2, QrCode } from 'lucide-react'
+import { Bot, ListTree, Settings2, QrCode, BookOpen } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const ITEMS = [
@@ -29,6 +29,12 @@ const ITEMS = [
     label: 'Pagamentos PIX',
     description: 'Cobrança automática via Asaas',
     icon: QrCode,
+  },
+  {
+    href: '/dashboard/configuracoes/guia',
+    label: 'Como Configurar',
+    description: 'Passo a passo completo de configuração',
+    icon: BookOpen,
   },
 ] as const
 
