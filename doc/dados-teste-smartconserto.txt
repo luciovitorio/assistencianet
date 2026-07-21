@@ -1,0 +1,188 @@
+================================================================================
+DADOS DE TESTE - EMPRESA "SmartConserto Interna"
+Conta de teste: luciovitorio@gmail.com
+Empresa (company_id): 7b3609e1-6fc6-4159-8823-8b8366a26d02
+Filial: SC-Filial01
+Criado em: 21/07/2026 (seed via SQL direto no Supabase)
+Obs: CPFs e CNPJs são fictícios, porém matematicamente válidos
+     (passam na validação de dígito verificador).
+================================================================================
+
+--------------------------------------------------------------------------------
+FUNCIONÁRIOS
+--------------------------------------------------------------------------------
+1. Lucio Vitorio   | admin     | (dono da conta - criado no onboarding)
+2. Carlos Souza    | tecnico   | (21) 98811-2233 | CPF 104.332.181-00 | mão de obra R$ 40,00
+3. Fernanda Lima   | atendente | (21) 97722-3344 | CPF 960.013.389-14
+
+--------------------------------------------------------------------------------
+CLIENTES
+--------------------------------------------------------------------------------
+1. Ana Beatriz Martins      | CPF 083.863.794-99  | (21) 98765-1122 | recorrente
+   ana.bmartins@gmail.com   | Rua das Laranjeiras, 45 Apto 302 - Rio de Janeiro/RJ - 22240-003
+2. Bruno Carvalho           | CPF 026.542.351-14  | (21) 99654-7788 | novo
+   brunocarvalho88@hotmail.com | Rua Barão de Mesquita, 850 - Rio de Janeiro/RJ - 20720-011
+3. Carla Menezes            | CPF 161.559.407-89  | (21) 98123-4455 | vip
+   carla.menezes@yahoo.com.br | Av. Ataulfo de Paiva, 1120 Sala 405 - Rio de Janeiro/RJ - 22430-060
+4. Diego Ferreira           | CPF 816.184.959-50  | (21) 97311-2299 | novo
+   diego.ferreira.rj@gmail.com | Rua Leopoldina Rego, 300 - Rio de Janeiro/RJ - 21031-142
+5. Elaine Santos            | CPF 310.341.316-56  | (21) 96888-5511 | recorrente
+   elainesantos.rj@gmail.com | Estrada do Campinho, 78 - Rio de Janeiro/RJ - 23050-320
+6. Felipe Rocha             | CPF 475.255.341-44  | (21) 95544-3322 | INADIMPLENTE
+   feliperocha1990@gmail.com | Av. Vicente de Carvalho, 909 - Rio de Janeiro/RJ - 21210-330
+7. Studio Hair Glamour (PJ) | CNPJ 16.697.848/0001-51 | (21) 2233-9090 | vip
+   contato@studiohairglamour.com.br | Rua Siqueira Campos, 143 Loja B - RJ (salão de beleza)
+8. Clínica Odonto Sorriso (PJ) | CNPJ 92.832.764/0001-61 | (21) 3344-5566 | recorrente
+   recepcao@odontosorriso.com.br | Av. Rio Branco, 156 Sala 1210 - RJ (autoclaves)
+
+--------------------------------------------------------------------------------
+FORNECEDORES
+--------------------------------------------------------------------------------
+1. TecnoParts Distribuidora LTDA | CNPJ 92.832.764/0001-61 | (11) 3232-1010
+   vendas@tecnoparts.com.br | São Paulo/SP | peças de autoclave/odonto
+2. Eletropeças Rio Comércio      | CNPJ 83.503.056/0001-96 | (21) 2525-4040
+   contato@eletropecasrio.com.br | Rio de Janeiro/RJ | resistências e motores
+3. HD Baterias e Componentes     | CNPJ 41.395.376/0001-20 | (31) 3344-7788
+   comercial@hdbaterias.com.br | Belo Horizonte/MG | baterias e conectores
+4. Importadora Global Tech       | CNPJ 72.423.884/0001-06 | (11) 98877-6655
+   pedidos@globaltech.com.br | São Paulo/SP | telas e displays
+
+--------------------------------------------------------------------------------
+TERCEIROS (envio de equipamento)
+--------------------------------------------------------------------------------
+1. Taiff Assistência Autorizada Central | fabricante | prazo padrão 15 dias
+2. LabPlaca Microeletrônica | técnico especializado | prazo padrão 10 dias
+
+--------------------------------------------------------------------------------
+SERVIÇOS (catálogo)
+--------------------------------------------------------------------------------
+SRV-001 | Análise técnica / Orçamento          | diagnóstico | R$ 30,00  | 30min
+SRV-002 | Troca de resistência de secador      | reparo      | R$ 80,00  | 40min
+SRV-003 | Troca de motor de secador            | reparo      | R$ 150,00 | 60min
+SRV-004 | Manutenção preventiva de autoclave   | manutenção  | R$ 220,00 | 90min
+SRV-005 | Troca de tela de smartphone          | reparo      | R$ 180,00 | 60min
+SRV-006 | Troca de bateria de smartphone       | reparo      | R$ 90,00  | 30min
+SRV-007 | Limpeza interna completa             | limpeza     | R$ 70,00  | 45min
+SRV-008 | Reparo de placa eletrônica           | reparo      | R$ 250,00 | 120min
+
+--------------------------------------------------------------------------------
+MODELOS DE EQUIPAMENTO
+--------------------------------------------------------------------------------
+Secador     | Taiff       | Vulcan 7000          | 110V
+Secador     | Taiff       | Tourmaline Ion       | 220V
+Autoclave   | Cristófoli  | Vitale Class CD 12L  | 220V
+Autoclave   | Stermax     | Extra 12L            | 110V
+Smartphone  | Apple       | iPhone 11            | -
+Smartphone  | Samsung     | Galaxy A54           | -
+Notebook    | Dell        | Inspiron 15 3520     | Bivolt
+Micro-ondas | Electrolux  | MI41S                | 110V
+
+--------------------------------------------------------------------------------
+PEÇAS (custo / venda | estoque inicial -> atual | mín)
+--------------------------------------------------------------------------------
+PC-001 | Resistência secador Taiff 110V  | 12,50 / 35,00   | 10 -> 9 (1 usada OS 20260001) | mín 5  | Eletropeças Rio
+PC-002 | Resistência secador Taiff 220V  | 12,50 / 35,00   | 8              | mín 5  | Eletropeças Rio
+PC-003 | Motor de secador AC universal   | 45,00 / 120,00  | 5 -> 4 (OS 20260004) | mín 3 | Eletropeças Rio
+PC-004 | Chave liga/desliga de secador   | 4,00 / 15,00    | 20             | mín 10 | Eletropeças Rio
+PC-005 | Kit vedação autoclave 12L       | 60,00 / 140,00  | 4 -> 3 (OS 20260002) | mín 2 | TecnoParts
+PC-006 | Resistência autoclave Cristófoli| 85,00 / 190,00  | 3              | mín 2  | TecnoParts
+PC-007 | Tela iPhone 11 (compatível)     | 180,00 / 420,00 | 4 -> 3 (OS 20260003) | mín 2 | Global Tech
+PC-008 | Bateria iPhone 11               | 65,00 / 160,00  | 6              | mín 3  | HD Baterias
+PC-009 | Tela Galaxy A54 OLED            | 210,00 / 480,00 | 3              | mín 2  | Global Tech
+PC-010 | Bateria Galaxy A54              | 55,00 / 140,00  | 5              | mín 3  | HD Baterias
+PC-011 | Conector de carga USB-C         | 8,00 / 45,00    | 15             | mín 10 | HD Baterias
+PC-012 | Cabo flex universal (rolo)      | 20,00 / 60,00   | 2              | mín 1  | Global Tech
+
+Carga inicial de estoque: entrada em 03/07/2026 (NF de 01/07/2026).
+
+--------------------------------------------------------------------------------
+ORDENS DE SERVIÇO
+--------------------------------------------------------------------------------
+#20260001 | FINALIZADO + PAGO (pix R$ 115,00)
+  Ana Beatriz Martins | Secador Taiff Vulcan 7000 (série TF7000-88412, preto)
+  Problema: não liga, cheiro de queimado. Técnico: Carlos Souza.
+  Orçamento aprovado (WhatsApp): SRV-002 R$ 80 + PC-001 R$ 35 = R$ 115.
+  Aberta 02/07, entregue 05/07. Garantia até 02/10/2026.
+
+#20260002 | FINALIZADO + PAGO (dinheiro R$ 360,00, recebido 400, troco 40)
+  Clínica Odonto Sorriso | Autoclave Cristófoli Vitale Class CD 12L (CV12-20388)
+  Problema: manutenção preventiva + vedação. Técnico: Carlos Souza.
+  Orçamento aprovado (balcão): SRV-004 R$ 220 + PC-005 R$ 140 = R$ 360.
+  Aberta 06/07, entregue 09/07. Garantia até 06/10/2026.
+
+#20260003 | PRONTO (aguardando retirada, pagamento pendente R$ 600,00)
+  Bruno Carvalho | iPhone 11 (C39ZL2QWN70F, branco)
+  Problema: tela quebrada após queda. Técnico: Carlos Souza.
+  Orçamento aprovado (WhatsApp): SRV-005 R$ 180 + PC-007 R$ 420 = R$ 600.
+  Aberta 10/07, pronta 13/07.
+
+#20260004 | EM REPARO
+  Studio Hair Glamour | Secador Taiff Tourmaline Ion (TI2200-55102, rosa)
+  Problema: motor com barulho e faísca. Técnico: Carlos Souza.
+  Orçamento aprovado (telefone): SRV-003 R$ 150 + PC-003 R$ 120 = R$ 270.
+  Aberta 13/07, previsão 22/07.
+
+#20260005 | AGUARDANDO APROVAÇÃO
+  Carla Menezes | Galaxy A54 (R58T40ZXKDM, verde)
+  Problema: bateria descarrega rápido e esquenta. Técnico: Carlos Souza.
+  Orçamento ENVIADO (WhatsApp 17/07, válido até 24/07): SRV-006 R$ 90 + PC-010 R$ 140 = R$ 230.
+  Aberta 16/07.
+
+#20260006 | AGUARDANDO PEÇA
+  Diego Ferreira | Notebook Dell Inspiron 15 3520 (BR-DL15-99823, prata)
+  Problema: não carrega, conector com mau contato. Técnico: Carlos Souza.
+  Orçamento aprovado: SRV-008 R$ 250 + PC-011 R$ 45 = R$ 295.
+  Aberta 15/07, previsão 30/07.
+
+#20260007 | EM ANÁLISE
+  Elaine Santos | Micro-ondas Electrolux MI41S (EMI41-77301)
+  Problema: liga mas não esquenta. Técnico: Carlos Souza.
+  Aberta 18/07, previsão 24/07. Sem orçamento ainda.
+
+#20260008 | ABERTA
+  Felipe Rocha (inadimplente!) | Secador Taiff Vulcan 7000 (TF7000-11209, grafite)
+  Problema: não liga em nenhuma velocidade. Sem técnico atribuído.
+  Aberta 20/07, previsão 27/07.
+
+#20260009 | ENVIADO A TERCEIRO
+  Clínica Odonto Sorriso | Autoclave Stermax Extra 12L (SX12-40771)
+  Problema: placa sem sinal de vida após queda de energia.
+  Enviada à LabPlaca em 14/07, retorno previsto 24/07. Aberta 11/07.
+
+#20260010 | CANCELADO
+  Bruno Carvalho | Galaxy A54 (R58T51ABCXP, preto)
+  Problema: tela e carcaça destruídas. Cliente desistiu (valor ~aparelho novo).
+  Aberta 08/07, cancelada 09/07.
+
+--------------------------------------------------------------------------------
+CAIXA (recebimentos)
+--------------------------------------------------------------------------------
+05/07/2026 | OS #20260001 | pix      | R$ 115,00
+09/07/2026 | OS #20260002 | dinheiro | R$ 360,00 (recebido 400,00 / troco 40,00)
+
+--------------------------------------------------------------------------------
+CONTAS A PAGAR
+--------------------------------------------------------------------------------
+Aluguel da loja - julho/2026      | R$ 1.800,00 | venc. 10/07 | PAGO (transferência) | mensal
+Conta de luz - julho/2026         | R$ 420,00   | venc. 28/07 | PENDENTE             | mensal
+Reposição de peças - TecnoParts   | R$ 1.250,00 | venc. 05/08 | PENDENTE
+Internet fibra - julho/2026       | R$ 149,90   | venc. 15/07 | PAGO (pix)           | mensal
+
+--------------------------------------------------------------------------------
+CENÁRIOS DE TESTE COBERTOS
+--------------------------------------------------------------------------------
+- OS em todos os principais status (aberta, em análise, aguardando aprovação,
+  aguardando peça, enviado a terceiro, em reparo, pronto, finalizado, cancelado)
+- OS pronta com pagamento pendente (testar fluxo de entrega + recebimento)
+- Orçamento enviado aguardando resposta do cliente (aprovar/recusar)
+- Cliente inadimplente com OS aberta (alerta no atendimento)
+- Estoque com baixas automáticas vinculadas a OS
+- Peça PC-012 com estoque no limite do mínimo (2/1) e PC-011 (15/10)
+- Caixa com pagamento em pix e dinheiro com troco
+- Contas a pagar pagas e pendentes, com e sem recorrência
+- Clientes PF e PJ, com classificações variadas (novo/recorrente/vip/inadimplente)
+
+Para limpar tudo depois: apagar registros com company_id
+7b3609e1-6fc6-4159-8823-8b8366a26d02 (exceto a própria empresa, filial
+SC-Filial01 e o funcionário Lucio Vitorio, criados no cadastro).
+================================================================================
