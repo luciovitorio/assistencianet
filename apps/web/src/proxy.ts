@@ -11,6 +11,7 @@ const PUBLIC_ROUTES = [
   '/auth',
   '/pix',
   '/funcionalidades',
+  '/blog',
   '/sobre-nos',
   '/em-construcao',
   '/contato',
