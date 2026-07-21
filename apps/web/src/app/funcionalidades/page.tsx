@@ -409,7 +409,7 @@ export default function FeaturesPage() {
               funcionando na sua rotina
             </h2>
             <p>
-              Comece com 14 dias grátis e teste o fluxo completo de OS, clientes, WhatsApp,
+              Comece com 30 dias grátis e teste o fluxo completo de OS, clientes, WhatsApp,
               estoque e financeiro sem cartão de crédito.
             </p>
             <div className={s['cta-final-actions']}>

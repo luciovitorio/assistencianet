@@ -64,7 +64,7 @@ export default function LoginPage() {
         <p className="mt-1.5 text-sm text-muted-foreground">
           Não tem conta?{' '}
           <AppLink href="/register" variant="inline">
-            Crie gratuitamente — 14 dias
+            Crie gratuitamente — 30 dias
           </AppLink>
         </p>
       </div>
@@ -198,7 +198,7 @@ export default function LoginPage() {
       <p className="text-center text-sm text-muted-foreground">
         Não tem conta?{' '}
         <AppLink href="/register" variant="inline">
-          Criar conta grátis — 14 dias sem cartão
+          Criar conta grátis — 30 dias sem cartão
         </AppLink>
       </p>
     </div>

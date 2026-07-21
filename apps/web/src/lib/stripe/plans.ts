@@ -24,7 +24,7 @@ export function hasSubscriptionAccess(subscription: SubscriptionAccessRecord | n
   return true
 }
 
-export const TRIAL_DAYS = 14
+export const TRIAL_DAYS = 30
 
 export function getUpgradePlanName(planId: PlanId | null | undefined): string | null {
   if (planId === 'basico') return 'Profissional'

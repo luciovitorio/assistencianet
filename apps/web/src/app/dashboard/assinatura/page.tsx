@@ -288,7 +288,7 @@ export default async function AssinaturaPage({
       <div>
         <h2 className="mb-1 text-lg font-medium">Planos disponíveis</h2>
         <p className="mb-6 text-sm text-muted-foreground">
-          Todos os planos incluem 14 dias grátis. Sem contrato, cancele quando quiser.
+          Todos os planos incluem 30 dias grátis. Sem contrato, cancele quando quiser.
         </p>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {(plans ?? []).map((plan) => (

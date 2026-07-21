@@ -46,7 +46,7 @@ const faqItems = [
     a: 'Sim. Nossa equipe ajuda a importar clientes, histórico de OS e estoque de qualquer planilha ou sistema. A migração é gratuita nos planos Profissional e Empresarial.',
   },
   {
-    q: 'Os 14 dias grátis incluem todas as funcionalidades?',
+    q: 'Os 30 dias grátis incluem todas as funcionalidades?',
     a: 'Sim. Durante o teste grátis você tem acesso completo ao plano Profissional, incluindo o Bot WhatsApp, sem precisar inserir cartão de crédito.',
   },
   {
@@ -152,7 +152,7 @@ export default function LandingPage() {
             <h1>Gerencie sua<br /><em>assistência técnica</em><br />em um só lugar</h1>
             <p className={s['hero-sub']}>Ordens de serviço, clientes, estoque e financeiro — tudo integrado com notificações automáticas pelo WhatsApp.</p>
             <div className={s['hero-actions']}>
-              <Link href="/register" className={s['btn-hero']}>Começar grátis — 14 dias</Link>
+              <Link href="/register" className={s['btn-hero']}>Começar grátis — 30 dias</Link>
               <a href="#como-funciona" className={s['btn-hero-ghost']}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                 Ver demonstração
@@ -502,7 +502,7 @@ export default function LandingPage() {
           <Reveal className={s['pricing-header']}>
             <div className={s['section-tag']}>Planos</div>
             <h2 className={s['section-title']}>Simples, transparente, sem surpresas</h2>
-            <p className={s['section-sub']}>Escolha o plano certo para o tamanho da sua assistência. Todos incluem 14 dias grátis.</p>
+            <p className={s['section-sub']}>Escolha o plano certo para o tamanho da sua assistência. Todos incluem 30 dias grátis.</p>
           </Reveal>
           <Stagger className={s['pricing-grid']}>
 
@@ -554,7 +554,7 @@ export default function LandingPage() {
 
           </Stagger>
           <p style={{ textAlign: 'center', marginTop: '24px', fontSize: '13px', color: 'var(--gray-400)' }}>
-            Todos os planos incluem 14 dias de teste grátis · Sem cartão de crédito · Cancele quando quiser
+            Todos os planos incluem 30 dias de teste grátis · Sem cartão de crédito · Cancele quando quiser
           </p>
         </div>
       </section>
@@ -594,7 +594,7 @@ export default function LandingPage() {
       <section className={`${s.section} ${s['cta-final']}`}>
         <div className={s['cta-final-inner']}>
           <h2>Comece a usar hoje,<br />de graça</h2>
-          <p>14 dias completos, sem cartão de crédito. Configure em minutos e veja sua assistência técnica ganhar nova vida.</p>
+          <p>30 dias completos, sem cartão de crédito. Configure em minutos e veja sua assistência técnica ganhar nova vida.</p>
           <div className={s['cta-final-actions']}>
             <Link href="/register" className={s['btn-cta-white']}>Criar conta grátis</Link>
             <a href="mailto:contato@smartconserto.com.br" className={s['btn-cta-outline']}>Falar com um especialista</a>
