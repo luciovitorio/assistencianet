@@ -15,7 +15,7 @@ const productLinks = [
 
 const companyLinks = [
   { label: 'Sobre nós', href: '/sobre-nos' },
-  { label: 'Blog', href: underConstructionHref },
+  { label: 'Blog', href: '/blog' },
   { label: 'Casos de sucesso', href: underConstructionHref },
   { label: 'Parceiros', href: underConstructionHref },
   { label: 'Trabalhe conosco', href: underConstructionHref },

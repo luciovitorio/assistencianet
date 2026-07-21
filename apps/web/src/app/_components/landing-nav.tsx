@@ -44,6 +44,9 @@ export function LandingNav() {
           <Link href="/#precos" className={s['nav-link']}>
             Preços
           </Link>
+          <Link href="/blog" className={s['nav-link']}>
+            Blog
+          </Link>
         </div>
         <div className={s['nav-ctas']}>
           <Link href="/login" className={s['btn-ghost']}>
