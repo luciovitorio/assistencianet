@@ -96,9 +96,10 @@ export default async function ServiceOrderPrintPage({ params }: ServiceOrderPrin
     <main className="min-h-screen bg-neutral-100 px-4 py-6 print:block print:min-h-0 print:bg-white print:px-0 print:py-0">
       <style>{`
         @media print {
-          @page { size: A5 landscape; margin: 8mm; }
+          @page { size: A4 portrait; margin: 8mm; }
           html, body { margin: 0 !important; padding: 0 !important; }
-          .print-sheet { min-height: calc(148mm - 16mm); display: flex; flex-direction: column; }
+          /* Conteúdo ocupa apenas a metade superior da folha A4 (148.5mm - margem) */
+          .print-sheet { height: 140mm; display: flex; flex-direction: column; overflow: hidden; }
           .print-notes { flex: 1 1 auto; min-height: 22mm; }
         }
       `}</style>
