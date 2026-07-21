@@ -147,6 +147,7 @@ export function ClientList({
 
   const filteredClients = React.useMemo(() => {
     const normalizedQuery = deferredSearch.trim().toLowerCase()
+    const digitsQuery = normalizedQuery.replace(/\D/g, '')
 
     return clients.filter((client) => {
       const branchName = client.origin_branch_id ? branchMap[client.origin_branch_id] : ''
@@ -162,7 +163,11 @@ export function ClientList({
           branchName,
         ]
           .filter(Boolean)
-          .some((value) => value!.toLowerCase().includes(normalizedQuery))
+          .some((value) => value!.toLowerCase().includes(normalizedQuery)) ||
+        (digitsQuery.length >= 3 &&
+          [client.document, client.phone]
+            .filter(Boolean)
+            .some((value) => value!.replace(/\D/g, '').includes(digitsQuery)))
 
       const matchesBranch =
         branchFilter.length === 0 ||

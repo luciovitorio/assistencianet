@@ -30,10 +30,6 @@ const revalidateClientsPage = () => {
 const sanitizeSearchTerm = (value: string) =>
   value.trim().replace(/[,%]/g, ' ').replace(/\s+/g, ' ').slice(0, 80)
 
-const mergeClientSearchResults = (
-  ...groups: Array<Array<{ id: string; name: string; phone: string | null; document: string | null }>>
-) => Array.from(new Map(groups.flat().map((client) => [client.id, client])).values())
-
 export async function createClient(data: ClientSchema) {
   try {
     const { companyId } = await getCompanyContext()
@@ -123,35 +119,17 @@ export async function searchClientsForServiceOrder(search: string) {
       return { clients: data ?? [] }
     }
 
-    const { data: nameMatches, error: nameError } = await supabase
-      .from('clients')
-      .select(baseSelect)
-      .eq('company_id', companyId)
-      .eq('active', true)
-      .is('deleted_at', null)
-      .or(`name.ilike.${term}%,name.ilike.% ${term}%`)
-      .order('name', { ascending: true })
-      .limit(12)
+    const { data, error } = await supabase.rpc('search_clients_global', {
+      p_company_id: companyId,
+      p_term: term,
+      p_numeric: numericTerm,
+      p_lim: 12,
+      p_only_active: true,
+    })
 
-    if (nameError) throw nameError
+    if (error) throw error
 
-    if (numericTerm.length < 3) {
-      return { clients: nameMatches ?? [] }
-    }
-
-    const { data: numericMatches, error: numericError } = await supabase
-      .from('clients')
-      .select(baseSelect)
-      .eq('company_id', companyId)
-      .eq('active', true)
-      .is('deleted_at', null)
-      .or(`phone.ilike.%${numericTerm}%,document.ilike.%${numericTerm}%`)
-      .order('name', { ascending: true })
-      .limit(12)
-
-    if (numericError) throw numericError
-
-    return { clients: mergeClientSearchResults(nameMatches ?? [], numericMatches ?? []).slice(0, 12) }
+    return { clients: data ?? [] }
   } catch (error: unknown) {
     return { error: getActionErrorMessage(error, 'Erro ao buscar clientes.') }
   }

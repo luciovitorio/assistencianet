@@ -2516,10 +2516,10 @@ export type Database = {
       get_client_stats: {
         Args: { p_client_id: string; p_company_id: string }
         Returns: {
-          total_orders: number
+          last_order_at: string
           open_orders: number
+          total_orders: number
           total_paid: number
-          last_order_at: string | null
         }[]
       }
       get_current_user_company_id: { Args: never; Returns: string }
@@ -2557,15 +2557,16 @@ export type Database = {
       search_clients_global: {
         Args: {
           p_company_id: string
-          p_term: string
-          p_numeric: string
           p_lim?: number
+          p_numeric: string
+          p_only_active?: boolean
+          p_term: string
         }
         Returns: {
+          document: string
           id: string
           name: string
-          phone: string | null
-          document: string | null
+          phone: string
         }[]
       }
     }
@@ -2700,4 +2701,3 @@ export const Constants = {
     Enums: {},
   },
 } as const
-
