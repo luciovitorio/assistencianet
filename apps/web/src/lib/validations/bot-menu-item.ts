@@ -1,6 +1,6 @@
 import * as z from 'zod'
 
-export const HANDLER_TYPES = ['check_os', 'human_handoff', 'info', 'submenu', 'url'] as const
+export const HANDLER_TYPES = ['check_os', 'human_handoff', 'info', 'submenu', 'url', 'end_conversation'] as const
 export type HandlerType = (typeof HANDLER_TYPES)[number]
 
 export const HANDLER_TYPE_LABELS: Record<HandlerType, string> = {
@@ -9,6 +9,7 @@ export const HANDLER_TYPE_LABELS: Record<HandlerType, string> = {
   info: 'Mensagem informativa',
   submenu: 'Sub-menu',
   url: 'Link / URL',
+  end_conversation: 'Finalizar atendimento',
 }
 
 export const botMenuItemSchema = z

@@ -58,7 +58,7 @@ export type MenuItemRecord = {
   position: number
   label: string
   emoji: string | null
-  handler_type: 'check_os' | 'human_handoff' | 'info' | 'submenu' | 'url'
+  handler_type: 'check_os' | 'human_handoff' | 'info' | 'submenu' | 'url' | 'end_conversation'
   handler_config: Record<string, unknown>
   enabled: boolean
 }
@@ -90,6 +90,16 @@ export const DEFAULT_MENU_ITEMS: MenuItemRecord[] = [
     label: 'Falar com um atendente',
     emoji: '2️⃣',
     handler_type: 'human_handoff',
+    handler_config: {},
+    enabled: true,
+  },
+  {
+    id: 'default-3',
+    parent_id: null,
+    position: 3,
+    label: 'Finalizar atendimento',
+    emoji: '3️⃣',
+    handler_type: 'end_conversation',
     handler_config: {},
     enabled: true,
   },

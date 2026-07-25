@@ -54,6 +54,11 @@ const SECTIONS: SectionDef[] = [
         label: 'Reexibição do menu (mid-sessão)',
         hint: 'Exibido antes das opções quando o bot reapresenta o menu no meio de uma conversa.',
       },
+      {
+        key: 'farewell',
+        label: 'Encerramento (mensagem padrão)',
+        hint: 'Usada quando o item "Finalizar atendimento" não tem mensagem própria configurada no menu interativo.',
+      },
     ],
   },
   {

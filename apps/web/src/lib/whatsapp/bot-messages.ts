@@ -15,6 +15,7 @@ export type BotMessages = {
   os_list_more_footer: string
   os_list_footer: string
   more_help: string
+  farewell: string
   // Handoff / atendimento humano
   ask_branch: string
   ask_branch_footer: string
@@ -56,6 +57,7 @@ export const BOT_MESSAGES_DEFAULTS: BotMessages = {
     'Sua OS não está na lista? Informe o *número da OS* e consulto para você.',
   os_list_footer: 'Deseja consultar outra OS? Informe o *número da OS*.',
   more_help: 'Posso ajudar com mais alguma coisa?',
+  farewell: 'Por nada! 😊 Se precisar de algo, é só me chamar por aqui. Até mais!',
   ask_branch: 'Em qual filial você deseja atendimento?',
   ask_branch_footer: 'Responda com o *número* da filial.',
   handoff_confirmation:

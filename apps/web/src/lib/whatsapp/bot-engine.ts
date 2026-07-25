@@ -252,6 +252,24 @@ const handleAwaitingMenu = async (params: BotEngineParams) => {
     case 'submenu':
       await handleSubmenu(params, selected)
       break
+    case 'end_conversation': {
+      const raw = String(selected.handler_config.message ?? '').trim() || botMessages.farewell
+      const branchName = conversation.branch_id
+        ? await getBranchName(supabase, conversation.company_id, conversation.branch_id)
+        : null
+      const msg = resolveVars(raw, {
+        clientName: conversation.contact_name,
+        companyName: params.companyName,
+        branchName,
+      })
+      await sendAndSave(supabase, evolutionClient, conversation, msg)
+      await updateConversation(supabase, conversation.id, {
+        status: 'resolved',
+        bot_state: null,
+        attempts: 0,
+      })
+      break
+    }
     case 'url': {
       const url = String(selected.handler_config.url ?? '')
       const label = String(selected.handler_config.label ?? selected.label)

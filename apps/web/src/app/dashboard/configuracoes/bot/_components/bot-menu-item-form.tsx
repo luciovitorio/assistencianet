@@ -187,6 +187,31 @@ export function BotMenuItemForm({ parentId, nextPosition, editing, onSuccess, on
         </div>
       )}
 
+      {handlerType === 'end_conversation' && (
+        <div className="space-y-1.5">
+          <Label>Mensagem de encerramento (opcional)</Label>
+          <Textarea
+            placeholder="Deixe em branco para usar a mensagem padrão configurada em Mensagens do bot."
+            rows={4}
+            className="rounded-xl border-foreground/10 bg-background shadow-sm shadow-slate-950/5 placeholder:text-muted-foreground/70"
+            {...register('handler_config.message')}
+          />
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            {TEMPLATE_VARS.map(({ token, label }) => (
+              <button
+                key={token}
+                type="button"
+                onClick={() => insertVar(token)}
+                className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs text-slate-600 hover:bg-slate-100"
+              >
+                <Info className="size-3" />
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {handlerType === 'url' && (
         <InputField
           label="URL"

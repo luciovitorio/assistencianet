@@ -55,6 +55,7 @@ const TYPE_BADGE_VARIANT: Record<HandlerType, 'default' | 'secondary' | 'outline
   info: 'outline',
   submenu: 'secondary',
   url: 'outline',
+  end_conversation: 'outline',
 }
 
 function ItemRow({
