@@ -1,5 +1,6 @@
 import { notFound, redirect } from 'next/navigation'
 import { getCompanyContext } from '@/lib/auth/company-context'
+import { resolveCompanySettings } from '@/lib/company-settings'
 import { createClient } from '@/lib/supabase/server'
 import { STATUS_LABELS, type ServiceOrderStatus } from '@/lib/validations/service-order'
 import { ServiceOrderPrintActions } from './service-order-print-actions'
@@ -56,8 +57,13 @@ export default async function ServiceOrderPrintPage({ params }: ServiceOrderPrin
     notFound()
   }
 
-  const [{ data: company }, { data: client }, { data: branch }, { data: technician }] =
-    await Promise.all([
+  const [
+    { data: company },
+    { data: client },
+    { data: branch },
+    { data: technician },
+    { data: companySettings },
+  ] = await Promise.all([
       supabase
         .from('companies')
         .select('name, cnpj, phone, email')
@@ -85,9 +91,16 @@ export default async function ServiceOrderPrintPage({ params }: ServiceOrderPrin
             .eq('company_id', companyId)
             .maybeSingle()
         : Promise.resolve({ data: null }),
+      supabase
+        .from('company_settings')
+        .select('default_warranty_days, default_estimate_validity_days, os_print_disclaimer')
+        .eq('company_id', companyId)
+        .maybeSingle(),
     ])
 
   if (!company) notFound()
+
+  const { osPrintDisclaimer } = resolveCompanySettings(companySettings)
 
   const statusLabel =
     STATUS_LABELS[serviceOrder.status as ServiceOrderStatus] ?? serviceOrder.status
@@ -252,12 +265,35 @@ export default async function ServiceOrderPrintPage({ params }: ServiceOrderPrin
           </div>
 
           {/* Anotações — preenche o restante da página */}
-          <div className="print-notes flex flex-col px-6 pb-6 pt-0 print:flex-1 print:px-4 print:pb-3">
+          <div
+            className={
+              osPrintDisclaimer
+                ? 'print-notes flex flex-col px-6 pb-4 pt-0 print:flex-1 print:px-4 print:pb-2'
+                : 'print-notes flex flex-col px-6 pb-6 pt-0 print:flex-1 print:px-4 print:pb-3'
+            }
+          >
             <h2 className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground print:text-[8.5px]">
               Anotações
             </h2>
             <div className="mt-2 h-32 flex-1 rounded-xl border border-dashed border-muted-foreground/30 print:mt-1 print:h-auto" />
           </div>
+
+          {/* Aviso configurável + assinatura do cliente */}
+          {osPrintDisclaimer && (
+            <div className="border-t border-border px-6 py-4 print:px-4 print:py-2.5">
+              <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-foreground print:text-[8.5px]">
+                Atenção
+              </h2>
+              <p className="mt-1.5 whitespace-pre-wrap text-xs leading-relaxed text-foreground print:mt-1 print:text-[9.5px] print:leading-snug">
+                {osPrintDisclaimer}
+              </p>
+              <div className="mx-auto mt-10 w-full max-w-80 border-t border-foreground/60 pt-1 text-center print:mt-8">
+                <p className="text-[10px] text-muted-foreground print:text-[8.5px]">
+                  Assinatura do cliente
+                </p>
+              </div>
+            </div>
+          )}
         </section>
       </div>
     </main>

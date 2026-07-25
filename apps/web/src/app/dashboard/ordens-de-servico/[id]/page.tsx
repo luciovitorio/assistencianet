@@ -230,7 +230,7 @@ export default async function ServiceOrderDetailPage({ params, searchParams }: S
       .order('created_at', { ascending: true }),
     supabase
       .from('company_settings')
-      .select('default_warranty_days, default_estimate_validity_days')
+      .select('default_warranty_days, default_estimate_validity_days, os_print_disclaimer')
       .eq('company_id', companyId)
       .maybeSingle(),
     supabase

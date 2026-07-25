@@ -553,6 +553,7 @@ export type Database = {
           default_warranty_days: number
           device_types: string[]
           id: string
+          os_print_disclaimer: string | null
           updated_at: string | null
         }
         Insert: {
@@ -562,6 +563,7 @@ export type Database = {
           default_warranty_days?: number
           device_types?: string[]
           id?: string
+          os_print_disclaimer?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -571,6 +573,7 @@ export type Database = {
           default_warranty_days?: number
           device_types?: string[]
           id?: string
+          os_print_disclaimer?: string | null
           updated_at?: string | null
         }
         Relationships: [

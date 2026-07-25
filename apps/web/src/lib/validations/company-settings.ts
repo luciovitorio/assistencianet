@@ -11,6 +11,11 @@ export const companySettingsSchema = z.object({
     .int('A validade default do orcamento deve ser inteira.')
     .min(0, 'A validade default do orcamento nao pode ser negativa.')
     .max(3650, 'A validade default do orcamento deve ser de no maximo 3650 dias.'),
+  os_print_disclaimer: z
+    .string()
+    .max(1000, 'A mensagem de aviso da OS deve ter no maximo 1000 caracteres.')
+    .optional()
+    .default(''),
 })
 
 export type CompanySettingsSchema = z.input<typeof companySettingsSchema>

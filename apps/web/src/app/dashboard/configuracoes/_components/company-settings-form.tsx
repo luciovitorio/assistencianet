@@ -10,6 +10,7 @@ import { saveCompanySettings } from '@/app/actions/company-settings'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { InputField } from '@/components/ui/input-field'
+import { Textarea } from '@/components/ui/textarea'
 import type { ResolvedCompanySettings } from '@/lib/company-settings'
 import {
   companySettingsSchema,
@@ -35,6 +36,7 @@ export function CompanySettingsForm({ initialSettings }: CompanySettingsFormProp
     defaultValues: {
       default_warranty_days: initialSettings.defaultWarrantyDays,
       default_estimate_validity_days: initialSettings.defaultEstimateValidityDays,
+      os_print_disclaimer: initialSettings.osPrintDisclaimer ?? '',
     },
   })
 
@@ -110,6 +112,33 @@ export function CompanySettingsForm({ initialSettings }: CompanySettingsFormProp
               error={errors.default_estimate_validity_days?.message}
               {...register('default_estimate_validity_days', { valueAsNumber: true })}
             />
+
+            <div className="space-y-1.5">
+              <label
+                htmlFor="os_print_disclaimer"
+                className="block text-sm font-medium text-foreground"
+              >
+                Aviso impresso na OS
+              </label>
+              <Textarea
+                id="os_print_disclaimer"
+                rows={4}
+                placeholder="Ex.: Aparelhos não retirados após 90 dias do orçamento serão descartados segundo a lei municipal..."
+                className="rounded-xl border-foreground/10 bg-background shadow-sm shadow-slate-950/5 placeholder:text-muted-foreground/70"
+                aria-invalid={!!errors.os_print_disclaimer}
+                {...register('os_print_disclaimer')}
+              />
+              {errors.os_print_disclaimer?.message ? (
+                <p className="text-xs text-destructive" role="alert">
+                  {errors.os_print_disclaimer.message}
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Quando preenchido, aparece no rodapé da OS impressa com um espaço para o
+                  cliente assinar. Deixe em branco para não imprimir.
+                </p>
+              )}
+            </div>
 
             <Button
               type="submit"

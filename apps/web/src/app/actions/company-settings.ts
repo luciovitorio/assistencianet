@@ -28,7 +28,7 @@ export async function saveCompanySettings(data: CompanySettingsSchema) {
     const { data: previousSettings } = await supabase
       .from('company_settings')
       .select(
-        'id, default_warranty_days, default_estimate_validity_days',
+        'id, default_warranty_days, default_estimate_validity_days, os_print_disclaimer',
       )
       .eq('company_id', companyId)
       .maybeSingle()
@@ -40,11 +40,12 @@ export async function saveCompanySettings(data: CompanySettingsSchema) {
           company_id: companyId,
           default_warranty_days: parsed.data.default_warranty_days,
           default_estimate_validity_days: parsed.data.default_estimate_validity_days,
+          os_print_disclaimer: parsed.data.os_print_disclaimer.trim() || null,
         },
         { onConflict: 'company_id' },
       )
       .select(
-        'id, default_warranty_days, default_estimate_validity_days',
+        'id, default_warranty_days, default_estimate_validity_days, os_print_disclaimer',
       )
       .single()
 
@@ -64,12 +65,14 @@ export async function saveCompanySettings(data: CompanySettingsSchema) {
               default_warranty_days: previousSettings.default_warranty_days,
               default_estimate_validity_days:
                 previousSettings.default_estimate_validity_days,
+              os_print_disclaimer: previousSettings.os_print_disclaimer,
             }
           : null,
         after: {
           default_warranty_days: savedSettings.default_warranty_days,
           default_estimate_validity_days:
             savedSettings.default_estimate_validity_days,
+          os_print_disclaimer: savedSettings.os_print_disclaimer,
         },
       },
     })

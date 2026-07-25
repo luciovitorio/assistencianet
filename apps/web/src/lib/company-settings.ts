@@ -2,12 +2,13 @@ import type { Tables } from '@/lib/supabase/database.types'
 
 type CompanySettingsRow = Pick<
   Tables<'company_settings'>,
-  'default_warranty_days' | 'default_estimate_validity_days'
+  'default_warranty_days' | 'default_estimate_validity_days' | 'os_print_disclaimer'
 >
 
 export interface ResolvedCompanySettings {
   defaultWarrantyDays: number
   defaultEstimateValidityDays: number
+  osPrintDisclaimer: string | null
 }
 
 export const BEAUTY_SALON_DEVICE_TYPE_DEFAULTS = [
@@ -24,6 +25,7 @@ export const BEAUTY_SALON_DEVICE_TYPE_DEFAULTS = [
 export const COMPANY_SETTINGS_DEFAULTS: ResolvedCompanySettings = {
   defaultWarrantyDays: 90,
   defaultEstimateValidityDays: 30,
+  osPrintDisclaimer: null,
 }
 
 export const resolveCompanySettings = (
@@ -41,6 +43,10 @@ export const resolveCompanySettings = (
     settings.default_estimate_validity_days >= 0
       ? settings.default_estimate_validity_days
       : COMPANY_SETTINGS_DEFAULTS.defaultEstimateValidityDays,
+  osPrintDisclaimer:
+    typeof settings?.os_print_disclaimer === 'string' && settings.os_print_disclaimer.trim()
+      ? settings.os_print_disclaimer.trim()
+      : COMPANY_SETTINGS_DEFAULTS.osPrintDisclaimer,
 })
 
 export const addDaysToDateInputValue = (days: number, baseDate = new Date()) => {
