@@ -9,6 +9,7 @@ import {
   Wrench,
 } from 'lucide-react'
 import { getDashboardOverview, type DashboardBranchPerformanceRow, type DashboardRecentServiceOrder } from '@/app/actions/dashboard'
+import { WhatsAppAutomationBanner } from './whatsapp-automation-banner'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { cn } from '@/lib/utils'
 import { STATUS_COLORS, STATUS_LABELS, type ServiceOrderStatus } from '@/lib/validations/service-order'
@@ -54,6 +55,8 @@ export async function AdminDashboard() {
           </Link>
         </div>
       </section>
+
+      <WhatsAppAutomationBanner />
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <KpiCard

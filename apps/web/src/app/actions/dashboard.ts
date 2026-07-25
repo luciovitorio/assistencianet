@@ -191,3 +191,59 @@ export async function getDashboardOverview(): Promise<{
     }
   }
 }
+
+export type WhatsAppAutomationWarning = 'disconnected' | 'no_triggers' | null
+
+/**
+ * Estado de saúde da automação de WhatsApp para o banner do dashboard.
+ * - 'disconnected': automação habilitada mas a sessão do WhatsApp caiu (fonte:
+ *   notificação `whatsapp_desconectado` não lida, mantida pelo health-check —
+ *   não faz chamada externa no render).
+ * - 'no_triggers': sessão ok, mas nenhum gatilho automático ligado, então
+ *   nenhuma mensagem é enviada ao cliente.
+ */
+export async function getWhatsAppAutomationWarning(): Promise<WhatsAppAutomationWarning> {
+  try {
+    const { companyId } = await getAdminContext('configuracoes')
+    const supabase = await createClient()
+
+    const { data: settings } = await supabase
+      .from('whatsapp_automation_settings')
+      .select(
+        'enabled, provider, evolution_api_key, evolution_instance_name, notify_inbound_message, notify_os_created, notify_estimate_ready, notify_service_completed, notify_satisfaction_survey',
+      )
+      .eq('company_id', companyId)
+      .eq('enabled', true)
+      .maybeSingle()
+
+    if (
+      !settings ||
+      settings.provider !== 'evolution_api' ||
+      !settings.evolution_api_key ||
+      !settings.evolution_instance_name
+    ) {
+      return null
+    }
+
+    const { count } = await supabase
+      .from('notifications')
+      .select('id', { count: 'exact', head: true })
+      .eq('company_id', companyId)
+      .eq('type', 'whatsapp_desconectado')
+      .is('read_at', null)
+
+    if (count) return 'disconnected'
+
+    const hasAnyTrigger =
+      settings.notify_inbound_message ||
+      settings.notify_os_created ||
+      settings.notify_estimate_ready ||
+      settings.notify_service_completed ||
+      settings.notify_satisfaction_survey
+
+    return hasAnyTrigger ? null : 'no_triggers'
+  } catch {
+    // Falha silenciosa — o banner é acessório e não pode derrubar a dashboard
+    return null
+  }
+}
