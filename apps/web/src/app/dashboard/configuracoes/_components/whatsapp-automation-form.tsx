@@ -3,25 +3,28 @@
 import * as React from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import {
-  Controller,
   useForm,
   useWatch,
 } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
+  ArrowRight,
   CheckCircle2,
+  ChevronDown,
   Clock,
   Globe,
   KeyRound,
+  Lock,
   MessageSquareText,
   PlugZap,
   Power,
   QrCode,
   RefreshCw,
-  ShieldCheck,
   Trash2,
   Wifi,
+  XCircle,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -32,7 +35,6 @@ import {
   getEvolutionWebhookUrlWarning,
   logoutEvolutionApiInstance,
   saveWhatsAppAutomationSettings,
-  validateEvolutionApiSettings,
   validateWhatsAppAutomationSdk,
 } from '@/app/actions/whatsapp-automation'
 import { Button } from '@/components/ui/button'
@@ -43,7 +45,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Checkbox } from '@/components/ui/checkbox'
 import { InputField } from '@/components/ui/input-field'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -82,40 +83,6 @@ const PROVIDER_OPTIONS: Array<{
 
 interface WhatsAppAutomationFormProps {
   initialSettings: ResolvedWhatsAppAutomationSettings
-}
-
-function BooleanField({
-  checked,
-  description,
-  disabled,
-  label,
-  onCheckedChange,
-}: {
-  checked: boolean
-  description: string
-  disabled?: boolean
-  label: string
-  onCheckedChange: (value: boolean) => void
-}) {
-  return (
-    <label
-      className={cn(
-        'flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm',
-        disabled && 'cursor-not-allowed opacity-60',
-      )}
-    >
-      <Checkbox
-        checked={checked}
-        disabled={disabled}
-        onCheckedChange={(value) => onCheckedChange(value === true)}
-        className="mt-0.5"
-      />
-      <span className="space-y-1">
-        <span className="block text-sm font-semibold text-slate-900">{label}</span>
-        <span className="block text-xs leading-5 text-slate-500">{description}</span>
-      </span>
-    </label>
-  )
 }
 
 function ProviderTabs({
@@ -275,10 +242,10 @@ function EvolutionConnectionPanel({
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base text-slate-900">
           <Wifi className="size-4 text-emerald-700" />
-          Conexão Evolution
+          1 · Conectar o WhatsApp
         </CardTitle>
         <CardDescription>
-          Passo 1: crie a instância. Passo 2: gere o QR Code e conecte o WhatsApp.
+          Crie a instância, gere o QR Code e escaneie com o celular da assistência.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -482,8 +449,6 @@ export function WhatsAppAutomationForm({
   const router = useRouter()
   const [isPending, startTransition] = React.useTransition()
   const [isValidatingMeta, startMetaValidationTransition] = React.useTransition()
-  const [isValidatingEvolution, startEvolutionValidationTransition] =
-    React.useTransition()
   const [isEvolutionOperationPending, startEvolutionOperationTransition] =
     React.useTransition()
   const [evolutionOperation, setEvolutionOperation] =
@@ -501,14 +466,13 @@ export function WhatsAppAutomationForm({
   const [evolutionWebhookOk, setEvolutionWebhookOk] = React.useState<
     boolean | null
   >(null)
+  const [showAdvanced, setShowAdvanced] = React.useState(false)
   const hasNotifiedEvolutionConnectedRef = React.useRef(false)
   const {
     control,
-    getValues,
     handleSubmit,
     register,
     setValue,
-    trigger,
     formState: { errors },
   } = useForm<WhatsAppAutomationSettingsSchema>({
     resolver: zodResolver(whatsappAutomationSettingsSchema),
@@ -573,6 +537,16 @@ export function WhatsAppAutomationForm({
     })
   }
 
+  const handleToggleEnabled = (next: boolean) => {
+    setValue('enabled', next, { shouldDirty: true })
+    // Meta ainda é "Em breve": ativar sempre usa a Evolution para não travar
+    // a ativação nas validações de credenciais da Meta.
+    if (next && provider !== 'evolution_api') {
+      setValue('provider', 'evolution_api', { shouldDirty: true })
+    }
+    void handleSubmit(onSubmit)()
+  }
+
   const handleValidateMeta = () => {
     startMetaValidationTransition(async () => {
       const result = await validateWhatsAppAutomationSdk()
@@ -583,23 +557,6 @@ export function WhatsAppAutomationForm({
       }
 
       toast.success(`SDK oficial carregada com sucesso (${result.version}).`)
-    })
-  }
-
-  const handleValidateEvolution = () => {
-    startEvolutionValidationTransition(async () => {
-      const result = await validateEvolutionApiSettings()
-
-      if (result?.error) {
-        toast.error(result.error)
-        return
-      }
-
-      const suffix =
-        result.instanceFound === true
-          ? ' Instância encontrada.'
-          : ` ${result.instanceCount} instância(s) retornada(s).`
-      toast.success(`Evolution API validada com sucesso.${suffix}`)
     })
   }
 
@@ -844,70 +801,208 @@ export function WhatsAppAutomationForm({
     refreshEvolutionConnectionState,
   ])
 
+  const triggerSummary = [
+    { label: 'Bot de atendimento', active: initialSettings.notifyInboundMessage },
+    { label: 'OS aberta', active: initialSettings.notifyOsCreated },
+    { label: 'Orçamento pronto', active: initialSettings.notifyEstimateReady },
+    { label: 'Serviço concluído', active: initialSettings.notifyServiceCompleted },
+    { label: 'Pesquisa de satisfação', active: initialSettings.notifySatisfactionSurvey },
+  ]
+  const hasAnyTriggerOn = triggerSummary.some((item) => item.active)
+
+  const connectionStatus = !enabled
+    ? { dot: 'bg-slate-400', label: 'Automação pausada', detail: null as string | null }
+    : provider !== 'evolution_api'
+      ? { dot: 'bg-emerald-500', label: 'Meta Cloud API ativa', detail: null }
+      : isEvolutionConnected(evolutionConnectionState)
+        ? {
+            dot: 'bg-emerald-500',
+            label: 'WhatsApp conectado',
+            detail: evolutionConnectedPhone
+              ? formatEvolutionConnectedPhone(evolutionConnectedPhone)
+              : null,
+          }
+        : evolutionConnectionState === 'connecting'
+          ? { dot: 'bg-amber-500', label: 'Aguardando QR Code', detail: null }
+          : evolutionConnectionState === 'loading'
+            ? { dot: 'bg-blue-500', label: 'Consultando status…', detail: null }
+            : {
+                dot: 'bg-red-500',
+                label: 'WhatsApp desconectado',
+                detail: 'Conecte na etapa 1 abaixo.',
+              }
+
   return (
-    <div className="space-y-6">
+    <div className="w-full max-w-5xl space-y-6">
       <div className="rounded-2xl border border-slate-200 bg-[linear-gradient(135deg,rgba(15,23,42,0.04),rgba(34,197,94,0.08),rgba(255,255,255,1))] p-5 shadow-sm shadow-slate-950/5">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="space-y-3">
-            <div className="space-y-1">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                Automação
-              </p>
-              <div className="flex flex-wrap items-center gap-3">
-                <h2 className="text-2xl font-bold tracking-tight text-slate-950">
-                  WhatsApp Business
-                </h2>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">
-                  <MessageSquareText className="size-3.5" />
-                  {provider === 'evolution_api'
-                    ? 'Evolution API ativa'
-                    : 'Meta Cloud API ativa'}
-                </span>
-              </div>
-              <p className="max-w-3xl text-sm leading-6 text-slate-600">
-                Configure credenciais, provedor ativo e gatilhos sem valores fixos no código.
-                A Orquídea pode começar pela Evolution API e migrar para a Meta depois.
-              </p>
-            </div>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="space-y-1">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              Automação
+            </p>
+            <h2 className="text-2xl font-bold tracking-tight text-slate-950">
+              WhatsApp Business
+            </h2>
+            <p className="max-w-xl text-sm leading-6 text-slate-600">
+              Conecte o WhatsApp da assistência e avise seus clientes automaticamente a cada
+              etapa da OS.
+            </p>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 lg:min-w-90">
-            <div className="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                Status
-              </p>
-              <p className="mt-2 text-sm font-semibold text-slate-950">
-                {enabled ? 'Automação habilitada' : 'Automação pausada'}
-              </p>
+          <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm">
+            <span className={cn('size-2.5 shrink-0 rounded-full', connectionStatus.dot)} />
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-slate-950">{connectionStatus.label}</p>
+              {connectionStatus.detail && (
+                <p className="text-xs text-slate-500">{connectionStatus.detail}</p>
+              )}
             </div>
-            <div className="rounded-2xl border border-slate-200 bg-slate-950 p-4 text-white shadow-lg shadow-slate-950/10">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                Segredos
-              </p>
-              <p className="mt-2 text-sm font-medium text-emerald-300">
-                {provider === 'evolution_api'
-                  ? initialSettings.evolutionApiKeyConfigured
-                    ? 'API key salva'
-                    : 'API key pendente'
-                  : initialSettings.accessTokenConfigured
-                    ? 'Token Meta salvo'
-                    : 'Token Meta pendente'}
-              </p>
-            </div>
+            {enabled && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                loading={isPending}
+                disabled={isPending}
+                onClick={() => handleToggleEnabled(false)}
+                className="ml-2 shrink-0 rounded-xl"
+              >
+                Pausar
+              </Button>
+            )}
           </div>
         </div>
       </div>
 
-      <form
-        onSubmit={handleSubmit(onSubmit)}
-        className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_380px]"
-      >
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div className="space-y-6">
+          {!enabled && (
+            <Card className="border border-slate-200 shadow-sm shadow-slate-950/5">
+              <CardContent className="flex flex-col items-start gap-3 pt-6">
+                <p className="text-base font-semibold text-slate-900">
+                  A automação do WhatsApp está pausada
+                </p>
+                <p className="text-sm leading-6 text-slate-600">
+                  Ative para conectar o WhatsApp da assistência e enviar avisos automáticos aos
+                  clientes — OS aberta, orçamento pronto, serviço concluído e pesquisa de
+                  satisfação.
+                </p>
+                <Button
+                  type="button"
+                  loading={isPending}
+                  disabled={isPending}
+                  onClick={() => handleToggleEnabled(true)}
+                  className="rounded-xl bg-emerald-700 hover:bg-emerald-800"
+                >
+                  <Power className="size-4" />
+                  Ativar automação
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {enabled && provider === 'evolution_api' && (
+            <EvolutionConnectionPanel
+              connectedPhone={evolutionConnectedPhone}
+              connectionState={evolutionConnectionState}
+              instanceName={evolutionInstanceName}
+              instanceReady={evolutionInstanceReady}
+              isPending={isEvolutionOperationPending}
+              operation={evolutionOperation}
+              qrCodeCount={evolutionQrCodeCount}
+              qrCodeImage={evolutionQrCodeImage}
+              onCreateInstance={handleCreateEvolutionInstance}
+              webhookOk={evolutionWebhookOk}
+              onDelete={handleDeleteEvolution}
+              onGenerateQrCode={handleGenerateQrCode}
+              onLogout={handleLogoutEvolution}
+              onRefreshStatus={handleRefreshEvolutionStatus}
+            />
+          )}
+
+          {enabled && (
+            <Card className="border border-slate-200 shadow-sm shadow-slate-950/5">
+              <CardHeader className="border-b border-slate-100">
+                <CardTitle className="flex items-center gap-2 text-slate-900">
+                  <MessageSquareText className="size-4 text-emerald-700" />
+                  2 · Mensagens automáticas
+                </CardTitle>
+                <CardDescription>
+                  Quais avisos seus clientes recebem no WhatsApp em cada etapa da OS.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4 pt-4">
+                {isEvolutionConnected(evolutionConnectionState) ? (
+                  <>
+                    <div className="flex flex-wrap gap-2">
+                      {triggerSummary.map((item) => (
+                        <span
+                          key={item.label}
+                          className={cn(
+                            'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold',
+                            item.active
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : 'bg-slate-100 text-slate-500',
+                          )}
+                        >
+                          {item.active ? (
+                            <CheckCircle2 className="size-3.5" />
+                          ) : (
+                            <XCircle className="size-3.5" />
+                          )}
+                          {item.label}
+                        </span>
+                      ))}
+                    </div>
+                    {!hasAnyTriggerOn && (
+                      <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5">
+                        <p className="text-xs font-medium leading-5 text-amber-800">
+                          Nenhum gatilho ligado — os clientes não recebem nenhuma mensagem
+                          automática, mesmo com o WhatsApp conectado.
+                        </p>
+                      </div>
+                    )}
+                    <Link
+                      href="/dashboard/configuracoes/bot"
+                      className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-700 hover:underline"
+                    >
+                      Configurar gatilhos e mensagens
+                      <ArrowRight className="size-4" />
+                    </Link>
+                  </>
+                ) : (
+                  <div className="flex items-start gap-2.5 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-3 py-2.5">
+                    <Lock className="mt-0.5 size-4 shrink-0 text-slate-400" />
+                    <p className="text-sm leading-6 text-slate-600">
+                      Conclua a etapa 1 primeiro: assim que o WhatsApp estiver conectado, os
+                      gatilhos de mensagens são liberados aqui.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {enabled && (
+            <button
+              type="button"
+              onClick={() => setShowAdvanced((value) => !value)}
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-600 hover:text-slate-900"
+            >
+              <ChevronDown
+                className={cn('size-4 transition-transform', showAdvanced && 'rotate-180')}
+              />
+              Configurações avançadas
+            </button>
+          )}
+
+          {enabled && showAdvanced && (
+            <>
           <Card className="border border-slate-200 shadow-sm shadow-slate-950/5">
             <CardHeader className="border-b border-slate-100">
               <CardTitle className="flex items-center gap-2 text-slate-900">
                 <PlugZap className="size-4 text-emerald-700" />
-                Provedor ativo
+                Provedor
               </CardTitle>
               <CardDescription>
                 Escolha qual integração será usada pela automação. As duas configurações ficam
@@ -915,18 +1010,6 @@ export function WhatsAppAutomationForm({
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 pt-4">
-              <Controller
-                control={control}
-                name="enabled"
-                render={({ field }) => (
-                  <BooleanField
-                    checked={field.value}
-                    label="Habilitar automação do WhatsApp"
-                    description="Quando habilitado, o sistema valida os campos obrigatórios do provedor ativo."
-                    onCheckedChange={field.onChange}
-                  />
-                )}
-              />
               <ProviderTabs
                 provider={provider}
                 onChange={(value) =>
@@ -941,6 +1024,14 @@ export function WhatsAppAutomationForm({
                   {errors.provider.message}
                 </p>
               )}
+              <Button
+                type="submit"
+                loading={isPending}
+                disabled={isPending}
+                className="rounded-xl bg-slate-950 hover:bg-slate-800"
+              >
+                Salvar
+              </Button>
             </CardContent>
           </Card>
 
@@ -1030,6 +1121,26 @@ export function WhatsAppAutomationForm({
                   error={errors.webhook_verify_token?.message}
                   {...register('webhook_verify_token')}
                 />
+                <div className="flex flex-wrap gap-2 md:col-span-2">
+                  <Button
+                    type="submit"
+                    loading={isPending}
+                    disabled={isPending}
+                    className="rounded-xl bg-slate-950 hover:bg-slate-800"
+                  >
+                    Salvar
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    loading={isValidatingMeta}
+                    disabled={isValidatingMeta}
+                    onClick={handleValidateMeta}
+                    className="rounded-xl"
+                  >
+                    Validar Meta Cloud API
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ) : null}
@@ -1073,6 +1184,14 @@ export function WhatsAppAutomationForm({
                   Mensagem enviada quando o tempo de aviso chegar. Se vazia, usa o texto padrão acima.
                 </p>
               </div>
+              <Button
+                type="submit"
+                loading={isPending}
+                disabled={isPending}
+                className="rounded-xl bg-slate-950 hover:bg-slate-800"
+              >
+                Salvar
+              </Button>
             </CardContent>
           </Card>
 
@@ -1103,90 +1222,19 @@ export function WhatsAppAutomationForm({
                 error={errors.templates_language?.message}
                 {...register('templates_language')}
               />
-            </CardContent>
-          </Card>
-
-        </div>
-
-        <div className="space-y-6">
-          {provider === 'evolution_api' && (
-            <EvolutionConnectionPanel
-              connectedPhone={evolutionConnectedPhone}
-              connectionState={evolutionConnectionState}
-              instanceName={evolutionInstanceName}
-              instanceReady={evolutionInstanceReady}
-              isPending={isEvolutionOperationPending}
-              operation={evolutionOperation}
-              qrCodeCount={evolutionQrCodeCount}
-              qrCodeImage={evolutionQrCodeImage}
-              onCreateInstance={handleCreateEvolutionInstance}
-              webhookOk={evolutionWebhookOk}
-              onDelete={handleDeleteEvolution}
-              onGenerateQrCode={handleGenerateQrCode}
-              onLogout={handleLogoutEvolution}
-              onRefreshStatus={handleRefreshEvolutionStatus}
-            />
-          )}
-
-          <Card className="border border-slate-200 shadow-sm shadow-slate-950/5">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-slate-900">
-                <ShieldCheck className="size-4 text-emerald-700" />
-                Checklist
-              </CardTitle>
-              <CardDescription>
-                Use a validação do provedor ativo antes de disparar mensagens.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm leading-6 text-slate-600">
-              <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4">
-                Webhook Meta: <strong>/api/webhooks/whatsapp</strong>
-              </div>
-              <div className="flex items-start gap-2">
-                <CheckCircle2 className="mt-1 size-4 shrink-0 text-emerald-700" />
-                A Meta exige templates aprovados para iniciar conversas fora da janela de 24h.
-              </div>
-              <div className="flex items-start gap-2">
-                <CheckCircle2 className="mt-1 size-4 shrink-0 text-emerald-700" />
-                A Evolution precisa de API key e instância conectada por QR Code.
-              </div>
-              <div className="flex items-start gap-2">
-                <CheckCircle2 className="mt-1 size-4 shrink-0 text-emerald-700" />
-                A troca de provedor fica registrada no log de auditoria da empresa.
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border border-slate-200 shadow-sm shadow-slate-950/5">
-            <CardHeader>
-              <CardTitle className="text-base text-slate-900">Salvar e validar</CardTitle>
-              <CardDescription>
-                Salve antes de validar para testar as credenciais persistidas no sistema.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
               <Button
                 type="submit"
                 loading={isPending}
                 disabled={isPending}
-                className="w-full rounded-xl bg-slate-950 hover:bg-slate-800"
+                className="rounded-xl bg-slate-950 hover:bg-slate-800"
               >
-                Salvar automação
+                Salvar
               </Button>
-              {provider === 'whatsapp_cloud_api' && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  loading={isValidatingMeta}
-                  disabled={isValidatingMeta}
-                  onClick={handleValidateMeta}
-                  className="w-full rounded-xl"
-                >
-                  Validar Meta Cloud API
-                </Button>
-              )}
             </CardContent>
           </Card>
+            </>
+          )}
+
         </div>
       </form>
     </div>
