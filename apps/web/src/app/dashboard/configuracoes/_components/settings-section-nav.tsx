@@ -2,10 +2,16 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Bot, ListTree, Settings2, QrCode, BookOpen } from 'lucide-react'
+import { Bot, Building2, ListTree, Settings2, QrCode, BookOpen } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const ITEMS = [
+  {
+    href: '/dashboard/configuracoes/empresa',
+    label: 'Empresa',
+    description: 'Nome, CNPJ e dados de contato',
+    icon: Building2,
+  },
   {
     href: '/dashboard/configuracoes/sistema',
     label: 'Sistema',
