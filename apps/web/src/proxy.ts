@@ -18,6 +18,7 @@ const PUBLIC_ROUTES = [
   '/privacidade',
   '/termos-de-uso',
   '/cookies',
+  '/perguntas',
   '/recursos-api-whatsapp.html',
   '/recursos-dashboard-admin.html',
   '/sem-plano',
