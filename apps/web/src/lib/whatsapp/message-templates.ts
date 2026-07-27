@@ -12,7 +12,11 @@ Responda com o *número* da opção desejada. 😊`,
   osCreated:
     'Olá, {{cliente_nome}}! Sua OS #{{os_numero}} foi aberta para o equipamento {{equipamento}}. Avisaremos por aqui sobre o andamento.',
   estimateReady: `Olá, {{cliente_nome}}! O orçamento da OS *#{{os_numero}}* está pronto.
-Valor do orçamento: *{{valor_orcamento}}*.
+
+{{equipamento}}
+{{itens_orcamento}}
+
+*TOTAL {{valor_orcamento}}*
 
 Deseja:
 1 - Aprovar orçamento
@@ -32,6 +36,7 @@ export const WHATSAPP_MESSAGE_VARIABLES = [
   '{{telefone_cliente}}',
   '{{os_numero}}',
   '{{equipamento}}',
+  '{{itens_orcamento}}',
   '{{valor_orcamento}}',
   '{{instancia_nome}}',
   '{{marcas_autorizadas}}',

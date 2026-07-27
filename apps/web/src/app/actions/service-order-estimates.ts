@@ -70,6 +70,9 @@ const normalizeRecipientPhone = (phone: string | null, defaultCountryCode: strin
 const truncatePreview = (text: string, max = 80) =>
   text.length > max ? `${text.slice(0, max - 1)}…` : text
 
+const buildEstimateItemsText = (items: Array<{ description: string; line_total: number }>) =>
+  items.map((item) => `${item.description} ${currencyFormatter.format(item.line_total)}`).join('\n')
+
 const buildEstimateWhatsAppMessage = ({
   template,
   companyName,
@@ -77,6 +80,7 @@ const buildEstimateWhatsAppMessage = ({
   clientPhone,
   osNumber,
   equipment,
+  items,
   totalAmount,
   validUntil,
 }: {
@@ -86,13 +90,18 @@ const buildEstimateWhatsAppMessage = ({
   clientPhone: string | null
   osNumber: number
   equipment: string
+  items: Array<{ description: string; line_total: number }>
   totalAmount: number
   validUntil: string | null
 }) => {
+  const itemsText = buildEstimateItemsText(items)
+
   const fallback = [
     'Olá, {{cliente_nome}}! Segue o orçamento referente à OS #{{os_numero}}.',
     '',
     'Equipamento: {{equipamento}}',
+    itemsText ? itemsText : null,
+    '',
     'Total: {{valor_orcamento}}',
     validUntil ? `Válido até: ${formatEstimateDate(validUntil)}` : null,
     '',
@@ -109,6 +118,7 @@ const buildEstimateWhatsAppMessage = ({
       telefone_cliente: clientPhone,
       os_numero: String(osNumber),
       equipamento: equipment,
+      itens_orcamento: itemsText,
       valor_orcamento: currencyFormatter.format(totalAmount),
       marcas_autorizadas: '',
       instancia_nome: '',
@@ -196,33 +206,43 @@ const prepareEstimateWhatsApp = async ({
     throw new Error('OS não encontrada para envio pelo WhatsApp.')
   }
 
-  const [{ data: estimate, error: estimateError }, { data: client, error: clientError }, { data: company }] =
-    await Promise.all([
-      adminSupabase
-        .from('service_order_estimates')
-        .select('id, version, total_amount, valid_until')
-        .eq('id', estimateId)
-        .eq('company_id', companyId)
-        .is('deleted_at', null)
-        .single<{
-          id: string
-          version: number
-          total_amount: number
-          valid_until: string | null
-        }>(),
-      adminSupabase
-        .from('clients')
-        .select('id, name, phone')
-        .eq('id', serviceOrder.client_id)
-        .eq('company_id', companyId)
-        .is('deleted_at', null)
-        .single<{ id: string; name: string; phone: string | null }>(),
-      adminSupabase
-        .from('companies')
-        .select('name')
-        .eq('id', companyId)
-        .single<{ name: string }>(),
-    ])
+  const [
+    { data: estimate, error: estimateError },
+    { data: client, error: clientError },
+    { data: company },
+    { data: estimateItems },
+  ] = await Promise.all([
+    adminSupabase
+      .from('service_order_estimates')
+      .select('id, version, total_amount, valid_until')
+      .eq('id', estimateId)
+      .eq('company_id', companyId)
+      .is('deleted_at', null)
+      .single<{
+        id: string
+        version: number
+        total_amount: number
+        valid_until: string | null
+      }>(),
+    adminSupabase
+      .from('clients')
+      .select('id, name, phone')
+      .eq('id', serviceOrder.client_id)
+      .eq('company_id', companyId)
+      .is('deleted_at', null)
+      .single<{ id: string; name: string; phone: string | null }>(),
+    adminSupabase
+      .from('companies')
+      .select('name')
+      .eq('id', companyId)
+      .single<{ name: string }>(),
+    adminSupabase
+      .from('service_order_estimate_items')
+      .select('description, line_total')
+      .eq('estimate_id', estimateId)
+      .eq('company_id', companyId)
+      .order('created_at', { ascending: true }),
+  ])
 
   if (estimateError || !estimate) throw new Error('Orçamento não encontrado para envio pelo WhatsApp.')
   if (clientError || !client) throw new Error('Cliente não encontrado para envio pelo WhatsApp.')
@@ -237,6 +257,7 @@ const prepareEstimateWhatsApp = async ({
     clientPhone: client.phone,
     osNumber: serviceOrder.number,
     equipment: buildEquipmentLabel(serviceOrder),
+    items: estimateItems ?? [],
     totalAmount: estimate.total_amount,
     validUntil: estimate.valid_until,
   })

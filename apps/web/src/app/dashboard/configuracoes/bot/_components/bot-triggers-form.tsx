@@ -188,7 +188,7 @@ export function BotTriggersForm({ initialSettings }: Props) {
               tplPlaceholder: 'orcamento_pronto',
               msgLabel: 'Mensagem — Orçamento pronto',
               tplLabel: 'Template Meta — Orçamento',
-              extraVars: '{{valor_orcamento}}',
+              extraVars: '{{itens_orcamento}}, {{valor_orcamento}}',
             },
             {
               notify: 'notify_service_completed' as const,

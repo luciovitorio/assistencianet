@@ -22,7 +22,8 @@ const VARS: Record<string, string> = {
   '{{os_data}}': '05/05/2026',
   '{{os_data_finalizacao}}': '07/05/2026',
   '{{equipamento}}': 'Babyliss Prancha',
-  '{{valor_orcamento}}': 'R$ 250,00',
+  '{{itens_orcamento}}': 'Limpeza R$ 55,00\nMancal R$ 50,00\nBotão ar frio R$ 50,00',
+  '{{valor_orcamento}}': 'R$ 155,00',
 }
 
 const resolveVars = (text: string): string =>
@@ -123,7 +124,7 @@ const FLOWS: Record<string, Step[]> = {
   Orçamento: [
     {
       role: 'bot',
-      text: 'Seu orçamento para a OS *#20260001* está pronto:\n\nValor: *R$ 250,00*\n\n1️⃣ Aprovar\n2️⃣ Recusar\n3️⃣ Falar com atendente\n0️⃣ Voltar',
+      text: 'Seu orçamento para a OS *#20260001* está pronto:\n\nBabyliss Prancha\nLimpeza R$ 55,00\nMancal R$ 50,00\nBotão ar frio R$ 50,00\n\n*TOTAL R$ 155,00*\n\n1️⃣ Aprovar\n2️⃣ Recusar\n3️⃣ Falar com atendente\n0️⃣ Voltar',
     },
     { role: 'user', text: '1' },
     { role: 'bot', text: (m) => m.estimate_approved },

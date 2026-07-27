@@ -144,8 +144,9 @@ Acompanhe o andamento pelo WhatsApp respondendo aqui. 😊`}
 
 O orçamento do seu *{{equipamento}}* está pronto.
 
-💰 Valor: *R$ {{valor_orcamento}}*
-📋 Descrição: {{descricao_servico}}
+{{itens_orcamento}}
+
+💰 TOTAL: *R$ {{valor_orcamento}}*
 
 Responda *1* para APROVAR ou *2* para RECUSAR.`}
           />
@@ -185,6 +186,7 @@ Sua opinião nos ajuda a melhorar!
               '{{nome_cliente}}',
               '{{equipamento}}',
               '{{numero_os}}',
+              '{{itens_orcamento}}',
               '{{valor_orcamento}}',
               '{{valor_total}}',
               '{{descricao_servico}}',
